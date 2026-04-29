@@ -1,9 +1,10 @@
 # Fontes com credenciais
 
 > **Status atual: nenhuma fonte ativa exige credenciais.** O findata-br é
-> 100% public-data — todas as 7 fontes (BCB, CVM, B3, IBGE, IPEA, Tesouro,
-> ANBIMA) funcionam apenas com `pip install findata-br`, sem env vars,
-> sem cadastro, sem API key. Este documento existe pra registrar o
+> 100% public-data — todas as 11 fontes públicas online (BCB, CVM, B3, IBGE,
+> IPEA, Tesouro, ANBIMA, Receita Federal, ANEEL, SUSEP e Open Finance Brasil)
+> funcionam apenas com `pip install findata-br`, sem env vars, sem cadastro,
+> sem chave de API. O registro local também funciona offline. Este documento existe pra registrar o
 > _framework_ que está pronto pra ser usado quando alguém da comunidade
 > integrar uma fonte que de fato exija auth (SUSEP, BNDES, etc.).
 

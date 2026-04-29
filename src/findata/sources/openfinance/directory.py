@@ -398,7 +398,11 @@ def filter_participants(
             if role_cf not in roles:
                 continue
         if api_family_cf:
-            endpoints = flatten_api_endpoints([item], api_family=api_family)
+            endpoints = flatten_api_endpoints(
+                [item],
+                api_family=api_family,
+                status=status,
+            )
             if not endpoints:
                 continue
         results.append(item)
@@ -469,7 +473,8 @@ async def find_participant(
     environment: Environment = "production",
 ) -> dict[str, Any] | None:
     """Find one raw participant by OrganisationId."""
+    needle = organisation_id.casefold()
     for item in await get_participants(environment):
-        if item.get("OrganisationId") == organisation_id:
+        if _str_value(item.get("OrganisationId")).casefold() == needle:
             return item
     return None

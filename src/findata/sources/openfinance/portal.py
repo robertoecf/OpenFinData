@@ -177,15 +177,19 @@ def parse_dataset_files(slug: str, html: str) -> list[OpenFinancePortalFile]:
     seen: set[str] = set()
 
     for file_type, title, date_range, download_id in _HTML_FILE_RE.findall(html):
-        seen.add(download_id)
-        path = f"/api/download?id={download_id}"
+        try:
+            safe_id = _safe_download_id(download_id)
+        except ValueError:
+            continue
+        seen.add(safe_id)
+        path = f"/api/download?id={safe_id}"
         files.append(
             OpenFinancePortalFile(
                 dataset_slug=slug,
                 title=unescape(title),
                 date_range=unescape(date_range),
                 file_type=unescape(file_type),
-                download_id=download_id,
+                download_id=safe_id,
                 download_url=urljoin(PORTAL_BASE_URL, path),
             )
         )
@@ -196,20 +200,24 @@ def parse_dataset_files(slug: str, html: str) -> list[OpenFinancePortalFile]:
     types = [unescape(value) for value in _TYPE_RE.findall(html)]
 
     for index, download_id in enumerate(ids):
-        if download_id in seen:
+        try:
+            safe_id = _safe_download_id(download_id)
+        except ValueError:
             continue
-        seen.add(download_id)
+        if safe_id in seen:
+            continue
+        seen.add(safe_id)
         title = _nearby_value(titles, index) or f"Arquivo {index + 1}"
         date_range = _nearby_value(ranges, index)
         file_type = _nearby_value(types, index) or "CSV"
-        path = f"/api/download?id={download_id}"
+        path = f"/api/download?id={safe_id}"
         files.append(
             OpenFinancePortalFile(
                 dataset_slug=slug,
                 title=title,
                 date_range=date_range,
                 file_type=file_type,
-                download_id=download_id,
+                download_id=safe_id,
                 download_url=urljoin(PORTAL_BASE_URL, path),
             )
         )

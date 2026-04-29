@@ -223,11 +223,13 @@ async def get_bytes(
     max_bytes: int | None = None,
 ) -> bytes:
     """GET raw bytes (large downloads use a dedicated longer-timeout client)."""
-    key = _cache_key("bytes", url, None)
+    key = _cache_key("bytes", url, {"max_bytes": max_bytes if max_bytes is not None else "none"})
     cached = _cache_get(key)
     if cached is not None:
         if not isinstance(cached, bytes):
             raise TypeError("cached value is not bytes")
+        if max_bytes is not None and len(cached) > max_bytes:
+            raise ValueError(f"download exceeds max_bytes={max_bytes}")
         return cached
 
     async with _lock_for(key):
@@ -235,6 +237,8 @@ async def get_bytes(
         if cached is not None:
             if not isinstance(cached, bytes):
                 raise TypeError("cached value is not bytes")
+            if max_bytes is not None and len(cached) > max_bytes:
+                raise ValueError(f"download exceeds max_bytes={max_bytes}")
             return cached
 
         async def _do() -> bytes:

@@ -86,7 +86,7 @@ reproduzíveis com testes sem rede.
 | **ANEEL** | Energia | Resultados de leilões de geração e transmissão | — |
 | **SUSEP** | Seguros | Entidades supervisionadas e identificadores FIP/CNPJ | — |
 | **Open Finance Brasil** | Ecossistema OFB | Diretório público (`participants`, `roles`, `apiresources`, JWKS, `.well-known`) + Portal de Dados (10 datasets públicos de indicadores e rankings) | — |
-| **Registro** | Multiffonte | **Resolvedor CNPJ ↔ ticker ↔ nome** — SQLite FTS5 embarcado no pacote wheel (~50k entidades CVM+SUSEP+B3); uma consulta MATCH cobre exato, fragmento e aproximado | — (offline) |
+| **Registro** | Multifonte | **Resolvedor CNPJ ↔ ticker ↔ nome** — SQLite FTS5 embarcado no pacote wheel (~50k entidades CVM+SUSEP+B3); uma consulta MATCH cobre exato, fragmento e aproximado | — (offline) |
 
 > **Nota sobre ANBIMA.** Usamos os arquivos públicos em `www.anbima.com.br/informacoes/*`
 > (XLS / CSV / TXT atualizados diariamente), não a API comercial Sensedia

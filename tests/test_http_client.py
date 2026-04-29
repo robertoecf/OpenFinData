@@ -6,6 +6,7 @@ import asyncio
 
 import httpx
 import pytest
+import respx
 
 from findata import http_client
 
@@ -127,3 +128,19 @@ async def test_retry_loop_does_not_retry_non_retryable() -> None:
     with pytest.raises(ValueError):
         await http_client._retry_loop(value_error, retries=5)
     assert calls == 1
+
+
+@respx.mock
+async def test_get_bytes_scopes_cache_by_max_bytes() -> None:
+    http_client.clear_cache()
+    route = respx.get("https://example.test/file").mock(
+        side_effect=[
+            httpx.Response(200, content=b"abcdef"),
+            httpx.Response(200, content=b"abcdef"),
+        ]
+    )
+
+    assert await http_client.get_bytes("https://example.test/file", max_bytes=None) == b"abcdef"
+    with pytest.raises(ValueError, match="download exceeds max_bytes=3"):
+        await http_client.get_bytes("https://example.test/file", max_bytes=3)
+    assert route.call_count == 2

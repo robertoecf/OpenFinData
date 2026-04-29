@@ -27,6 +27,13 @@ def test_root_endpoint(client: TestClient) -> None:
     assert body["name"] == "findata-br"
     assert "version" in body
     assert "bcb" in body["sources"]
+    assert "openfinance" in body["sources"]
+
+
+def test_stats_uses_same_source_registry_as_root(client: TestClient) -> None:
+    root_sources = client.get("/").json()["sources"]
+    stats_sources = client.get("/stats").json()["sources"]
+    assert stats_sources == list(root_sources)
 
 
 def test_health_endpoint(client: TestClient) -> None:

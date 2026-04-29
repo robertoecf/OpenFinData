@@ -44,6 +44,21 @@ def _resolve_version() -> str:
 
 _VERSION = _resolve_version()
 
+ADVERTISED_SOURCES: dict[str, str] = {
+    "bcb": "Banco Central do Brasil (Selic, IPCA, PTAX, Focus)",
+    "cvm": "CVM (companies, financial statements, funds)",
+    "tesouro": "Tesouro Direto (treasury bonds)",
+    "ibge": "IBGE (economic indicators)",
+    "ipea": "IPEA Data (~8k macro series, long historical coverage)",
+    "openfinance": "Open Finance Brasil (public Directory + indicator Portal)",
+    "b3": "B3 (stock quotes via yfinance)",
+    "anbima": "ANBIMA (IMA family, ETTJ, debêntures — public file downloads)",
+    "receita": "Receita Federal (federal tax collection)",
+    "aneel": "ANEEL (generation and transmission auctions)",
+    "susep": "SUSEP (supervised insurance entities)",
+    "registry": "Offline CNPJ/ticker/name registry",
+}
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
@@ -139,16 +154,7 @@ async def root() -> dict[str, object]:
         "version": _VERSION,
         "docs": "/docs",
         "mcp": "/mcp" if _MCP_ENABLED else None,
-        "sources": {
-            "bcb": "Banco Central do Brasil (Selic, IPCA, PTAX, Focus)",
-            "cvm": "CVM (companies, financial statements, funds)",
-            "tesouro": "Tesouro Direto (treasury bonds)",
-            "ibge": "IBGE (economic indicators)",
-            "ipea": "IPEA Data (~8k macro series, long historical coverage)",
-            "openfinance": "Open Finance Brasil (public Directory + indicator Portal)",
-            "b3": "B3 (stock quotes via yfinance)",
-            "anbima": "ANBIMA (IMA family, ETTJ, debêntures — public file downloads)",
-        },
+        "sources": ADVERTISED_SOURCES,
     }
 
 
@@ -173,7 +179,7 @@ async def stats() -> dict[str, object]:
             "size": len(_http_cache),
             "max_size": _CACHE_MAX,
         },
-        "sources": ["bcb", "cvm", "tesouro", "ibge", "ipea", "b3"],
+        "sources": list(ADVERTISED_SOURCES),
         "rate_limits": {
             "enabled": limiter.enabled,
         },
