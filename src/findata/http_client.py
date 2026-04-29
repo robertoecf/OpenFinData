@@ -27,11 +27,13 @@ _locks: weakref.WeakValueDictionary[tuple[int | None, str], asyncio.Lock] = (
 
 
 def _cache_key(kind: str, url: str, params: dict[str, Any] | None) -> str:
+    """Build a stable cache key namespaced by payload kind."""
     raw = f"{kind}:{url}:{sorted(params.items()) if params else ''}"
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
 def _cache_get(key: str) -> Any | None:
+    """Return a cached value when present and still within its TTL."""
     if key not in _cache:
         return None
     cached_at, ttl, data = _cache[key]
@@ -43,6 +45,7 @@ def _cache_get(key: str) -> Any | None:
 
 
 def _cache_set(key: str, data: Any, ttl: float = CACHE_TTL) -> None:
+    """Store one cached value and evict the oldest entries past the size cap."""
     if ttl <= 0:
         return
     _cache[key] = (time.time(), ttl, data)
@@ -58,6 +61,7 @@ def clear_cache() -> None:
 
 
 def _loop_id() -> int | None:
+    """Return the current event-loop identity, or None outside a running loop."""
     try:
         return id(asyncio.get_running_loop())
     except RuntimeError:
@@ -65,6 +69,7 @@ def _loop_id() -> int | None:
 
 
 def _lock_for(key: str) -> asyncio.Lock:
+    """Return the event-loop-scoped single-flight lock for one cache key."""
     scoped_key = (_loop_id(), key)
     lock = _locks.get(scoped_key)
     if lock is None:
@@ -98,6 +103,7 @@ _HTTP_TOO_MANY_REQUESTS = 429
 
 
 def _should_retry(exc: BaseException) -> bool:
+    """Return whether an exception should trigger the retry loop."""
     if isinstance(exc, httpx.HTTPStatusError):
         status = exc.response.status_code
         return status >= _HTTP_INTERNAL_ERROR or status == _HTTP_TOO_MANY_REQUESTS
@@ -148,6 +154,7 @@ def _ssl_context() -> Any:
 
 
 def _get_client() -> httpx.AsyncClient:
+    """Return a shared async client scoped to the current event loop."""
     global _client, _client_loop_id
     try:
         loop_id: int | None = id(asyncio.get_running_loop())
@@ -166,6 +173,7 @@ def _get_client() -> httpx.AsyncClient:
 
 
 async def close_client() -> None:
+    """Close and reset the shared async HTTP client."""
     global _client, _client_loop_id
     if _client and not _client.is_closed:
         await _client.aclose()
@@ -198,6 +206,7 @@ async def get_json(
         client = _get_client()
 
         async def _do() -> Any:
+            """Fetch and decode one JSON response."""
             resp = await client.get(full_url, params=use_params)
             resp.raise_for_status()
             return resp.json()
@@ -229,6 +238,7 @@ async def get_bytes(
             return cached
 
         async def _do() -> bytes:
+            """Collect one streamed response into bytes for callers that need bytes."""
             chunks: list[bytes] = []
             async with stream_bytes(url, max_bytes=max_bytes) as body:
                 async for chunk in body:
@@ -259,6 +269,7 @@ async def stream_bytes(
             raise ValueError(f"download exceeds max_bytes={max_bytes}")
 
         async def _body() -> AsyncIterator[bytes]:
+            """Yield response chunks while enforcing the optional byte limit."""
             total = 0
             async for chunk in resp.aiter_bytes():
                 total += len(chunk)

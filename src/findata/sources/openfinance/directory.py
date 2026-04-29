@@ -94,32 +94,39 @@ class OpenFinanceDirectoryResource(BaseModel):
 
 
 def _data_base(environment: Environment) -> str:
+    """Return the public data API base URL for one Directory environment."""
     return _DATA_BASE[environment]
 
 
 def _web_base(environment: Environment) -> str:
+    """Return the web API base URL for one Directory environment."""
     return _WEB_BASE[environment]
 
 
 def _auth_base(environment: Environment) -> str:
+    """Return the OIDC issuer base URL for one Directory environment."""
     return _AUTH_BASE[environment]
 
 
 def _keystore_base(environment: Environment) -> str:
+    """Return the Directory keystore base URL for one environment."""
     return _KEYSTORE_BASE[environment]
 
 
 def _dicts(value: object) -> list[dict[str, Any]]:
+    """Return only dict items when the input is a list."""
     if not isinstance(value, list):
         return []
     return [cast(dict[str, Any], item) for item in value if isinstance(item, dict)]
 
 
 def _str_or_none(value: object) -> str | None:
+    """Return a non-empty string value, otherwise None."""
     return value if isinstance(value, str) and value else None
 
 
 def _str_value(value: object) -> str:
+    """Return an object as a string, treating None as an empty value."""
     if isinstance(value, str):
         return value
     if value is None:
@@ -128,6 +135,7 @@ def _str_value(value: object) -> str:
 
 
 def _matches(value: str | None, needle: str | None) -> bool:
+    """Return whether a nullable string contains a nullable casefolded needle."""
     if needle is None:
         return True
     if value is None:
@@ -136,11 +144,13 @@ def _matches(value: str | None, needle: str | None) -> bool:
 
 
 def _is_active_status(value: object) -> bool:
+    """Treat missing status and case-insensitive 'active' as active."""
     status = _str_or_none(value)
     return status is None or status.casefold() == "active"
 
 
 def _safe_uuid(value: str, field: str) -> str:
+    """Validate and URL-quote a UUID path segment."""
     if not _UUID_RE.fullmatch(value):
         raise ValueError(f"invalid Open Finance {field}: expected UUID")
     return quote(value, safe="")

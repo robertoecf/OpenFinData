@@ -189,6 +189,7 @@ async def portal_download(download_id: str) -> StreamingResponse:
     filename = of_portal.download_filename(download_id)
 
     async def _body() -> AsyncIterator[bytes]:
+        """Yield the validated Portal download stream to the response."""
         async with of_portal.stream_download_file(download_id) as chunks:
             async for chunk in chunks:
                 yield chunk

@@ -143,6 +143,7 @@ def list_datasets() -> list[OpenFinancePortalDataset]:
 
 
 def _dataset_url(slug: str, page: int = 1) -> str:
+    """Build the public Portal page URL for one supported dataset slug."""
     if slug not in PORTAL_DATASETS:
         raise ValueError(f"unknown Open Finance portal dataset: {slug}")
     suffix = f"?page={page}#files" if page > 1 else ""
@@ -150,6 +151,7 @@ def _dataset_url(slug: str, page: int = 1) -> str:
 
 
 def _nearby_value(values: list[str], index: int) -> str | None:
+    """Return the value at an index only when it exists."""
     if not values:
         return None
     if index < len(values):
@@ -158,6 +160,7 @@ def _nearby_value(values: list[str], index: int) -> str | None:
 
 
 def _safe_download_id(download_id: str) -> str:
+    """Validate a Portal download identifier as a UUID."""
     if not _UUID_RE.fullmatch(download_id):
         raise ValueError("invalid Open Finance download_id: expected UUID")
     return download_id

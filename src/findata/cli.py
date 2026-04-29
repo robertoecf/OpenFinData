@@ -40,6 +40,7 @@ def _fmt(val: float | None, spec: str = ".2f") -> str:
 
 
 def _version_callback(value: bool) -> None:
+    """Print the package version and exit when the eager flag is set."""
     if value:
         rprint(f"findata-br [bold]{__version__}[/bold]")
         raise typer.Exit()
@@ -965,6 +966,7 @@ _OpenFinanceEnvironment = Literal["production", "sandbox"]
 
 
 def _openfinance_env(value: str) -> _OpenFinanceEnvironment:
+    """Validate an Open Finance Directory environment CLI option."""
     if value not in ("production", "sandbox"):
         rprint("[red]Error:[/red] --env must be 'production' or 'sandbox'")
         raise typer.Exit(code=1)
@@ -1022,6 +1024,7 @@ def cvm_holdings(
 
 
 def _print_lamina_header(f: Any) -> None:
+    """Print the compact header for a CVM fund lâmina."""
     rprint(f"[bold]{f.denom_social}[/bold]  ({f.cnpj})")
     if f.nome_fantasia:
         rprint(f"  Fantasia: {f.nome_fantasia}")
