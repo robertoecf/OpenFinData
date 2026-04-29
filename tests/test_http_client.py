@@ -27,9 +27,10 @@ def test_build_url_returns_unchanged_for_regular_params() -> None:
 
 
 def test_cache_key_is_stable_across_dict_order() -> None:
-    k1 = http_client._cache_key("u", {"a": 1, "b": 2})
-    k2 = http_client._cache_key("u", {"b": 2, "a": 1})
+    k1 = http_client._cache_key("json", "u", {"a": 1, "b": 2})
+    k2 = http_client._cache_key("json", "u", {"b": 2, "a": 1})
     assert k1 == k2
+    assert k1 != http_client._cache_key("bytes", "u", {"a": 1, "b": 2})
 
 
 def test_cache_set_get_roundtrip() -> None:

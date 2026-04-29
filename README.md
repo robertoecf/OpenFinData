@@ -9,14 +9,14 @@
  ╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝       ╚═════╝ ╚═╝  ╚═╝
 
                    Dados financeiros abertos do Brasil
-        BCB · CVM · B3 · IBGE · IPEA · Tesouro  →  API + MCP + CLI
+        BCB · CVM · B3 · IBGE · IPEA · Tesouro · Open Finance  →  API + MCP + CLI
 ```
 
 <div align="center">
 
 **API + servidor MCP + CLI open-source para dados financeiros brasileiros.**
 
-_Agrega dados públicos de BCB, CVM, B3, IBGE, IPEA e Tesouro Nacional._
+_Agrega dados públicos de BCB, CVM, B3, IBGE, IPEA, Tesouro Nacional e Open Finance Brasil._
 _De graça. Sem API key. Sem truques de rate-limit. Só Python._
 
 <p>
@@ -72,6 +72,7 @@ _De graça. Sem API key. Sem truques de rate-limit. Só Python._
 | **Tesouro Transparente** | Tesouro Nacional | Tesouro Direto — preços e taxas históricos | — |
 | **B3** | Bolsa | Cotações atuais via `yfinance`, **COTAHIST oficial (1986+)** ano/mês/dia, **composição teórica de índices** (IBOV, IBrX, SMLL, IDIV, IFIX + 14 sectoriais) | — |
 | **ANBIMA** | Mercado | IMA (família IRF-M, IMA-B, IMA-S, IMA-Geral) snapshot + **histórico via formulário Série Histórica**, ETTJ (curva zero), debêntures secundário | — |
+| **Open Finance Brasil** | Ecossistema OFB | Diretório público (`participants`, `roles`, `apiresources`, JWKS, `.well-known`) + Portal de Dados (10 datasets públicos de indicadores e rankings) | — |
 | **Registry** | Cross-source | **CNPJ ↔ ticker ↔ nome resolver** — SQLite FTS5 embarcado no wheel (~50k entidades CVM+SUSEP+B3); uma query MATCH cobre exato, fragmento e fuzzy | — (offline) |
 
 > **Nota sobre ANBIMA.** Usamos os arquivos públicos em `www.anbima.com.br/informacoes/*`
@@ -171,6 +172,10 @@ findata ipea catalog            # séries IPEA curadas
 findata ipea search desemprego  # busca full-text em ~8k séries
 findata ipea get BM12_TJOVER12 -n 12
 
+findata openfinance participants --role DADOS -n 20
+findata openfinance endpoints --api-family channels -n 20
+findata openfinance datasets
+
 findata cvm search Petrobras
 
 # Fundos: holdings (CDA), lâmina, perfil de cotistas
@@ -203,6 +208,7 @@ import asyncio
 from findata.sources.bcb import sgs, ptax, focus
 from findata.sources.ipea import get_series_values
 from findata.registry import lookup
+from findata.sources.openfinance import get_participants, summarise_participants
 
 async def main() -> None:
     selic = await sgs.get_series_by_name("selic", n=5)
@@ -217,6 +223,10 @@ async def main() -> None:
     # Selic over mensal do IPEA (série desde 1974)
     hist = await get_series_values("BM12_TJOVER12", top=12)
     print(hist)
+
+    # Open Finance público — participantes do diretório
+    participants = await get_participants()
+    print(summarise_participants(participants[:3]))
 
     # Registry — uma chamada resolve qualquer formato de identificador
     res = await lookup("PETR4")
@@ -257,6 +267,7 @@ curl http://localhost:8000/bcb/series/name/selic?n=5
 curl 'http://localhost:8000/bcb/focus/annual?indicator=IPCA&top=3'
 curl 'http://localhost:8000/registry/lookup?q=33000167000101'
 curl 'http://localhost:8000/registry/lookup?q=PETR4'
+curl 'http://localhost:8000/openfinance/participants?role=DADOS&limit=20'
 curl http://localhost:8000/docs     # Swagger UI
 curl http://localhost:8000/redoc    # ReDoc
 ```

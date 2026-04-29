@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Coroutine
 from datetime import date
-from typing import Any, TypeVar
+from typing import Any, Literal, TypeVar, cast
 
 import typer
 from rich import print as rprint
@@ -803,6 +803,172 @@ def ipea_search(
             m.serfonte or "-",
         )
     rprint(table)
+
+
+# ── Open Finance Brasil commands (public Track A only) ─────────────
+
+openfinance_app = typer.Typer(
+    help="Open Finance Brasil — public Directory and indicator Portal",
+    no_args_is_help=True,
+)
+app.add_typer(openfinance_app, name="openfinance")
+
+
+@openfinance_app.command("resources")
+def openfinance_resources(
+    environment: str = typer.Option("production", "--env", help="production | sandbox"),
+) -> None:
+    """List public Open Finance resources supported by findata-br."""
+    from findata.sources.openfinance import directory as of_dir
+
+    env = _openfinance_env(environment)
+    table = Table(title=f"Open Finance public resources ({env})")
+    table.add_column("Name", style="cyan")
+    table.add_column("URL")
+    table.add_column("Cache", justify="right")
+    table.add_column("Description")
+    for resource in of_dir.public_resources(env):
+        table.add_row(
+            resource.name,
+            resource.url,
+            f"{resource.cache_ttl_seconds}s",
+            resource.description[:70],
+        )
+    rprint(table)
+
+
+@openfinance_app.command("participants")
+def openfinance_participants(
+    role: str | None = typer.Option(None, "--role", help="Filter by role, e.g. DADOS"),
+    api_family: str | None = typer.Option(None, "--api-family", help="API family substring"),
+    query: str | None = typer.Option(None, "--query", "-q", help="Name/CNPJ substring"),
+    status: str | None = typer.Option(
+        "Active",
+        "--status",
+        help="Participant status; empty for all",
+    ),
+    limit: int = typer.Option(30, "--limit", "-n", min=1, max=1000),
+    environment: str = typer.Option("production", "--env", help="production | sandbox"),
+) -> None:
+    """List Open Finance participants from the public Directory."""
+    from findata.sources.openfinance import directory as of_dir
+
+    env = _openfinance_env(environment)
+    raw = _run(of_dir.get_participants(env))
+    filtered = of_dir.filter_participants(
+        raw,
+        role=role,
+        status=status or None,
+        api_family=api_family,
+        query=query,
+    )
+    rows = of_dir.summarise_participants(filtered[:limit])
+    table = Table(title=f"Open Finance participants ({env})")
+    table.add_column("OrganisationId", style="cyan")
+    table.add_column("Name")
+    table.add_column("CNPJ")
+    table.add_column("Roles")
+    table.add_column("AS", justify="right")
+    table.add_column("Resources", justify="right")
+    for row in rows:
+        table.add_row(
+            row.organisation_id[:8],
+            (row.organisation_name or row.registered_name or "-")[:45],
+            row.registration_number or "-",
+            ",".join(row.roles) or "-",
+            str(row.authorization_servers),
+            str(row.api_resources),
+        )
+    rprint(table)
+    if len(filtered) > limit:
+        rprint(f"[dim](showing {limit} of {len(filtered)})[/dim]")
+
+
+@openfinance_app.command("endpoints")
+def openfinance_endpoints(
+    api_family: str | None = typer.Option(None, "--api-family", help="API family substring"),
+    status: str | None = typer.Option(
+        "Active",
+        "--status",
+        help="Participant status; empty for all",
+    ),
+    limit: int = typer.Option(40, "--limit", "-n", min=1, max=5000),
+    environment: str = typer.Option("production", "--env", help="production | sandbox"),
+) -> None:
+    """List API endpoints advertised by public /participants metadata."""
+    from findata.sources.openfinance import directory as of_dir
+
+    env = _openfinance_env(environment)
+    raw = _run(of_dir.get_participants(env))
+    rows = of_dir.flatten_api_endpoints(raw, api_family=api_family, status=status or None)
+    table = Table(title=f"Open Finance API endpoints ({env})")
+    table.add_column("Org", style="cyan")
+    table.add_column("Brand")
+    table.add_column("Family", style="green")
+    table.add_column("Version")
+    table.add_column("Endpoint")
+    for row in rows[:limit]:
+        table.add_row(
+            row.organisation_id[:8],
+            (row.authorisation_server_name or row.organisation_name or "-")[:30],
+            (row.api_family_type or "-")[:35],
+            row.api_version or "-",
+            row.api_endpoint[:80],
+        )
+    rprint(table)
+    if len(rows) > limit:
+        rprint(f"[dim](showing {limit} of {len(rows)})[/dim]")
+
+
+@openfinance_app.command("datasets")
+def openfinance_datasets() -> None:
+    """List public datasets from the Open Finance data Portal."""
+    from findata.sources.openfinance import portal as of_portal
+
+    table = Table(title="Open Finance Portal datasets")
+    table.add_column("Slug", style="cyan")
+    table.add_column("Title")
+    table.add_column("Description")
+    for dataset in of_portal.list_datasets():
+        table.add_row(dataset.slug, dataset.title, dataset.description[:70])
+    rprint(table)
+
+
+@openfinance_app.command("files")
+def openfinance_files(
+    slug: str = typer.Argument(help="Dataset slug from `findata openfinance datasets`"),
+    page: int = typer.Option(1, "--page", min=1, max=20),
+) -> None:
+    """List downloadable files for a public Portal dataset."""
+    from findata.sources.openfinance import portal as of_portal
+
+    rows = _run(of_portal.get_dataset_files(slug, page=page))
+    if not rows:
+        rprint("[yellow]No files found on that dataset page.[/yellow]")
+        return
+    table = Table(title=f"Open Finance files: {slug} (page {page})")
+    table.add_column("ID", style="cyan")
+    table.add_column("Type")
+    table.add_column("Title")
+    table.add_column("Range")
+    for row in rows:
+        table.add_row(
+            row.download_id,
+            row.file_type or "-",
+            row.title,
+            row.date_range or "-",
+        )
+    rprint(table)
+
+
+_OpenFinanceEnvironment = Literal["production", "sandbox"]
+
+
+def _openfinance_env(value: str) -> _OpenFinanceEnvironment:
+    if value not in ("production", "sandbox"):
+        rprint("[red]Error:[/red] --env must be 'production' or 'sandbox'")
+        raise typer.Exit(code=1)
+    return cast(_OpenFinanceEnvironment, value)
 
 
 # ── CVM commands ───────────────────────────────────────────────────

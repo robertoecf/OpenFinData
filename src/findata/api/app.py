@@ -22,6 +22,7 @@ from findata.api.routers import (
     cvm,
     ibge,
     ipea,
+    openfinance,
     receita,
     registry,
     susep,
@@ -62,7 +63,8 @@ app = FastAPI(
     title="findata-br",
     description=(
         "Open-source Brazilian financial data API. "
-        "Aggregates public data from BCB, CVM, B3, IBGE, IPEA, and Tesouro Nacional. "
+        "Aggregates public data from BCB, CVM, B3, IBGE, IPEA, "
+        "Tesouro Nacional, and Open Finance Brasil. "
         "Free. No API key required."
     ),
     version=_VERSION,
@@ -98,6 +100,7 @@ app.include_router(cvm.router)
 app.include_router(tesouro.router)
 app.include_router(ibge.router)
 app.include_router(ipea.router)
+app.include_router(openfinance.router)
 app.include_router(b3.router)
 app.include_router(anbima.router)
 app.include_router(receita.router)
@@ -115,7 +118,10 @@ try:
     _mcp = FastApiMCP(
         app,
         name="findata-br",
-        description="Brazilian financial data MCP server — BCB, CVM, B3, IBGE, IPEA, Tesouro",
+        description=(
+            "Brazilian financial data MCP server — BCB, CVM, B3, "
+            "IBGE, IPEA, Tesouro, Open Finance"
+        ),
     )
     _mcp.mount_http()  # Serves MCP at /mcp (fastapi-mcp >=0.4)
     _MCP_ENABLED = True
@@ -139,6 +145,7 @@ async def root() -> dict[str, object]:
             "tesouro": "Tesouro Direto (treasury bonds)",
             "ibge": "IBGE (economic indicators)",
             "ipea": "IPEA Data (~8k macro series, long historical coverage)",
+            "openfinance": "Open Finance Brasil (public Directory + indicator Portal)",
             "b3": "B3 (stock quotes via yfinance)",
             "anbima": "ANBIMA (IMA family, ETTJ, debêntures — public file downloads)",
         },

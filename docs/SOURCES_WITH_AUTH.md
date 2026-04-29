@@ -61,6 +61,19 @@ Quirks da API ANBIMA (já validamos em testes ao vivo):
 - `403 "Access denied for this environment"` → seu app não está
   subscrito ao produto.
 
+
+## Open Finance Brasil: somente recursos públicos neste projeto
+
+A integração `openfinance` do findata-br é deliberadamente o Track A: Diretório
+público, JWKS públicos, `.well-known`, recursos publicados e Portal de Dados.
+Ela não usa API key, certificado privado, token, DCR, consentimento ou mTLS do
+operador.
+
+Conectar com bancos para solicitar dados cadastrais/transacionais de clientes é
+outro caso: exige onboarding institucional, certificados ICP-Brasil, segurança
+FAPI/RP, registro no Diretório, consentimento e certificação. Se isso entrar no
+roadmap, deve ficar como módulo opcional e isolado, não como fonte pública core.
+
 ## Fontes futuras candidatas
 
 | Fonte | Tipo | Trigger pra implementar |
