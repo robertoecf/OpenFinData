@@ -6,8 +6,10 @@ import asyncio
 import hashlib
 import ssl
 import time
+import weakref
 from collections import OrderedDict
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from typing import Any, TypeVar
 from urllib.parse import quote
 
@@ -19,14 +21,19 @@ MAX_CACHE_SIZE = 2048
 CACHE_TTL = 900  # 15 min default
 
 _cache: OrderedDict[str, tuple[float, float, Any]] = OrderedDict()  # key → (ts, ttl, data)
+_locks: weakref.WeakValueDictionary[tuple[int | None, str], asyncio.Lock] = (
+    weakref.WeakValueDictionary()
+)
 
 
-def _cache_key(url: str, params: dict[str, Any] | None) -> str:
-    raw = f"{url}:{sorted(params.items()) if params else ''}"
+def _cache_key(kind: str, url: str, params: dict[str, Any] | None) -> str:
+    """Build a stable cache key namespaced by payload kind."""
+    raw = f"{kind}:{url}:{sorted(params.items()) if params else ''}"
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
 def _cache_get(key: str) -> Any | None:
+    """Return a cached value when present and still within its TTL."""
     if key not in _cache:
         return None
     cached_at, ttl, data = _cache[key]
@@ -38,6 +45,9 @@ def _cache_get(key: str) -> Any | None:
 
 
 def _cache_set(key: str, data: Any, ttl: float = CACHE_TTL) -> None:
+    """Store one cached value and evict the oldest entries past the size cap."""
+    if ttl <= 0:
+        return
     _cache[key] = (time.time(), ttl, data)
     _cache.move_to_end(key)
     while len(_cache) > MAX_CACHE_SIZE:
@@ -47,6 +57,25 @@ def _cache_set(key: str, data: Any, ttl: float = CACHE_TTL) -> None:
 def clear_cache() -> None:
     """Clear the entire in-memory cache. Useful in tests."""
     _cache.clear()
+    _locks.clear()
+
+
+def _loop_id() -> int | None:
+    """Return the current event-loop identity, or None outside a running loop."""
+    try:
+        return id(asyncio.get_running_loop())
+    except RuntimeError:
+        return None
+
+
+def _lock_for(key: str) -> asyncio.Lock:
+    """Return the event-loop-scoped single-flight lock for one cache key."""
+    scoped_key = (_loop_id(), key)
+    lock = _locks.get(scoped_key)
+    if lock is None:
+        lock = asyncio.Lock()
+        _locks[scoped_key] = lock
+    return lock
 
 
 # ── OData URL Builder ─────────────────────────────────────────────
@@ -74,6 +103,7 @@ _HTTP_TOO_MANY_REQUESTS = 429
 
 
 def _should_retry(exc: BaseException) -> bool:
+    """Return whether an exception should trigger the retry loop."""
     if isinstance(exc, httpx.HTTPStatusError):
         status = exc.response.status_code
         return status >= _HTTP_INTERNAL_ERROR or status == _HTTP_TOO_MANY_REQUESTS
@@ -124,6 +154,7 @@ def _ssl_context() -> Any:
 
 
 def _get_client() -> httpx.AsyncClient:
+    """Return a shared async client scoped to the current event loop."""
     global _client, _client_loop_id
     try:
         loop_id: int | None = id(asyncio.get_running_loop())
@@ -142,6 +173,7 @@ def _get_client() -> httpx.AsyncClient:
 
 
 async def close_client() -> None:
+    """Close and reset the shared async HTTP client."""
     global _client, _client_loop_id
     if _client and not _client.is_closed:
         await _client.aclose()
@@ -159,49 +191,94 @@ async def get_json(
     retries: int = 3,
 ) -> Any:
     """GET JSON with LRU cache, connection pooling, and smart retry."""
-    key = _cache_key(url, params)
+    key = _cache_key("json", url, params)
     cached = _cache_get(key)
     if cached is not None:
         return cached
 
-    full_url = _build_url(url, params)
-    use_params = None if full_url != url else params
-    client = _get_client()
+    async with _lock_for(key):
+        cached = _cache_get(key)
+        if cached is not None:
+            return cached
 
-    async def _do() -> Any:
-        resp = await client.get(full_url, params=use_params)
-        resp.raise_for_status()
-        return resp.json()
+        full_url = _build_url(url, params)
+        use_params = None if full_url != url else params
+        client = _get_client()
 
-    data = await _retry_loop(_do, retries)
-    _cache_set(key, data, cache_ttl)
-    return data
+        async def _do() -> Any:
+            """Fetch and decode one JSON response."""
+            resp = await client.get(full_url, params=use_params)
+            resp.raise_for_status()
+            return resp.json()
+
+        data = await _retry_loop(_do, retries)
+        _cache_set(key, data, cache_ttl)
+        return data
 
 
 async def get_bytes(
     url: str,
     retries: int = 3,
     cache_ttl: int = CACHE_TTL,
+    max_bytes: int | None = None,
 ) -> bytes:
     """GET raw bytes (large downloads use a dedicated longer-timeout client)."""
-    key = _cache_key(url, None)
+    key = _cache_key("bytes", url, {"max_bytes": max_bytes if max_bytes is not None else "none"})
     cached = _cache_get(key)
     if cached is not None:
-        assert isinstance(cached, bytes)
+        if not isinstance(cached, bytes):
+            raise TypeError("cached value is not bytes")
+        if max_bytes is not None and len(cached) > max_bytes:
+            raise ValueError(f"download exceeds max_bytes={max_bytes}")
         return cached
 
+    async with _lock_for(key):
+        cached = _cache_get(key)
+        if cached is not None:
+            if not isinstance(cached, bytes):
+                raise TypeError("cached value is not bytes")
+            if max_bytes is not None and len(cached) > max_bytes:
+                raise ValueError(f"download exceeds max_bytes={max_bytes}")
+            return cached
+
+        async def _do() -> bytes:
+            """Collect one streamed response into bytes for callers that need bytes."""
+            chunks: list[bytes] = []
+            async with stream_bytes(url, max_bytes=max_bytes) as body:
+                async for chunk in body:
+                    chunks.append(chunk)
+            return b"".join(chunks)
+
+        data: bytes = await _retry_loop(_do, retries)
+
+        _cache_set(key, data, cache_ttl)
+        return data
+
+
+@asynccontextmanager
+async def stream_bytes(
+    url: str,
+    *,
+    max_bytes: int | None = None,
+) -> AsyncIterator[AsyncIterator[bytes]]:
+    """Stream raw response bytes without caching the payload."""
     async with httpx.AsyncClient(
         timeout=120,
         headers={"User-Agent": "findata-br/0.1 (+https://github.com/robertoecf/findata-br)"},
         verify=_ssl_context(),
-    ) as dl_client:
+    ) as dl_client, dl_client.stream("GET", url) as resp:
+        resp.raise_for_status()
+        length = resp.headers.get("content-length")
+        if max_bytes is not None and length is not None and int(length) > max_bytes:
+            raise ValueError(f"download exceeds max_bytes={max_bytes}")
 
-        async def _do() -> bytes:
-            resp = await dl_client.get(url)
-            resp.raise_for_status()
-            return resp.content
+        async def _body() -> AsyncIterator[bytes]:
+            """Yield response chunks while enforcing the optional byte limit."""
+            total = 0
+            async for chunk in resp.aiter_bytes():
+                total += len(chunk)
+                if max_bytes is not None and total > max_bytes:
+                    raise ValueError(f"download exceeds max_bytes={max_bytes}")
+                yield chunk
 
-        data: bytes = await _retry_loop(_do, retries)
-
-    _cache_set(key, data, cache_ttl)
-    return data
+        yield _body()

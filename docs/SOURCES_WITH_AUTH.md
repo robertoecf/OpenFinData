@@ -1,9 +1,10 @@
 # Fontes com credenciais
 
 > **Status atual: nenhuma fonte ativa exige credenciais.** O findata-br é
-> 100% public-data — todas as 7 fontes (BCB, CVM, B3, IBGE, IPEA, Tesouro,
-> ANBIMA) funcionam apenas com `pip install findata-br`, sem env vars,
-> sem cadastro, sem API key. Este documento existe pra registrar o
+> 100% public-data — todas as 11 fontes públicas online (BCB, CVM, B3, IBGE,
+> IPEA, Tesouro, ANBIMA, Receita Federal, ANEEL, SUSEP e Open Finance Brasil)
+> funcionam apenas com `pip install findata-br`, sem env vars, sem cadastro,
+> sem chave de API. O registro local também funciona offline. Este documento existe pra registrar o
 > _framework_ que está pronto pra ser usado quando alguém da comunidade
 > integrar uma fonte que de fato exija auth (SUSEP, BNDES, etc.).
 
@@ -60,6 +61,19 @@ Quirks da API ANBIMA (já validamos em testes ao vivo):
 - Header obrigatório adicional: `client_id: <client_id>`.
 - `403 "Access denied for this environment"` → seu app não está
   subscrito ao produto.
+
+
+## Open Finance Brasil: somente recursos públicos neste projeto
+
+A integração `openfinance` do findata-br é deliberadamente o Track A: Diretório
+público, JWKS públicos, `.well-known`, recursos publicados e Portal de Dados.
+Ela não usa API key, certificado privado, token, DCR, consentimento ou mTLS do
+operador.
+
+Conectar com bancos para solicitar dados cadastrais/transacionais de clientes é
+outro caso: exige onboarding institucional, certificados ICP-Brasil, segurança
+FAPI/RP, registro no Diretório, consentimento e certificação. Se isso entrar no
+roadmap, deve ficar como módulo opcional e isolado, não como fonte pública core.
 
 ## Fontes futuras candidatas
 
