@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import Response
+from fastapi.responses import StreamingResponse
 
 from findata.sources.openfinance import directory as of_dir
 from findata.sources.openfinance import portal as of_portal
@@ -182,7 +184,17 @@ async def portal_dataset_files(
 
 
 @router.get("/portal/download/{download_id}")
-async def portal_download(download_id: str) -> Response:
+async def portal_download(download_id: str) -> StreamingResponse:
     """Download one public Portal file by id."""
-    content = await of_portal.download_file(download_id)
-    return Response(content=content, media_type="application/octet-stream")
+    filename = of_portal.download_filename(download_id)
+
+    async def _body() -> AsyncIterator[bytes]:
+        async with of_portal.stream_download_file(download_id) as chunks:
+            async for chunk in chunks:
+                yield chunk
+
+    return StreamingResponse(
+        _body(),
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

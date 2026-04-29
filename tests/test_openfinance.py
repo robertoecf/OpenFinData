@@ -73,6 +73,18 @@ PORTAL_HTML = """
 </html>
 """
 
+SPARSE_PORTAL_HTML = """
+<html>
+  <a href="/api/download?id=51b0a27a-a295-43c4-b275-53c010e6ced1">Download</a>
+  <a href="/api/download?id=2f5a8f9b-d70a-4a89-8a07-60c5d13a70e0">Download</a>
+  <script>
+    self.__next_f.push(["children":"CSV"]);
+    self.__next_f.push(["children":"Consolidado Agosto 2025"]);
+    self.__next_f.push(["children":"Dados de 26/07/2025 a 29/08/2025"]);
+  </script>
+</html>
+"""
+
 
 def test_directory_flatten_and_filter_participants() -> None:
     filtered = of_dir.filter_participants(PARTICIPANTS, role="DADOS", api_family="channels")
@@ -90,6 +102,26 @@ def test_directory_flatten_and_filter_participants() -> None:
     assert endpoints[0].api_endpoint.endswith("/branches")
 
 
+def test_directory_role_status_normalization_is_consistent() -> None:
+    participant = {
+        "OrganisationId": "org-case",
+        "Status": "Active",
+        "OrganisationName": "Banco Case",
+        "OrgDomainRoleClaims": [
+            {"Role": "DADOS", "Status": "active"},
+            {"Role": "SEMSTATUS"},
+            {"Role": "PAGTO", "Status": "Inactive"},
+        ],
+        "AuthorisationServers": [],
+    }
+
+    summary = of_dir.summarise_participant(participant)
+    assert summary.roles == ["DADOS", "SEMSTATUS"]
+    assert of_dir.filter_participants([participant], role="DADOS") == [participant]
+    assert of_dir.filter_participants([participant], role="SEMSTATUS") == [participant]
+    assert of_dir.filter_participants([participant], role="PAGTO") == []
+
+
 def test_portal_parse_dataset_files() -> None:
     files = of_portal.parse_dataset_files("chamadas-por-apis-dados-abertos", PORTAL_HTML)
     assert len(files) == 1
@@ -97,6 +129,14 @@ def test_portal_parse_dataset_files() -> None:
     assert files[0].date_range == "Dados de 26/07/2025 a 29/08/2025"
     assert files[0].file_type == "CSV"
     assert files[0].download_url.endswith("id=51b0a27a-a295-43c4-b275-53c010e6ced1")
+
+
+def test_portal_parse_dataset_files_does_not_duplicate_sparse_metadata() -> None:
+    files = of_portal.parse_dataset_files("chamadas-por-apis-dados-abertos", SPARSE_PORTAL_HTML)
+    assert len(files) == 2
+    assert files[0].title == "Consolidado Agosto 2025"
+    assert files[1].title == "Arquivo 2"
+    assert files[1].date_range is None
 
 
 def test_openfinance_rejects_unsafe_ids() -> None:
@@ -162,4 +202,8 @@ def test_openfinance_portal_files_and_download_routes() -> None:
 
     download = client.get("/openfinance/portal/download/51b0a27a-a295-43c4-b275-53c010e6ced1")
     assert download.status_code == 200
+    assert (
+        download.headers["content-disposition"]
+        == 'attachment; filename="51b0a27a-a295-43c4-b275-53c010e6ced1.bin"'
+    )
     assert download.text == "col\n1\n"

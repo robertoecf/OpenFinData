@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import re
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from html import unescape
 from typing import Literal
 from urllib.parse import urljoin
 
 from pydantic import BaseModel, ConfigDict
 
-from findata.http_client import get_bytes
+from findata.http_client import get_bytes, stream_bytes
 
 PORTAL_BASE_URL = "https://dados.openfinancebrasil.org.br"
 PORTAL_CACHE_TTL = 3600
@@ -152,7 +154,7 @@ def _nearby_value(values: list[str], index: int) -> str | None:
         return None
     if index < len(values):
         return values[index]
-    return values[-1]
+    return None
 
 
 def _safe_download_id(download_id: str) -> str:
@@ -225,3 +227,20 @@ async def download_file(download_id: str) -> bytes:
         cache_ttl=0,
         max_bytes=DOWNLOAD_MAX_BYTES,
     )
+
+
+def download_filename(download_id: str) -> str:
+    """Return a safe default filename for one public Portal download."""
+    safe_id = _safe_download_id(download_id)
+    return f"{safe_id}.bin"
+
+
+@asynccontextmanager
+async def stream_download_file(download_id: str) -> AsyncIterator[AsyncIterator[bytes]]:
+    """Stream one public Portal file by id without caching the payload."""
+    safe_id = _safe_download_id(download_id)
+    async with stream_bytes(
+        f"{PORTAL_BASE_URL}/api/download?id={safe_id}",
+        max_bytes=DOWNLOAD_MAX_BYTES,
+    ) as chunks:
+        yield chunks

@@ -135,6 +135,11 @@ def _matches(value: str | None, needle: str | None) -> bool:
     return needle.casefold() in value.casefold()
 
 
+def _is_active_status(value: object) -> bool:
+    status = _str_or_none(value)
+    return status is None or status.casefold() == "active"
+
+
 def _safe_uuid(value: str, field: str) -> str:
     if not _UUID_RE.fullmatch(value):
         raise ValueError(f"invalid Open Finance {field}: expected UUID")
@@ -323,8 +328,7 @@ def summarise_participant(item: dict[str, Any]) -> OpenFinanceParticipantSummary
     roles: list[str] = []
     for claim in role_claims:
         role = _str_or_none(claim.get("Role"))
-        status = _str_or_none(claim.get("Status"))
-        if role and (status is None or status == "Active"):
+        if role and _is_active_status(claim.get("Status")):
             roles.append(role)
 
     api_resources = 0
@@ -379,7 +383,7 @@ def filter_participants(
             roles = [
                 _str_value(claim.get("Role")).casefold()
                 for claim in role_claims
-                if _str_value(claim.get("Status")).casefold() == "active"
+                if _is_active_status(claim.get("Status"))
             ]
             if role_cf not in roles:
                 continue

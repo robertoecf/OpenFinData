@@ -6,8 +6,10 @@ import asyncio
 import hashlib
 import ssl
 import time
+import weakref
 from collections import OrderedDict
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from typing import Any, TypeVar
 from urllib.parse import quote
 
@@ -19,7 +21,9 @@ MAX_CACHE_SIZE = 2048
 CACHE_TTL = 900  # 15 min default
 
 _cache: OrderedDict[str, tuple[float, float, Any]] = OrderedDict()  # key → (ts, ttl, data)
-_locks: dict[tuple[int | None, str], asyncio.Lock] = {}
+_locks: weakref.WeakValueDictionary[tuple[int | None, str], asyncio.Lock] = (
+    weakref.WeakValueDictionary()
+)
 
 
 def _cache_key(kind: str, url: str, params: dict[str, Any] | None) -> str:
@@ -224,28 +228,42 @@ async def get_bytes(
                 raise TypeError("cached value is not bytes")
             return cached
 
-        async with httpx.AsyncClient(
-            timeout=120,
-            headers={"User-Agent": "findata-br/0.1 (+https://github.com/robertoecf/findata-br)"},
-            verify=_ssl_context(),
-        ) as dl_client:
+        async def _do() -> bytes:
+            chunks: list[bytes] = []
+            async with stream_bytes(url, max_bytes=max_bytes) as body:
+                async for chunk in body:
+                    chunks.append(chunk)
+            return b"".join(chunks)
 
-            async def _do() -> bytes:
-                async with dl_client.stream("GET", url) as resp:
-                    resp.raise_for_status()
-                    length = resp.headers.get("content-length")
-                    if max_bytes is not None and length is not None and int(length) > max_bytes:
-                        raise ValueError(f"download exceeds max_bytes={max_bytes}")
-                    chunks: list[bytes] = []
-                    total = 0
-                    async for chunk in resp.aiter_bytes():
-                        total += len(chunk)
-                        if max_bytes is not None and total > max_bytes:
-                            raise ValueError(f"download exceeds max_bytes={max_bytes}")
-                        chunks.append(chunk)
-                    return b"".join(chunks)
-
-            data: bytes = await _retry_loop(_do, retries)
+        data: bytes = await _retry_loop(_do, retries)
 
         _cache_set(key, data, cache_ttl)
         return data
+
+
+@asynccontextmanager
+async def stream_bytes(
+    url: str,
+    *,
+    max_bytes: int | None = None,
+) -> AsyncIterator[AsyncIterator[bytes]]:
+    """Stream raw response bytes without caching the payload."""
+    async with httpx.AsyncClient(
+        timeout=120,
+        headers={"User-Agent": "findata-br/0.1 (+https://github.com/robertoecf/findata-br)"},
+        verify=_ssl_context(),
+    ) as dl_client, dl_client.stream("GET", url) as resp:
+        resp.raise_for_status()
+        length = resp.headers.get("content-length")
+        if max_bytes is not None and length is not None and int(length) > max_bytes:
+            raise ValueError(f"download exceeds max_bytes={max_bytes}")
+
+        async def _body() -> AsyncIterator[bytes]:
+            total = 0
+            async for chunk in resp.aiter_bytes():
+                total += len(chunk)
+                if max_bytes is not None and total > max_bytes:
+                    raise ValueError(f"download exceeds max_bytes={max_bytes}")
+                yield chunk
+
+        yield _body()
