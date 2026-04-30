@@ -24,3 +24,7 @@ coverage.xml
 .vscode/
 *.log
 node_modules/
+
+# Generated external benchmark artifacts
+/docs/*_ENDPOINT_BENCHMARK.md
+/docs/snapshots/*_public_surface.json
