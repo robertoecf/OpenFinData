@@ -63,6 +63,17 @@ Quirks da API ANBIMA (já validamos em testes ao vivo):
   subscrito ao produto.
 
 
+
+## Base dos Dados: grátis, mas com login/projeto do usuário
+
+Base dos Dados não entra na mesma categoria da API autenticada da ANBIMA. O
+acesso via SQL, Python e R é gratuito, mas costuma exigir login Google e um
+projeto BigQuery do próprio operador. No `findata-br`, classifique esse caminho
+como `free_logged_in`: gratuito e self-serve, porém não anônimo/zero-setup.
+
+Datasets e funcionalidades BD Pro devem ficar marcados separadamente como
+`paid_logged_in` e nunca como requisito para a fonte gratuita.
+
 ## Open Finance Brasil: somente recursos públicos neste projeto
 
 A integração `openfinance` do findata-br é deliberadamente o Track A: Diretório

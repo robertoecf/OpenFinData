@@ -18,6 +18,7 @@ from findata.api.routers import (
     anbima,
     aneel,
     b3,
+    basedosdados,
     bcb,
     cvm,
     ibge,
@@ -27,6 +28,7 @@ from findata.api.routers import (
     registry,
     susep,
     tesouro,
+    yahoo,
 )
 from findata.http_client import MAX_CACHE_SIZE as _CACHE_MAX
 from findata.http_client import _cache as _http_cache
@@ -37,19 +39,26 @@ _STARTED_AT = time.time()
 
 
 def _resolve_version() -> str:
-    return _pkg_version
+    try:
+        from importlib.metadata import PackageNotFoundError, version
+
+        return version("findata-br")
+    except (ImportError, PackageNotFoundError):
+        return _pkg_version
 
 
 _VERSION = _resolve_version()
 
 ADVERTISED_SOURCES: dict[str, str] = {
     "bcb": "Banco Central do Brasil (Selic, IPCA, PTAX, Focus)",
+    "basedosdados": "Base dos Dados (free logged-in SQL/Python/R via BigQuery; BD Pro marked paid)",
     "cvm": "CVM (companies, financial statements, funds)",
     "tesouro": "Tesouro Direto (treasury bonds)",
     "ibge": "IBGE (economic indicators)",
     "ipea": "IPEA Data (~8k macro series, long historical coverage)",
     "openfinance": "Open Finance Brasil (public Directory + indicator Portal)",
     "b3": "B3 (stock quotes via yfinance)",
+    "yahoo": "Yahoo Finance chart endpoint (experimental, unofficial)",
     "anbima": "ANBIMA (IMA family, ETTJ, debêntures — public file downloads)",
     "receita": "Receita Federal (federal tax collection)",
     "aneel": "ANEEL (generation and transmission auctions)",
@@ -77,7 +86,7 @@ app = FastAPI(
     description=(
         "Open-source Brazilian financial data API. "
         "Aggregates public data from BCB, CVM, B3, IBGE, IPEA, "
-        "Tesouro Nacional, and Open Finance Brasil. "
+        "Tesouro Nacional, Base dos Dados, and Open Finance Brasil. "
         "Free. No API key required."
     ),
     version=_VERSION,
@@ -110,6 +119,7 @@ async def _value_error_handler(_: Request, exc: ValueError) -> JSONResponse:
 # ── Routers ────────────────────────────────────────────────────────
 
 app.include_router(bcb.router)
+app.include_router(basedosdados.router)
 app.include_router(cvm.router)
 app.include_router(tesouro.router)
 app.include_router(ibge.router)
@@ -121,6 +131,7 @@ app.include_router(receita.router)
 app.include_router(aneel.router)
 app.include_router(susep.router)
 app.include_router(registry.router)
+app.include_router(yahoo.router)
 
 
 # ── MCP Server (auto-generated from FastAPI endpoints) ─────────────
@@ -134,7 +145,7 @@ try:
         name="findata-br",
         description=(
             "Brazilian financial data MCP server — BCB, CVM, B3, "
-            "IBGE, IPEA, Tesouro, Open Finance"
+            "IBGE, IPEA, Tesouro, Base dos Dados, Open Finance, Yahoo experimental charts"
         ),
     )
     _mcp.mount_http()  # Serves MCP at /mcp (fastapi-mcp >=0.4)

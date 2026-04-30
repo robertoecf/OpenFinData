@@ -47,7 +47,8 @@ dependencies = [
 [project.optional-dependencies]
 # Kept for backward-compat — everything is already in the core install.
 b3 = []
-all = []
+basedosdados = ["basedosdados>=2.0.0"]
+all = ["basedosdados>=2.0.0"]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.25",
