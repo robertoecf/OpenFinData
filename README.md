@@ -33,12 +33,20 @@ _De graça. Sem chave de API. Sem truques de limite de chamadas. Só Python._
 
 ## Resumo | TL;DR
 
+O objetivo final do **findata-br** é se tornar a infraestrutura aberta de
+referência para dados financeiros públicos do Brasil: uma camada confiável,
+auditável e extensível que conecta fontes como BCB, CVM, B3, IBGE, IPEA,
+Tesouro Nacional e Open Finance a bibliotecas, APIs, CLIs, agentes e
+aplicações.
+
 findata-br é uma biblioteca, API REST, servidor MCP e CLI para consultar dados
 financeiros públicos do Brasil em um único lugar. Hoje cobre BCB, CVM, B3,
 IBGE, IPEA, Tesouro Nacional, ANBIMA, Receita Federal, ANEEL, SUSEP e recursos
 públicos do Open Finance Brasil. O projeto não exige chaves de API para as
 fontes principais, não consulta dados privados de clientes e mantém integrações
 reproduzíveis com testes sem rede.
+
+Leia também: [MANIFESTO.txt](MANIFESTO.txt).
 
 
 ```text
