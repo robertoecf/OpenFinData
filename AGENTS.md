@@ -44,6 +44,40 @@ git diff --check
   `@pytest.mark.integration`.
 - Keep `mypy --strict` clean for new code.
 
+## Base dos Dados / BigQuery usage
+
+Base dos Dados is a supported free logged-in source. Treat it differently from
+commercial-entitlement APIs such as ANBIMA's authenticated developer products:
+SQL, Python and R access are free/self-serve, but BigQuery still requires the
+operator's Google login and a billing project.
+
+- Do not embed Google credentials, service-account JSON, refresh tokens, or
+  project-specific secrets in code, tests, docs, examples, or generated
+  artifacts.
+- Prefer the local env var for interactive work:
+
+```bash
+export FINDATA_BD_BILLING_PROJECT_ID="<google-cloud-project-id>"
+```
+
+- The project also accepts `BASE_DOS_DADOS_BILLING_PROJECT_ID` and
+  `GOOGLE_CLOUD_PROJECT` as fallbacks.
+- Use the Project ID, not the display name.
+- BigQuery can bill by bytes processed. Base dos Dados access is free, and
+  BigQuery has a free monthly quota, but queries may still consume billable
+  quota. Start with tiny `LIMIT` queries before broad scans.
+- Prefer the `findata` CLI wrapper for local checks:
+
+```bash
+.venv/bin/findata basedosdados sql br_bd_diretorios_brasil municipio --limit 5
+.venv/bin/findata basedosdados query \
+  'SELECT id_municipio, nome FROM `basedosdados.br_bd_diretorios_brasil.municipio` LIMIT 5'
+```
+
+- For user-facing or PR evidence, report the billing project used only when it
+  is already known to the user or explicitly provided in the task. Do not expose
+  private credential paths.
+
 ## Graphics and chart generation standards
 
 Agents will sometimes use this repo to generate exploratory charts for users.

@@ -2,6 +2,23 @@
 
 This is the current short list for agent-facing source work.
 
+
+## P0 — Base dos Dados finance/economics map
+
+Base dos Dados is now a supported `free_logged_in` source through BigQuery and
+public catalog search. It does not replace canonical official-source adapters;
+it adds BigQuery-native joins, microdata-scale exploration, treated datasets and
+coverage not yet present in findata-br. The curated finance/economics map lives
+in `docs/source-notes/basedosdados.md`.
+
+Use it to prioritize datasets such as Selic, câmbio, IPCA/IPCA-15/INPC/IGP,
+PIB, CVM funds, portfolio administrators, equity offerings, ESTBAN, banking
+agencies, Sicor, CNPJ ownership, fiscal revenue, public debt, Comex, CAGED/RAIS,
+and household/labor microdata.
+
+Do not mirror the full economics catalog into the core API. Prefer small SQL
+examples and helper functions around high-value datasets only.
+
 ## P0 — Yahoo Finance chart adapter
 
 Implemented as experimental/unofficial market-price retrieval.
