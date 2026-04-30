@@ -5,11 +5,11 @@ from __future__ import annotations
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from importlib.metadata import PackageNotFoundError, version
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi.middleware import SlowAPIMiddleware
 
 from findata import __version__ as _pkg_version
@@ -31,15 +31,13 @@ from findata.api.routers import (
 from findata.http_client import MAX_CACHE_SIZE as _CACHE_MAX
 from findata.http_client import _cache as _http_cache
 from findata.http_client import close_client
+from findata.web.landing import WEB_STATIC_DIR, render_landing_page
 
 _STARTED_AT = time.time()
 
 
 def _resolve_version() -> str:
-    try:
-        return version("findata-br")
-    except PackageNotFoundError:
-        return _pkg_version
+    return _pkg_version
 
 
 _VERSION = _resolve_version()
@@ -94,6 +92,7 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+app.mount("/site", StaticFiles(directory=WEB_STATIC_DIR), name="site")
 
 # Attach the SlowAPI limiter so routes can use the `limiter` dependency and
 # the middleware can short-circuit requests that exceed the bucket. Disabled
@@ -147,15 +146,31 @@ except Exception:  # optional subsystem must never break core API
 # ── Health / Root ──────────────────────────────────────────────────
 
 
-@app.get("/", tags=["Meta"])
-async def root() -> dict[str, object]:
+def _meta_payload() -> dict[str, object]:
     return {
         "name": "findata-br",
         "version": _VERSION,
+        "site": "/",
         "docs": "/docs",
+        "redoc": "/redoc",
         "mcp": "/mcp" if _MCP_ENABLED else None,
         "sources": ADVERTISED_SOURCES,
     }
+
+
+@app.get("/", include_in_schema=False)
+async def root() -> HTMLResponse:
+    return render_landing_page(
+        version=_VERSION,
+        sources=ADVERTISED_SOURCES,
+        mcp_enabled=_MCP_ENABLED,
+    )
+
+
+@app.get("/meta", tags=["Meta"])
+async def meta() -> dict[str, object]:
+    """Machine-readable API and site metadata."""
+    return _meta_payload()
 
 
 @app.get("/health", tags=["Meta"])

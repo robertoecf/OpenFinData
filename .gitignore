@@ -28,3 +28,10 @@ node_modules/
 # Generated external benchmark artifacts
 /docs/*_ENDPOINT_BENCHMARK.md
 /docs/snapshots/*_public_surface.json
+
+# Local OBM reverse-engineering scratch work
+/docs/OBM_REVERSE_ENGINEERING.md
+/scripts/audit_obm_public_surface.py
+/scripts/benchmark_public_surface.py
+/tests/test_obm_audit.py
+/tests/test_benchmark_public_surface.py

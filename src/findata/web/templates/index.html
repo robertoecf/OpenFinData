@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>findata-br — dados financeiros abertos do Brasil</title>
+    <meta
+      name="description"
+      content="API, MCP, CLI e biblioteca Python para dados financeiros públicos do Brasil. BCB, CVM, B3, IBGE, IPEA, Tesouro, Open Finance e mais."
+    />
+    <link rel="stylesheet" href="/site/site.css" />
+    <script src="/site/site.js" defer></script>
+  </head>
+  <body>
+    <canvas class="field" aria-hidden="true"></canvas>
+    <div class="noise" aria-hidden="true"></div>
+    <div class="cursor-glow" aria-hidden="true"></div>
+
+    <header class="shell nav-shell">
+      <a class="brand" href="/" aria-label="findata-br">findata-br</a>
+      <nav aria-label="Navegação principal">
+        <a href="#fontes">Fontes</a>
+        <a href="#interfaces">Interfaces</a>
+        <a href="/docs">API docs</a>
+        <a href="/mcp">MCP</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero shell" aria-labelledby="hero-title">
+        <div class="hero-copy reveal">
+          <p class="eyebrow"><span class="flag-chip" aria-hidden="true"></span>Brasil core · Python · FastAPI · MCP</p>
+          <h1 id="hero-title">
+            A infraestrutura brasileira para dados financeiros <em>abertos.</em>
+          </h1>
+          <p class="lead">
+            findata-br conecta BCB, CVM, B3, IBGE, IPEA, Tesouro, Open Finance e outras
+            fontes públicas a uma API reproduzível, biblioteca Python, CLI e servidor MCP —
+            vibrante como o Brasil, limpa como uma boa abstração.
+          </p>
+
+          <div class="hero-actions" aria-label="Ações principais">
+            <a class="button primary" href="/docs">Explorar API <span aria-hidden="true">→</span></a>
+            <a class="button secondary" href="https://github.com/robertoecf/findata-br">Ver no GitHub</a>
+          </div>
+
+          <div class="install-card" data-copy="pip install findata-br">
+            <span class="prompt">$</span>
+            <code>pip install findata-br</code>
+            <button type="button" aria-label="Copiar comando de instalação">copiar</button>
+          </div>
+        </div>
+
+        <div class="hero-stage reveal" aria-label="Console visual do findata-br">
+          <div class="aurora" aria-hidden="true"></div>
+          <div class="orb orb-a" aria-hidden="true"></div>
+          <div class="orb orb-b" aria-hidden="true"></div>
+
+          <div class="terminal-card tilt">
+            <div class="terminal-top">
+              <span></span><span></span><span></span>
+              <strong>findata-br</strong>
+            </div>
+            <div class="terminal-body" aria-live="polite">
+              <p><span class="prompt">$</span> <span class="muted">findata</span> bcb get selic -n 3</p>
+              <p class="data-line">2026-04-28&nbsp;&nbsp;<b>14.7500</b></p>
+              <p class="data-line">2026-04-29&nbsp;&nbsp;<b>14.7500</b></p>
+              <p class="data-line">2026-04-30&nbsp;&nbsp;<b>14.7500</b></p>
+              <p><span class="prompt">$</span> <span class="muted">curl</span> /stats</p>
+              <p class="json-line">{</p>
+              <p class="json-line indent">"sources": <b>12</b>,</p>
+              <p class="json-line indent">"mcp": <b>"{{ mcp_status }}"</b></p>
+              <p class="json-line">}</p>
+              <span class="cursor" aria-hidden="true"></span>
+            </div>
+          </div>
+
+          <div class="signal-card one tilt">
+            <span class="mini-glyph bank" aria-hidden="true"></span>
+            <div><span>BCB SGS</span><strong>Selic · IPCA · PTAX</strong></div>
+          </div>
+          <div class="signal-card two tilt">
+            <span class="mini-glyph chart" aria-hidden="true"></span>
+            <div><span>B3 + CVM</span><strong>ativos · empresas · fundos</strong></div>
+          </div>
+          <div class="signal-card three tilt">
+            <span class="mini-glyph agent" aria-hidden="true"></span>
+            <div><span>MCP</span><strong>pronto para agentes</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics shell reveal" aria-label="Resumo do projeto">
+        <div><span class="metric-glyph bank"></span><strong data-stat="source-count">{{ source_count }}</strong><span>fontes públicas</span></div>
+        <div><span class="metric-glyph key"></span><strong>0</strong><span>chaves de API</span></div>
+        <div><span class="metric-glyph code"></span><strong>4</strong><span>interfaces</span></div>
+        <div><span class="metric-glyph shield"></span><strong>v{{ version }}</strong><span>alpha auditável</span></div>
+      </section>
+
+      <section class="section shell" id="fontes" aria-labelledby="sources-title">
+        <div class="section-heading split reveal">
+          <h2 id="sources-title"><span class="section-dot green"></span>Fontes brasileiras,<br />energia <em>brasileira.</em></h2>
+          <p>
+            Séries macro, mercado de capitais, fundos, títulos públicos, indicadores setoriais
+            e diretórios públicos — tudo em um só lugar.
+          </p>
+        </div>
+
+        <div class="source-grid">
+          <article class="source-card reveal tilt"><span class="source-glyph bank"></span><div><span>BCB</span><p>Banco Central do Brasil</p></div></article>
+          <article class="source-card reveal tilt"><span class="source-glyph cvm"></span><div><span>CVM</span><p>Comissão de Valores Mobiliários</p></div></article>
+          <article class="source-card reveal tilt"><span class="source-glyph b3"></span><div><span>B3</span><p>Brasil, Bolsa, Balcão</p></div></article>
+          <article class="source-card reveal tilt"><span class="source-glyph ibge"></span><div><span>IBGE</span><p>Instituto Brasileiro de Geografia e Estatística</p></div></article>
+          <article class="source-card reveal tilt"><span class="source-glyph ipea"></span><div><span>IPEA</span><p>Instituto de Pesquisa Econômica Aplicada</p></div></article>
+          <article class="source-card reveal tilt"><span class="source-glyph tesouro"></span><div><span>Tesouro</span><p>Tesouro Nacional</p></div></article>
+          <article class="source-card reveal tilt"><span class="source-glyph openfinance"></span><div><span>Open Finance</span><p>Open Finance Brasil</p></div></article>
+          <article class="source-card reveal tilt"><span class="source-glyph anbima"></span><div><span>ANBIMA</span><p>Associação Brasileira dos Mercados Financeiro e de Capitais</p></div></article>
+          <article class="source-card reveal tilt"><span class="source-glyph receita"></span><div><span>Receita</span><p>Receita Federal do Brasil</p></div></article>
+          <article class="source-card reveal tilt"><span class="source-glyph aneel"></span><div><span>ANEEL</span><p>Agência Nacional de Energia Elétrica</p></div></article>
+          <article class="source-card reveal tilt"><span class="source-glyph susep"></span><div><span>SUSEP</span><p>Superintendência de Seguros Privados</p></div></article>
+        </div>
+      </section>
+
+      <section class="section shell interfaces" id="interfaces" aria-labelledby="interfaces-title">
+        <div class="section-heading reveal">
+          <h2 id="interfaces-title"><span class="section-dot blue"></span>Do notebook ao agente,<br /><em>sem trocar de fonte.</em></h2>
+        </div>
+
+        <div class="interface-grid">
+          <article class="interface-panel reveal tilt">
+            <span class="interface-glyph python"></span>
+            <h3>Python</h3>
+            <p>Biblioteca Python moderna, tipada e testada.</p>
+            <code>from findata import bcb<br />series = bcb.sgs(432)</code>
+          </article>
+          <article class="interface-panel reveal tilt">
+            <span class="interface-glyph rest"></span>
+            <h3>REST</h3>
+            <p>API REST rápida, paginada e documentada.</p>
+            <code>GET /bcb/series/name/selic?n=10</code>
+          </article>
+          <article class="interface-panel reveal tilt">
+            <span class="interface-glyph mcp"></span>
+            <h3>MCP</h3>
+            <p>Servidor MCP pronto para agentes e automações.</p>
+            <code>{ "mcp": "findata-br", "status": "ativo" }</code>
+          </article>
+          <article class="interface-panel reveal tilt">
+            <span class="interface-glyph cli"></span>
+            <h3>CLI</h3>
+            <p>Terminal poderoso para explorar dados públicos.</p>
+            <code>$ findata bcb get selic -n 3<br />$ findata --help</code>
+          </article>
+        </div>
+      </section>
+
+      <section class="section shell live-strip reveal" aria-label="Status da API">
+        <div>
+          <h2><span class="section-dot green"></span>API viva, visual brasileiro.</h2>
+        </div>
+        <dl>
+          <div><dt>Versão</dt><dd data-live="version">v{{ version }}</dd></div>
+          <div><dt>Cache</dt><dd data-live="cache">carregando</dd></div>
+          <div><dt>MCP</dt><dd data-live="mcp">{{ mcp_status }}</dd></div>
+          <div><dt>Rate limit</dt><dd data-live="limits">carregando</dd></div>
+        </dl>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="shell footer-grid">
+        <div><strong>findata-br</strong><p>Infraestrutura brasileira para dados financeiros abertos.</p></div>
+        <div><a href="https://github.com/robertoecf/findata-br">GitHub</a><p>github.com/robertoecf/findata-br</p></div>
+        <div><a href="/docs">Documentação</a><p>Swagger, ReDoc e MCP local.</p></div>
+        <div><span>Feito no Brasil</span><p>para o Brasil.</p></div>
+      </div>
+    </footer>
+  </body>
+</html>
