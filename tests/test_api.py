@@ -23,15 +23,43 @@ def client() -> TestClient:
 def test_root_endpoint(client: TestClient) -> None:
     r = client.get("/")
     assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+    assert "findata-br" in r.text
+    assert "/site/site.css" in r.text
+    assert "/docs" in r.text
+
+
+def test_meta_endpoint(client: TestClient) -> None:
+    r = client.get("/meta")
+    assert r.status_code == 200
     body = r.json()
     assert body["name"] == "findata-br"
     assert "version" in body
+    assert body["site"] == "/"
+    assert body["docs"] == "/docs"
+    assert body["swagger"] == "/api/docs"
     assert "bcb" in body["sources"]
     assert "openfinance" in body["sources"]
 
 
-def test_stats_uses_same_source_registry_as_root(client: TestClient) -> None:
-    root_sources = client.get("/").json()["sources"]
+def test_developer_docs_page(client: TestClient) -> None:
+    r = client.get("/docs")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+    assert "Developer console" in r.text
+    assert "/api/docs" in r.text
+    assert "/openapi.json" in r.text
+
+
+def test_swagger_ui_moved_to_api_docs(client: TestClient) -> None:
+    r = client.get("/api/docs")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+    assert "swagger-ui" in r.text
+
+
+def test_stats_uses_same_source_registry_as_meta(client: TestClient) -> None:
+    root_sources = client.get("/meta").json()["sources"]
     stats_sources = client.get("/stats").json()["sources"]
     assert stats_sources == list(root_sources)
 

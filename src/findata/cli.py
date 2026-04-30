@@ -1323,5 +1323,270 @@ def serve(
     uvicorn.run("findata.api.app:app", host=host, port=port, reload=reload)
 
 
+# ── Base dos Dados commands ───────────────────────────────────────
+
+basedosdados_app = typer.Typer(
+    help="Base dos Dados — free logged-in SQL/Python/R access", no_args_is_help=True
+)
+app.add_typer(basedosdados_app, name="basedosdados")
+
+
+@basedosdados_app.command("info")
+def basedosdados_info() -> None:
+    """Show Base dos Dados access modes."""
+    from findata.sources.basedosdados import source_info
+
+    info = source_info()
+    rprint(f"[bold]{info.source}[/bold] — {info.status}")
+    for path in info.access_paths:
+        req = f" ({', '.join(path.requires)})" if path.requires else ""
+        rprint(f"  [cyan]{path.access}[/cyan] · {path.name}: {path.description}{req}")
+
+
+@basedosdados_app.command("sql")
+def basedosdados_sql(
+    dataset_id: str = typer.Argument(help="Dataset id, e.g. br_bd_diretorios_brasil"),
+    table_id: str = typer.Argument(help="Table id, e.g. municipio"),
+    limit: int = typer.Option(100, "--limit", "-n", min=1, max=10_000),
+) -> None:
+    """Print starter BigQuery SQL for a Base dos Dados table."""
+    from findata.sources.basedosdados import table_ref
+
+    ref = table_ref(dataset_id, table_id, limit)
+    rprint(f"[bold]{ref.full_table_id}[/bold] ({ref.access})")
+    rprint(ref.sql)
+
+
+@basedosdados_app.command("direct-download-free")
+def basedosdados_direct_download_free(
+    theme: str | None = typer.Option(None, "--theme", help="Theme filter, e.g. economics"),
+    page: int = typer.Option(1, "--page", min=1),
+) -> None:
+    """List datasets with free direct download in Base dos Dados."""
+    from findata.sources.basedosdados import search_direct_download_free
+
+    result = _run(search_direct_download_free(theme=theme, page=page))
+    rows = result.get("results", [])
+    table = Table(title=f"Base dos Dados — download direto gratuito ({result.get('count', 0)})")
+    table.add_column("slug", style="cyan")
+    table.add_column("name")
+    table.add_column("tables", justify="right")
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        table.add_row(
+            str(row.get("slug", "-")),
+            str(row.get("name", "-"))[:70],
+            str(row.get("n_tables", "-")),
+        )
+    rprint(table)
+
+
+def _write_basedosdados_rows(
+    rows: list[dict[str, object]],
+    row_count: int,
+    output: Literal["table", "csv", "json"],
+    out: str | None,
+    project: str,
+) -> None:
+    """Render or write a Base dos Dados BigQuery query result."""
+    import csv
+    import json
+    from pathlib import Path
+
+    if output == "json":
+        payload = json.dumps(rows, ensure_ascii=False, indent=2)
+        if out:
+            Path(out).write_text(payload)
+            rprint(f"[green]Wrote[/green] {out} ({row_count} rows)")
+        else:
+            rprint(payload)
+        return
+
+    if not rows:
+        rprint("[yellow]No rows returned.[/yellow]")
+        return
+
+    fieldnames = list(rows[0])
+    if output == "csv":
+        if out:
+            with Path(out).open("w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(rows)
+            rprint(f"[green]Wrote[/green] {out} ({row_count} rows)")
+        else:
+            writer = csv.DictWriter(_console.file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+        return
+
+    table = Table(title=f"Base dos Dados BigQuery ({row_count} rows, project={project})")
+    for name in fieldnames:
+        table.add_column(name)
+    for row in rows:
+        table.add_row(*(str(row.get(name, "")) for name in fieldnames))
+    rprint(table)
+
+
+@basedosdados_app.command("query")
+def basedosdados_query(
+    query: str = typer.Argument(help="SQL string, or file path when --from-file is set"),
+    billing_project_id: str | None = typer.Option(
+        None,
+        "--billing-project-id",
+        "-p",
+        help="Google Cloud project billed by BigQuery",
+    ),
+    from_file: bool = typer.Option(False, "--from-file", help="Read SQL from query file path"),
+    reauth: bool = typer.Option(False, "--reauth", help="Force Google re-authentication"),
+    use_bqstorage_api: bool = typer.Option(
+        False,
+        "--use-bqstorage-api",
+        help="Use BigQuery Storage API for faster downloads; can increase cost",
+    ),
+    max_rows: int = typer.Option(100, "--max-rows", min=1, max=10_000),
+    output: Literal["table", "csv", "json"] = typer.Option("table", "--output", "-o"),
+    out: str | None = typer.Option(None, "--out", help="Write csv/json output to this path"),
+) -> None:
+    """Run a free logged-in Base dos Dados BigQuery query locally."""
+    from pathlib import Path
+
+    from findata.sources.basedosdados import (
+        BaseDosDadosSDKNotInstalledError,
+        read_sql_preview,
+        resolve_billing_project_id,
+    )
+
+    sql = Path(query).read_text() if from_file else query
+    project = resolve_billing_project_id(billing_project_id) or "SDK/default auth"
+    try:
+        result = read_sql_preview(
+            sql,
+            billing_project_id=billing_project_id,
+            from_file=False,
+            reauth=reauth,
+            use_bqstorage_api=use_bqstorage_api,
+            max_rows=max_rows,
+        )
+    except BaseDosDadosSDKNotInstalledError as exc:
+        rprint(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        rprint(f"[red]BigQuery error:[/red] {exc}")
+        rprint(
+            "[dim]Check Google auth and set --billing-project-id or "
+            "FINDATA_BD_BILLING_PROJECT_ID.[/dim]"
+        )
+        raise typer.Exit(code=1) from exc
+
+    _write_basedosdados_rows(result.rows, result.row_count, output, out, project)
+
+
+@basedosdados_app.command("datasets")
+def basedosdados_datasets(
+    name: str | None = typer.Option(None, "--name", help="Dataset name search"),
+    dataset_id: str | None = typer.Option(None, "--id", help="Dataset id"),
+    page: int = typer.Option(1, "--page", min=1),
+    page_size: int = typer.Option(10, "--page-size", min=1, max=100),
+) -> None:
+    """List datasets via the optional basedosdados SDK."""
+    from findata.sources.basedosdados import BaseDosDadosSDKNotInstalledError, get_datasets
+
+    try:
+        rows = get_datasets(
+            dataset_id=dataset_id, dataset_name=name, page=page, page_size=page_size
+        )
+    except BaseDosDadosSDKNotInstalledError as exc:
+        rprint(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    table = Table(title="Base dos Dados datasets")
+    table.add_column("dataset_id", style="cyan")
+    table.add_column("name")
+    for row in rows:
+        table.add_row(
+            str(row.get("dataset_id", "-")), str(row.get("name", row.get("dataset_name", "-")))
+        )
+    rprint(table)
+
+
+@basedosdados_app.command("tables")
+def basedosdados_tables(
+    dataset_id: str | None = typer.Option(None, "--dataset-id", help="Dataset id"),
+    table_name: str | None = typer.Option(None, "--name", help="Table name search"),
+    table_id: str | None = typer.Option(None, "--id", help="Table id"),
+    page: int = typer.Option(1, "--page", min=1),
+    page_size: int = typer.Option(10, "--page-size", min=1, max=100),
+) -> None:
+    """List tables via the optional basedosdados SDK."""
+    from findata.sources.basedosdados import BaseDosDadosSDKNotInstalledError, get_tables
+
+    try:
+        rows = get_tables(
+            dataset_id=dataset_id,
+            table_id=table_id,
+            table_name=table_name,
+            page=page,
+            page_size=page_size,
+        )
+    except BaseDosDadosSDKNotInstalledError as exc:
+        rprint(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    table = Table(title="Base dos Dados tables")
+    table.add_column("dataset_id", style="cyan")
+    table.add_column("table_id", style="green")
+    table.add_column("name")
+    for row in rows:
+        table.add_row(
+            str(row.get("dataset_id", "-")),
+            str(row.get("table_id", "-")),
+            str(row.get("name", row.get("table_name", "-"))),
+        )
+    rprint(table)
+
+
+# ── Yahoo Finance commands ────────────────────────────────────────
+
+yahoo_app = typer.Typer(
+    help="Yahoo Finance market data (experimental, unofficial)",
+    no_args_is_help=True,
+)
+app.add_typer(yahoo_app, name="yahoo")
+
+
+@yahoo_app.command("chart")
+def yahoo_chart(
+    symbol: str = typer.Argument(help="Yahoo symbol (e.g., PETR4.SA, ^BVSP, BTC-USD)"),
+    range_: str = typer.Option("1mo", "--range", "-r", help="Range: 1mo, 1y, ytd, max"),
+    interval: str = typer.Option("1d", "--interval", "-i", help="Interval: 1d, 1wk, 1mo"),
+) -> None:
+    """Get an experimental OHLCV chart from Yahoo Finance."""
+    from findata.sources.yahoo import get_chart
+
+    data = _run(get_chart(symbol, range_, interval))
+    table = Table(title=f"Yahoo: {data.symbol} — {range_}/{interval}")
+    table.add_column("Date", style="cyan")
+    table.add_column("Open", justify="right")
+    table.add_column("High", justify="right", style="green")
+    table.add_column("Low", justify="right", style="red")
+    table.add_column("Close", justify="right", style="bold")
+    table.add_column("Volume", justify="right")
+
+    for point in data.points[-60:]:
+        table.add_row(
+            point.date,
+            _fmt(point.open),
+            _fmt(point.high),
+            _fmt(point.low),
+            _fmt(point.close),
+            f"{point.volume:,}" if point.volume is not None else "-",
+        )
+
+    rprint(table)
+    rprint("[dim]Source: Yahoo Finance v8 chart (unofficial, best-effort).[/dim]")
+
+
 if __name__ == "__main__":
     app()

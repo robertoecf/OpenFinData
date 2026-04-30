@@ -5,11 +5,11 @@ from __future__ import annotations
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from importlib.metadata import PackageNotFoundError, version
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi.middleware import SlowAPIMiddleware
 
 from findata import __version__ as _pkg_version
@@ -18,6 +18,7 @@ from findata.api.routers import (
     anbima,
     aneel,
     b3,
+    basedosdados,
     bcb,
     cvm,
     ibge,
@@ -27,18 +28,22 @@ from findata.api.routers import (
     registry,
     susep,
     tesouro,
+    yahoo,
 )
 from findata.http_client import MAX_CACHE_SIZE as _CACHE_MAX
 from findata.http_client import _cache as _http_cache
 from findata.http_client import close_client
+from findata.web.landing import WEB_STATIC_DIR, render_developer_page, render_landing_page
 
 _STARTED_AT = time.time()
 
 
 def _resolve_version() -> str:
     try:
+        from importlib.metadata import PackageNotFoundError, version
+
         return version("findata-br")
-    except PackageNotFoundError:
+    except (ImportError, PackageNotFoundError):
         return _pkg_version
 
 
@@ -46,12 +51,14 @@ _VERSION = _resolve_version()
 
 ADVERTISED_SOURCES: dict[str, str] = {
     "bcb": "Banco Central do Brasil (Selic, IPCA, PTAX, Focus)",
+    "basedosdados": "Base dos Dados (free logged-in SQL/Python/R via BigQuery; BD Pro marked paid)",
     "cvm": "CVM (companies, financial statements, funds)",
     "tesouro": "Tesouro Direto (treasury bonds)",
     "ibge": "IBGE (economic indicators)",
     "ipea": "IPEA Data (~8k macro series, long historical coverage)",
     "openfinance": "Open Finance Brasil (public Directory + indicator Portal)",
     "b3": "B3 (stock quotes via yfinance)",
+    "yahoo": "Yahoo Finance chart endpoint (experimental, unofficial)",
     "anbima": "ANBIMA (IMA family, ETTJ, debêntures — public file downloads)",
     "receita": "Receita Federal (federal tax collection)",
     "aneel": "ANEEL (generation and transmission auctions)",
@@ -79,11 +86,11 @@ app = FastAPI(
     description=(
         "Open-source Brazilian financial data API. "
         "Aggregates public data from BCB, CVM, B3, IBGE, IPEA, "
-        "Tesouro Nacional, and Open Finance Brasil. "
+        "Tesouro Nacional, Base dos Dados, and Open Finance Brasil. "
         "Free. No API key required."
     ),
     version=_VERSION,
-    docs_url="/docs",
+    docs_url="/api/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
 )
@@ -94,6 +101,7 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+app.mount("/site", StaticFiles(directory=WEB_STATIC_DIR), name="site")
 
 # Attach the SlowAPI limiter so routes can use the `limiter` dependency and
 # the middleware can short-circuit requests that exceed the bucket. Disabled
@@ -111,6 +119,7 @@ async def _value_error_handler(_: Request, exc: ValueError) -> JSONResponse:
 # ── Routers ────────────────────────────────────────────────────────
 
 app.include_router(bcb.router)
+app.include_router(basedosdados.router)
 app.include_router(cvm.router)
 app.include_router(tesouro.router)
 app.include_router(ibge.router)
@@ -122,6 +131,7 @@ app.include_router(receita.router)
 app.include_router(aneel.router)
 app.include_router(susep.router)
 app.include_router(registry.router)
+app.include_router(yahoo.router)
 
 
 # ── MCP Server (auto-generated from FastAPI endpoints) ─────────────
@@ -135,7 +145,7 @@ try:
         name="findata-br",
         description=(
             "Brazilian financial data MCP server — BCB, CVM, B3, "
-            "IBGE, IPEA, Tesouro, Open Finance"
+            "IBGE, IPEA, Tesouro, Base dos Dados, Open Finance, Yahoo experimental charts"
         ),
     )
     _mcp.mount_http()  # Serves MCP at /mcp (fastapi-mcp >=0.4)
@@ -147,15 +157,41 @@ except Exception:  # optional subsystem must never break core API
 # ── Health / Root ──────────────────────────────────────────────────
 
 
-@app.get("/", tags=["Meta"])
-async def root() -> dict[str, object]:
+def _meta_payload() -> dict[str, object]:
     return {
         "name": "findata-br",
         "version": _VERSION,
+        "site": "/",
         "docs": "/docs",
+        "swagger": "/api/docs",
+        "redoc": "/redoc",
         "mcp": "/mcp" if _MCP_ENABLED else None,
         "sources": ADVERTISED_SOURCES,
     }
+
+
+@app.get("/", include_in_schema=False)
+async def root() -> HTMLResponse:
+    return render_landing_page(
+        version=_VERSION,
+        sources=ADVERTISED_SOURCES,
+        mcp_enabled=_MCP_ENABLED,
+    )
+
+
+@app.get("/docs", include_in_schema=False)
+async def developer_docs() -> HTMLResponse:
+    return render_developer_page(
+        version=_VERSION,
+        sources=ADVERTISED_SOURCES,
+        mcp_enabled=_MCP_ENABLED,
+    )
+
+
+@app.get("/meta", tags=["Meta"])
+async def meta() -> dict[str, object]:
+    """Machine-readable API and site metadata."""
+    return _meta_payload()
 
 
 @app.get("/health", tags=["Meta"])

@@ -84,6 +84,7 @@ Leia também: [MANIFESTO.txt](MANIFESTO.txt).
 | **BCB SGS** | Banco Central | Selic, CDI, IPCA, IGP-M, câmbio, PIB, desemprego — 18k+ séries temporais | — |
 | **BCB Olinda PTAX** | Banco Central | USD/BRL, EUR/BRL e todas moedas rastreadas; ponto e período | — |
 | **BCB Olinda Focus** | Banco Central | Boletim Focus (semanal) — anual, mensal, Selic, Top-5 | — |
+| **Base dos Dados** | Dados públicos tratados | Catálogo público + datasets com download direto gratuito; SQL/Python/R via BigQuery no modo gratuito com login/projeto do usuário; BD Pro marcado separadamente como pago | `free_logged_in` / BD Pro pago |
 | **CVM** | Regulador | Empresas registradas, demonstrações DFP/ITR, **fatos relevantes/comunicados (IPE)**, **formulário cadastral (FCA — ticker→CNPJ resolver, setor, DRI)**, catálogo + cota diária de fundos, **composição da carteira (CDA)**, **lâmina + rentabilidade mensal/anual**, **perfil de cotistas** | — |
 | **IBGE Agregados v3** | Instituto de estatística | IPCA detalhado por 10 grupos + 365 subitens, INPC, PIB trimestral | — |
 | **IPEA Data (OData v4)** | Instituto de pesquisa | ~8k séries macro curadas (histórico desde a década de 1940), busca no catálogo, metadados | — |
@@ -95,6 +96,22 @@ Leia também: [MANIFESTO.txt](MANIFESTO.txt).
 | **SUSEP** | Seguros | Entidades supervisionadas e identificadores FIP/CNPJ | — |
 | **Open Finance Brasil** | Ecossistema OFB | Diretório público (`participants`, `roles`, `apiresources`, JWKS, `.well-known`) + Portal de Dados (10 datasets públicos de indicadores e rankings) | — |
 | **Registro** | Multifonte | **Resolvedor CNPJ ↔ ticker ↔ nome** — SQLite FTS5 embarcado no pacote wheel (~50k entidades CVM+SUSEP+B3); uma consulta MATCH cobre exato, fragmento e aproximado | — (offline) |
+
+
+> **Nota sobre Base dos Dados.** É uma fonte gratuita com caminhos de acesso
+> logados: SQL, Python e R são gratuitos, mas normalmente exigem login/projeto
+> Google Cloud/BigQuery do usuário. Isso é diferente de APIs com entitlement
+> comercial, como os produtos autenticados da ANBIMA. Superfícies BD Pro ficam
+> marcadas separadamente como `paid_logged_in`.
+
+Uso local via BigQuery:
+
+```bash
+pip install 'findata-br[basedosdados]'
+export FINDATA_BD_BILLING_PROJECT_ID="seu-projeto-gcp"
+findata basedosdados sql br_bd_diretorios_brasil municipio --limit 5
+findata basedosdados query 'SELECT id_municipio, nome FROM `basedosdados.br_bd_diretorios_brasil.municipio` LIMIT 5'
+```
 
 > **Nota sobre ANBIMA.** Usamos os arquivos públicos em `www.anbima.com.br/informacoes/*`
 > (XLS / CSV / TXT atualizados diariamente), não a API comercial Sensedia
@@ -206,6 +223,8 @@ findata cvm profile  00.280.302/0001-60 -y 2026 -m 3
 
 findata b3 quote PETR4
 findata b3 history VALE3 -p 1y
+
+findata yahoo chart PETR4.SA --range 1mo --interval 1d  # experimental/unofficial
 
 findata anbima ima                          # retrato do dia (todos os índices)
 findata anbima ima -i IMA-B                 # filtra uma família
@@ -348,7 +367,8 @@ Cursor / Codex pra ela e usar as rotas como ferramentas MCP.
      ├─ ibge/  (indicadores)
      ├─ ipea/  (séries)
      ├─ tesouro/ (títulos)
-     ├─ b3/    (cotações)      ← opcional, atrás dos extras
+     ├─ b3/    (cotações, COTAHIST, índices)
+     ├─ yahoo/ (gráficos de preços; experimental/não oficial)
      ├─ anbima/ (índices, ETTJ, debêntures)
      ├─ openfinance/ (diretório e portal públicos)
      └─ demais fontes regulatórias / públicas

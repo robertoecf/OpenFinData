@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>findata-br — developer console</title>
+    <meta
+      name="description"
+      content="Developer console for findata-br: REST docs, OpenAPI schema, MCP endpoint and live health signals."
+    />
+    <link rel="stylesheet" href="/site/site.css" />
+    <script src="/site/site.js" defer></script>
+  </head>
+  <body class="docs-page">
+    <canvas class="field" aria-hidden="true"></canvas>
+    <div class="noise" aria-hidden="true"></div>
+    <div class="cursor-glow" aria-hidden="true"></div>
+
+    <header class="shell nav-shell">
+      <a class="brand" href="/" aria-label="findata-br">findata-br</a>
+      <nav aria-label="Developer navigation">
+        <a href="#overview">Overview</a>
+        <a href="#endpoints">Endpoints</a>
+        <a href="#mcp">MCP</a>
+        <a href="https://github.com/robertoecf/findata-br">GitHub</a>
+        <a href="/">Home</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="docs-hero shell" id="overview" aria-labelledby="docs-title">
+        <div class="docs-copy reveal">
+          <p class="eyebrow">Developer console · REST · MCP · OpenAPI</p>
+          <h1 id="docs-title">Explore <em>Brazilian</em> financial data without leaving the browser.</h1>
+          <p class="lead">
+            Interactive REST docs, OpenAPI schema, MCP endpoint and live health signals for BCB,
+            CVM, B3, IBGE, IPEA, Tesouro, Open Finance and more.
+          </p>
+
+          <div class="hero-actions docs-actions" aria-label="Developer actions">
+            <a class="button primary" href="/api/docs">Open Swagger UI <span aria-hidden="true">↗</span></a>
+            <a class="button secondary" href="/redoc">Open ReDoc <span aria-hidden="true">↗</span></a>
+            <button class="button ghost" type="button" data-copy="/openapi.json">Copy OpenAPI URL</button>
+          </div>
+
+          <div class="install-card" data-copy="pip install findata-br">
+            <span class="prompt">$</span>
+            <code>pip install findata-br</code>
+            <button type="button" aria-label="Copy install command">Copy</button>
+          </div>
+        </div>
+
+        <div class="docs-console-wrap reveal" aria-label="API request console">
+          <div class="aurora docs-aurora" aria-hidden="true"></div>
+          <div class="api-console tilt">
+            <div class="console-tabs" aria-label="Interface tabs">
+              <span class="active">REST</span>
+              <span>MCP</span>
+              <span>CLI</span>
+            </div>
+            <div class="request-row">
+              <code><b>GET</b> /bcb/series/name/selic?n=10</code>
+              <a href="/api/docs" class="send-button">Send</a>
+            </div>
+            <div class="response-tabs">
+              <span class="active">Response</span>
+              <span>Headers (6)</span>
+              <span>Example</span>
+            </div>
+            <div class="response-meta"><span>200 OK</span><small>124 ms</small></div>
+            <pre><code>[
+  {
+    "data": "2026-04-30",
+    "valor": 14.75
+  }
+]</code></pre>
+          </div>
+
+          <aside class="health-card tilt">
+            <div class="health-title"><span></span><strong>System health</strong><small>All systems operational</small></div>
+            <dl>
+              <div><dt>Status</dt><dd>ok</dd></div>
+              <div><dt>Version</dt><dd data-live="version">v{{ version }}</dd></div>
+              <div><dt>Sources</dt><dd data-stat="source-count">{{ source_count }}</dd></div>
+              <div><dt>Cache</dt><dd data-live="cache">0/2048</dd></div>
+            </dl>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section shell docs-section" id="endpoints" aria-labelledby="endpoint-title">
+        <div class="section-heading docs-heading reveal">
+          <h2 id="endpoint-title"><span class="section-dot green"></span>Endpoint families</h2>
+          <div class="endpoint-controls" aria-label="Endpoint filters">
+            <label class="search-box">
+              <span aria-hidden="true">⌕</span>
+              <input data-endpoint-search type="search" placeholder="Search endpoints..." />
+            </label>
+            <select aria-label="Source filter" data-endpoint-select>
+              <option value="">All sources</option>
+              <option value="macro">Macro</option>
+              <option value="markets">Markets</option>
+              <option value="public">Public data</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="endpoint-grid">
+          <article class="endpoint-card reveal tilt" data-tags="bcb macro selic ptax focus"><span class="source-glyph bank"></span><div><strong>BCB</strong><small>128 endpoints</small><code>/bcb/series/name/{name}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="cvm markets funds companies"><span class="source-glyph cvm"></span><div><strong>CVM</strong><small>86 endpoints</small><code>/cvm/companies/{cvm}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="b3 markets bolsa quotes"><span class="source-glyph b3"></span><div><strong>B3</strong><small>64 endpoints</small><code>/b3/assets/{codigo}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="ibge macro public indicators"><span class="source-glyph ibge"></span><div><strong>IBGE</strong><small>58 endpoints</small><code>/ibge/indicators/{id}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="ipea macro public series"><span class="source-glyph ipea"></span><div><strong>IPEA</strong><small>43 endpoints</small><code>/ipea/indicators/{id}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="tesouro public bonds fiscal"><span class="source-glyph tesouro"></span><div><strong>Tesouro</strong><small>37 endpoints</small><code>/tesouro/titulos/{id}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="open finance public directory"><span class="source-glyph openfinance"></span><div><strong>Open Finance</strong><small>29 endpoints</small><code>/open-finance/{resource}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="anbima markets funds"><span class="source-glyph anbima"></span><div><strong>ANBIMA</strong><small>22 endpoints</small><code>/anbima/funds/{id}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="receita public cnpj tax"><span class="source-glyph receita"></span><div><strong>Receita</strong><small>18 endpoints</small><code>/receita/cnpj/{cnpj}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="aneel public energy"><span class="source-glyph aneel"></span><div><strong>ANEEL</strong><small>16 endpoints</small><code>/aneel/series/{id}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="susep public insurance"><span class="source-glyph susep"></span><div><strong>SUSEP</strong><small>14 endpoints</small><code>/susep/plans/{id}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="registry offline ticker cnpj"><span class="source-glyph registry"></span><div><strong>Registry</strong><small>12 endpoints</small><code>/registry/lookup/{query}</code></div></article>
+        </div>
+
+        <div class="center-action reveal"><a class="button secondary" href="/api/docs">View all endpoints <span aria-hidden="true">›</span></a></div>
+      </section>
+
+      <section class="section shell docs-section" id="mcp" aria-labelledby="fast-title">
+        <div class="section-heading reveal">
+          <h2 id="fast-title"><span class="section-dot green"></span>Fast paths</h2>
+        </div>
+
+        <div class="fast-grid">
+          <article class="fast-card reveal tilt"><span class="interface-glyph python"></span><h3>Python</h3><p>Async client</p><pre><code>await sgs.get_series_by_name(
+  "selic", 10
+)</code></pre><button type="button" data-copy='await sgs.get_series_by_name("selic", 10)'>Copy</button></article>
+          <article class="fast-card reveal tilt"><span class="interface-glyph rest"></span><h3>REST</h3><p>HTTP request</p><pre><code>GET /bcb/series/name/selic?n=10
+Accept: application/json</code></pre><button type="button" data-copy="GET /bcb/series/name/selic?n=10">Copy</button></article>
+          <article class="fast-card reveal tilt"><span class="interface-glyph mcp"></span><h3>MCP</h3><p>Agent endpoint</p><pre><code>POST /mcp
+Content-Type: application/json</code></pre><button type="button" data-copy="POST /mcp">Copy</button></article>
+          <article class="fast-card reveal tilt"><span class="interface-glyph cli"></span><h3>CLI</h3><p>Command line</p><pre><code>findata bcb get selic -n 10
+# output: JSON</code></pre><button type="button" data-copy="findata bcb get selic -n 10">Copy</button></article>
+        </div>
+      </section>
+
+      <section class="section shell docs-section raw-tools" aria-labelledby="tools-title">
+        <div class="section-heading reveal">
+          <h2 id="tools-title"><span class="section-dot green"></span>Raw developer tools</h2>
+          <p>Everything you need, straight from the source.</p>
+        </div>
+        <div class="tool-grid">
+          <a class="tool-card reveal tilt" href="/api/docs"><span class="tool-glyph swagger">{ }</span><div><small>/api/docs</small><strong>Swagger UI</strong><p>Interactive API explorer with try-it-out and schemas.</p><b>Open Swagger UI →</b></div></a>
+          <a class="tool-card reveal tilt" href="/redoc"><span class="tool-glyph redoc">▯</span><div><small>/redoc</small><strong>ReDoc</strong><p>Clean, readable API documentation.</p><b>Open ReDoc →</b></div></a>
+          <a class="tool-card reveal tilt" href="/openapi.json"><span class="tool-glyph openapi">&lt;/&gt;</span><div><small>/openapi.json</small><strong>OpenAPI schema</strong><p>Raw OpenAPI 3.1 schema for code generation and tooling.</p><b>View openapi.json →</b></div></a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer docs-footer">
+      <div class="shell footer-grid">
+        <div><strong>findata-br</strong><p>Open data. Open infra. Open Brazil.<br />v{{ version }} · MIT License</p></div>
+        <div><a href="https://github.com/robertoecf/findata-br">GitHub</a><p>github.com/robertoecf/findata-br</p></div>
+        <div><a href="/health">Health</a><p>/health</p></div>
+        <div><a href="/stats">Stats</a><p>/stats</p></div>
+        <div><a href="/">Home</a><p>Landing page</p></div>
+      </div>
+    </footer>
+  </body>
+</html>

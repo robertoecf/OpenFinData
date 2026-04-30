@@ -152,7 +152,7 @@ def test_anbima_debentures_filter_by_emissor() -> None:
 
 def test_root_endpoint_lists_anbima_in_main_sources() -> None:
     client = TestClient(app)
-    body = client.get("/").json()
+    body = client.get("/meta").json()
     assert "anbima" in body["sources"]
     # The auth-required block was removed — ANBIMA is fully public now.
     assert "sources_with_auth" not in body
