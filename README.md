@@ -104,6 +104,15 @@ Leia também: [MANIFESTO.txt](MANIFESTO.txt).
 > comercial, como os produtos autenticados da ANBIMA. Superfícies BD Pro ficam
 > marcadas separadamente como `paid_logged_in`.
 
+Uso local via BigQuery:
+
+```bash
+pip install 'findata-br[basedosdados]'
+export FINDATA_BD_BILLING_PROJECT_ID="seu-projeto-gcp"
+findata basedosdados sql br_bd_diretorios_brasil municipio --limit 5
+findata basedosdados query 'SELECT id_municipio, nome FROM `basedosdados.br_bd_diretorios_brasil.municipio` LIMIT 5'
+```
+
 > **Nota sobre ANBIMA.** Usamos os arquivos públicos em `www.anbima.com.br/informacoes/*`
 > (XLS / CSV / TXT atualizados diariamente), não a API comercial Sensedia
 > (que exige cadastro institucional). Os números são os mesmos canônicos

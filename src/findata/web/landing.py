@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from html import escape
 from pathlib import Path
 
@@ -13,6 +14,12 @@ _LANDING_TEMPLATE_PATH = _WEB_DIR / "templates" / "index.html"
 _DOCS_TEMPLATE_PATH = _WEB_DIR / "templates" / "docs.html"
 
 
+@lru_cache(maxsize=4)
+def _read_template(template_path: str) -> str:
+    """Read a bundled static template once per process."""
+    return Path(template_path).read_text(encoding="utf-8")
+
+
 def _render_template(
     template_path: Path,
     *,
@@ -21,7 +28,7 @@ def _render_template(
     mcp_enabled: bool,
 ) -> HTMLResponse:
     """Return a static web template with small runtime facts injected."""
-    html = template_path.read_text(encoding="utf-8")
+    html = _read_template(str(template_path))
     replacements = {
         "{{ version }}": escape(version),
         "{{ source_count }}": str(len(sources)),

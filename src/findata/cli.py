@@ -1382,6 +1382,107 @@ def basedosdados_direct_download_free(
     rprint(table)
 
 
+def _write_basedosdados_rows(
+    rows: list[dict[str, object]],
+    row_count: int,
+    output: Literal["table", "csv", "json"],
+    out: str | None,
+    project: str,
+) -> None:
+    """Render or write a Base dos Dados BigQuery query result."""
+    import csv
+    import json
+    from pathlib import Path
+
+    if output == "json":
+        payload = json.dumps(rows, ensure_ascii=False, indent=2)
+        if out:
+            Path(out).write_text(payload)
+            rprint(f"[green]Wrote[/green] {out} ({row_count} rows)")
+        else:
+            rprint(payload)
+        return
+
+    if not rows:
+        rprint("[yellow]No rows returned.[/yellow]")
+        return
+
+    fieldnames = list(rows[0])
+    if output == "csv":
+        if out:
+            with Path(out).open("w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(rows)
+            rprint(f"[green]Wrote[/green] {out} ({row_count} rows)")
+        else:
+            writer = csv.DictWriter(_console.file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+        return
+
+    table = Table(title=f"Base dos Dados BigQuery ({row_count} rows, project={project})")
+    for name in fieldnames:
+        table.add_column(name)
+    for row in rows:
+        table.add_row(*(str(row.get(name, "")) for name in fieldnames))
+    rprint(table)
+
+
+@basedosdados_app.command("query")
+def basedosdados_query(
+    query: str = typer.Argument(help="SQL string, or file path when --from-file is set"),
+    billing_project_id: str | None = typer.Option(
+        None,
+        "--billing-project-id",
+        "-p",
+        help="Google Cloud project billed by BigQuery",
+    ),
+    from_file: bool = typer.Option(False, "--from-file", help="Read SQL from query file path"),
+    reauth: bool = typer.Option(False, "--reauth", help="Force Google re-authentication"),
+    use_bqstorage_api: bool = typer.Option(
+        False,
+        "--use-bqstorage-api",
+        help="Use BigQuery Storage API for faster downloads; can increase cost",
+    ),
+    max_rows: int = typer.Option(100, "--max-rows", min=1, max=10_000),
+    output: Literal["table", "csv", "json"] = typer.Option("table", "--output", "-o"),
+    out: str | None = typer.Option(None, "--out", help="Write csv/json output to this path"),
+) -> None:
+    """Run a free logged-in Base dos Dados BigQuery query locally."""
+    from pathlib import Path
+
+    from findata.sources.basedosdados import (
+        BaseDosDadosSDKNotInstalledError,
+        read_sql_preview,
+        resolve_billing_project_id,
+    )
+
+    sql = Path(query).read_text() if from_file else query
+    project = resolve_billing_project_id(billing_project_id) or "SDK/default auth"
+    try:
+        result = read_sql_preview(
+            sql,
+            billing_project_id=billing_project_id,
+            from_file=False,
+            reauth=reauth,
+            use_bqstorage_api=use_bqstorage_api,
+            max_rows=max_rows,
+        )
+    except BaseDosDadosSDKNotInstalledError as exc:
+        rprint(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        rprint(f"[red]BigQuery error:[/red] {exc}")
+        rprint(
+            "[dim]Check Google auth and set --billing-project-id or "
+            "FINDATA_BD_BILLING_PROJECT_ID.[/dim]"
+        )
+        raise typer.Exit(code=1) from exc
+
+    _write_basedosdados_rows(result.rows, result.row_count, output, out, project)
+
+
 @basedosdados_app.command("datasets")
 def basedosdados_datasets(
     name: str | None = typer.Option(None, "--name", help="Dataset name search"),
@@ -1444,6 +1545,7 @@ def basedosdados_tables(
             str(row.get("name", row.get("table_name", "-"))),
         )
     rprint(table)
+
 
 # ── Yahoo Finance commands ────────────────────────────────────────
 

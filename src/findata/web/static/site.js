@@ -172,7 +172,7 @@
 
   const hydrateStats = async () => {
     try {
-      const response = await fetch("/stats", { headers: { Accept: "application/json" } });
+      const response = await fetch("stats", { headers: { Accept: "application/json" } });
       if (!response.ok) return;
       const stats = await response.json();
       const set = (selector, value) => {

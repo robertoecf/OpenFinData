@@ -81,3 +81,49 @@ def test_sdk_endpoints_fail_clean_when_optional_package_absent(monkeypatch) -> N
     r = client.get("/basedosdados/datasets")
     assert r.status_code == 503
     assert "findata-br[basedosdados]" in r.json()["detail"]
+
+
+def test_resolve_billing_project_prefers_explicit(monkeypatch) -> None:
+    monkeypatch.setenv("FINDATA_BD_BILLING_PROJECT_ID", "env-project")
+    assert catalog.resolve_billing_project_id("explicit-project") == "explicit-project"
+    assert catalog.resolve_billing_project_id() == "env-project"
+
+
+def test_read_sql_preview_calls_sdk_with_project_and_caps_rows(monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeFrame:
+        def __init__(self, rows: list[dict[str, object]]) -> None:
+            self._rows = rows
+
+        def head(self, n: int) -> FakeFrame:
+            return FakeFrame(self._rows[:n])
+
+        def to_dict(self, orient: str) -> list[dict[str, object]]:
+            assert orient == "records"
+            return self._rows
+
+    class FakeSDK:
+        @staticmethod
+        def read_sql(**kwargs: object) -> FakeFrame:
+            calls.update(kwargs)
+            return FakeFrame([{"id": 1}, {"id": 2}, {"id": 3}])
+
+    monkeypatch.setattr(catalog, "_load_sdk", lambda: FakeSDK)
+    result = catalog.read_sql_preview(
+        "SELECT 1",
+        billing_project_id="billing-project",
+        reauth=True,
+        use_bqstorage_api=True,
+        max_rows=2,
+    )
+
+    assert calls == {
+        "query": "SELECT 1",
+        "billing_project_id": "billing-project",
+        "from_file": False,
+        "reauth": True,
+        "use_bqstorage_api": True,
+    }
+    assert result.row_count == 2
+    assert result.rows == [{"id": 1}, {"id": 2}]
