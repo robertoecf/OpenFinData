@@ -78,8 +78,12 @@ def _timezone(name: str | None) -> tzinfo:
         return UTC
 
 
-def _date_label(timestamp: int, timezone_name: str | None) -> str:
-    return datetime.fromtimestamp(timestamp, tz=_timezone(timezone_name)).date().isoformat()
+def _timestamp_label(timestamp: int, timezone_name: str | None, interval: str) -> str:
+    """Return a date for daily+ candles and local ISO datetime for intraday candles."""
+    dt = datetime.fromtimestamp(timestamp, tz=_timezone(timezone_name))
+    if interval in {"1d", "5d", "1wk", "1mo", "3mo"}:
+        return dt.date().isoformat()
+    return dt.replace(microsecond=0).isoformat()
 
 
 def _validate_range_interval(range_: str, interval: str) -> None:
@@ -184,7 +188,9 @@ async def get_chart(
             continue
         points.append(
             YahooChartPoint(
-                date=_date_label(ts, timezone_name if isinstance(timezone_name, str) else None),
+                date=_timestamp_label(
+                    ts, timezone_name if isinstance(timezone_name, str) else None, interval
+                ),
                 open=_as_float(_value_at(quote, "open", index)),
                 high=_as_float(_value_at(quote, "high", index)),
                 low=_as_float(_value_at(quote, "low", index)),

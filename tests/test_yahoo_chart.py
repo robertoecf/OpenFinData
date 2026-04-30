@@ -85,6 +85,23 @@ def test_get_chart_surfaces_yahoo_error() -> None:
     with pytest.raises(ValueError, match="range too old"):
         asyncio.run(chart.get_chart("PETR4.SA", range_="1mo", interval="1h"))
 
+
+@respx.mock
+def test_get_chart_preserves_intraday_time() -> None:
+    payload = _sample_payload()
+    result = payload["chart"]["result"][0]  # type: ignore[index]
+    result["timestamp"] = [1711972800, 1711976400]  # type: ignore[index]
+
+    respx.get("https://query1.finance.yahoo.com/v8/finance/chart/PETR4.SA").mock(
+        return_value=httpx.Response(200, json=payload)
+    )
+
+    data = asyncio.run(chart.get_chart("PETR4.SA", range_="5d", interval="1h"))
+
+    assert data.points[0].date == "2024-04-01T09:00:00-03:00"
+    assert data.points[1].date == "2024-04-01T10:00:00-03:00"
+
+
 @respx.mock
 def test_yahoo_api_route() -> None:
     from fastapi.testclient import TestClient
