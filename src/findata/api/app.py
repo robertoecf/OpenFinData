@@ -31,7 +31,7 @@ from findata.api.routers import (
 from findata.http_client import MAX_CACHE_SIZE as _CACHE_MAX
 from findata.http_client import _cache as _http_cache
 from findata.http_client import close_client
-from findata.web.landing import WEB_STATIC_DIR, render_landing_page
+from findata.web.landing import WEB_STATIC_DIR, render_developer_page, render_landing_page
 
 _STARTED_AT = time.time()
 
@@ -81,7 +81,7 @@ app = FastAPI(
         "Free. No API key required."
     ),
     version=_VERSION,
-    docs_url="/docs",
+    docs_url="/api/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
 )
@@ -152,6 +152,7 @@ def _meta_payload() -> dict[str, object]:
         "version": _VERSION,
         "site": "/",
         "docs": "/docs",
+        "swagger": "/api/docs",
         "redoc": "/redoc",
         "mcp": "/mcp" if _MCP_ENABLED else None,
         "sources": ADVERTISED_SOURCES,
@@ -161,6 +162,15 @@ def _meta_payload() -> dict[str, object]:
 @app.get("/", include_in_schema=False)
 async def root() -> HTMLResponse:
     return render_landing_page(
+        version=_VERSION,
+        sources=ADVERTISED_SOURCES,
+        mcp_enabled=_MCP_ENABLED,
+    )
+
+
+@app.get("/docs", include_in_schema=False)
+async def developer_docs() -> HTMLResponse:
+    return render_developer_page(
         version=_VERSION,
         sources=ADVERTISED_SOURCES,
         mcp_enabled=_MCP_ENABLED,

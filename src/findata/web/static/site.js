@@ -80,18 +80,40 @@
   };
 
   const bindCopy = () => {
-    const card = document.querySelector(".install-card");
-    const button = card?.querySelector("button");
-    if (!card || !button) return;
-    const original = button.textContent;
-    button.addEventListener("click", async () => {
-      const value = card.getAttribute("data-copy") || "pip install findata-br";
-      await navigator.clipboard?.writeText(value);
-      button.textContent = "copiado";
-      window.setTimeout(() => {
-        button.textContent = original;
-      }, 1400);
+    document.querySelectorAll("[data-copy]").forEach((node) => {
+      const button = node.matches("button") ? node : node.querySelector("button");
+      if (!button) return;
+      const original = button.textContent;
+      button.addEventListener("click", async () => {
+        const value = node.getAttribute("data-copy") || "pip install findata-br";
+        await navigator.clipboard?.writeText(value);
+        button.textContent = document.documentElement.lang === "pt-BR" ? "copiado" : "Copied";
+        window.setTimeout(() => {
+          button.textContent = original;
+        }, 1400);
+      });
     });
+  };
+
+  const bindEndpointFilters = () => {
+    const input = document.querySelector("[data-endpoint-search]");
+    const select = document.querySelector("[data-endpoint-select]");
+    const cards = Array.from(document.querySelectorAll(".endpoint-card"));
+    if (!input || !select || !cards.length) return;
+
+    const apply = () => {
+      const query = input.value.trim().toLowerCase();
+      const category = select.value.trim().toLowerCase();
+      cards.forEach((card) => {
+        const haystack = `${card.textContent} ${card.getAttribute("data-tags") || ""}`.toLowerCase();
+        const matchesQuery = !query || haystack.includes(query);
+        const matchesCategory = !category || haystack.includes(category);
+        card.classList.toggle("is-hidden", !matchesQuery || !matchesCategory);
+      });
+    };
+
+    input.addEventListener("input", apply);
+    select.addEventListener("change", apply);
   };
 
   const bindTilt = () => {
@@ -243,6 +265,7 @@
   animatePointerVars();
   reveal();
   bindCopy();
+  bindEndpointFilters();
   bindTilt();
   hydrateStats();
   drawField();
