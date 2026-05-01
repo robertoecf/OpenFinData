@@ -20,7 +20,7 @@ import httpx
 MAX_CACHE_SIZE = 2048
 CACHE_TTL = 900  # 15 min default
 USER_AGENT = (
-    "findata-br/0.1 "
+    "findata-br/0.3.1 "
     "(+https://github.com/robertoecf/findata-br)"
 )
 
