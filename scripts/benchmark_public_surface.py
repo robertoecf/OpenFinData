@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit a public financial-data website as a benchmark for findata-br.
+"""Audit a public financial-data website as a benchmark for Dados Financeiros Abertos.
 
 Default mode is conservative: read public pages, public static assets,
 robots.txt, and sitemap.xml. Same-origin paths blocked by robots.txt are
@@ -28,7 +28,10 @@ from pathlib import Path
 from typing import Any
 
 DEFAULT_BASE_URL = "https://www.dadosdemercado.com.br"
-USER_AGENT = "findata-br-public-benchmark/0.2 (+https://github.com/robertoecf/findata-br)"
+USER_AGENT = (
+    "findata-br-public-benchmark/0.2 "
+    "(+https://github.com/robertoecf/findata-br)"
+)
 HTTP_OK = 200
 DEFAULT_API_MAX_BYTES = 256 * 1024
 MAX_JSON_SHAPE_DEPTH = 3
@@ -898,7 +901,7 @@ def build_report(payload: dict[str, Any]) -> str:
             "",
             "## Product benchmark mapping",
             "",
-            "| Benchmark surface | findata-br route(s) | Status |",
+            "| Benchmark surface | Dados Financeiros Abertos route(s) | Status |",
             "|---|---|---|",
         ]
     )

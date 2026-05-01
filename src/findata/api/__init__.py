@@ -1,1 +1,1 @@
-"""FastAPI application + auto-mounted MCP server for findata-br."""
+"""FastAPI application + auto-mounted MCP server for Dados Financeiros Abertos."""

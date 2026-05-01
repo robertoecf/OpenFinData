@@ -1,3 +1,3 @@
-"""findata-br: Open-source Brazilian financial data."""
+"""Dados Financeiros Abertos: dados financeiros públicos do Brasil."""
 
 __version__ = "0.3.1"

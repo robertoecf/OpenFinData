@@ -72,7 +72,8 @@ def _import_yfinance() -> Any:
         import yfinance as yf
     except ImportError as exc:
         raise RuntimeError(
-            "B3 support requires yfinance. Install with: pip install 'findata-br[b3]'"
+            "B3 support requires yfinance. Install with: "
+            "pip install 'findata-br[b3]'"
         ) from exc
     return yf
 

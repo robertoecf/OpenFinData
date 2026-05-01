@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "findata-br"
 version = "0.3.1"
-description = "Open-source Brazilian financial data API, MCP server, and CLI"
+description = "Dados financeiros públicos do Brasil via API, MCP server, CLI and Python"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]

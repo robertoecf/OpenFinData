@@ -1,6 +1,6 @@
-# Deploy público do findata-br no seu PC (WSL + Cloudflare Tunnel)
+# Deploy público do Dados Financeiros Abertos no seu PC (WSL + Cloudflare Tunnel)
 
-> **Meta:** expor seu `findata-br` como **servidor MCP público** — acessível via
+> **Meta:** expor o **Dados Financeiros Abertos** como **servidor MCP público** — acessível via
 > HTTPS, com TLS, rate limit, e _sem_ abrir porta no roteador nem pagar nada.
 >
 > **Stack:** Windows + WSL2 + Docker + Cloudflare Tunnel.
@@ -94,7 +94,7 @@ sudo mkdir -p /var/log/findata-br
 sudo chown findata:findata /var/log/findata-br
 ```
 
-### 2. Instale o findata-br
+### 2. Instale o Dados Financeiros Abertos
 
 ```bash
 sudo -u findata bash <<'EOF'
@@ -256,7 +256,7 @@ docker compose logs cloudflared
 sudo journalctl -u cloudflared -f
 ```
 
-**findata-br caiu silenciosamente:**
+**Dados Financeiros Abertos caiu silenciosamente:**
 ```bash
 curl http://localhost:8000/health   # local
 # se local OK mas público não, problema é no tunnel

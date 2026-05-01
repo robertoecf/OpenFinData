@@ -1,5 +1,5 @@
 Dados públicos não deveriam exigir trabalho arqueológico. O Brasil já publica muita informação financeira e econômica em fontes como BCB, CVM, B3, IBGE, IPEA, Tesouro, Receita e Open Finance. O problema é que o acesso é fragmentado, instável e caro em tempo humano.
 
-O findata-br existe para reduzir esse retrabalho. Em vez de cada analista, dev ou pesquisador reimplementar os mesmos conectores, a ideia é transformar esse esforço em base aberta: normalização, API, CLI, MCP, testes e exemplos reutilizáveis.
+O Dados Financeiros Abertos existe para reduzir esse retrabalho. Em vez de cada analista, dev ou pesquisador reimplementar os mesmos conectores, a ideia é transformar esse esforço em base aberta: normalização, API, CLI, MCP, testes e exemplos reutilizáveis.
 
 A tese é simples: se o dado é público, a infraestrutura essencial para usá-lo também deveria ser. Menos encanamento duplicado. Mais colaboração.

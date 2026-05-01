@@ -1,15 +1,11 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
 ```text
- ███████╗██╗███╗   ██╗██████╗  █████╗ ████████╗ █████╗        ██████╗ ██████╗
- ██╔════╝██║████╗  ██║██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗       ██╔══██╗██╔══██╗
- █████╗  ██║██╔██╗ ██║██║  ██║███████║   ██║   ███████║ █████╗██████╔╝██████╔╝
- ██╔══╝  ██║██║╚██╗██║██║  ██║██╔══██║   ██║   ██╔══██║ ╚════╝██╔══██╗██╔══██╗
- ██║     ██║██║ ╚████║██████╔╝██║  ██║   ██║   ██║  ██║       ██████╔╝██║  ██║
- ╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝       ╚═════╝ ╚═╝  ╚═╝
-
-                   Dados financeiros abertos do Brasil
-        BCB · CVM · B3 · IBGE · IPEA · Tesouro · Open Finance  →  API + MCP + CLI
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ Dados Financeiros Abertos                                                  ║
+║ Dados financeiros públicos do Brasil para API, MCP, CLI e agentes.         ║
+║ BCB · CVM · B3 · IBGE · IPEA · Tesouro · Open Finance                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
 <div align="center">
@@ -33,13 +29,13 @@ _De graça. Sem chave de API. Sem truques de limite de chamadas. Só Python._
 
 ## Resumo | TL;DR
 
-O objetivo final do **findata-br** é se tornar a infraestrutura aberta de
+O objetivo final do **Dados Financeiros Abertos** é se tornar a infraestrutura aberta de
 referência para dados financeiros públicos do Brasil: uma camada confiável,
 auditável e extensível que conecta fontes como BCB, CVM, B3, IBGE, IPEA,
 Tesouro Nacional e Open Finance a bibliotecas, APIs, CLIs, agentes e
 aplicações.
 
-findata-br é uma biblioteca, API REST, servidor MCP e CLI para consultar dados
+Dados Financeiros Abertos é uma biblioteca, API REST, servidor MCP e CLI para consultar dados
 financeiros públicos do Brasil em um único lugar. Hoje cobre BCB, CVM, B3,
 IBGE, IPEA, Tesouro Nacional, ANBIMA, Receita Federal, ANEEL, SUSEP e recursos
 públicos do Open Finance Brasil. O projeto não exige chaves de API para as
@@ -62,7 +58,7 @@ Leia também: [MANIFESTO.txt](MANIFESTO.txt).
 
 
 - **API REST** com Swagger interativo em `/docs`.
-- **Servidor MCP** montado automaticamente em `/mcp` — plugue o findata-br direto no Claude, Cursor, Codex.
+- **Servidor MCP** montado automaticamente em `/mcp` — plugue o Dados Financeiros Abertos direto no Claude, Cursor, Codex.
 - **CLI Python** (`findata ...`) com tabelas ricas e banner animado em terminal interativo.
 - **Biblioteca assíncrona** com reuso de conexões, retentativas com espera exponencial e cache LRU de 15 min.
 - **Registro CNPJ ↔ ticker ↔ nome** embarcado no pacote wheel (~50k entidades CVM + SUSEP + B3) — uma consulta resolve qualquer formato.
@@ -140,7 +136,7 @@ pip install findata-br
 
 ### O que vai ser instalado
 
-findata-br é Python 3.11+ e depende de uma stack enxuta de bibliotecas
+Dados Financeiros Abertos é Python 3.11+ e depende de uma stack enxuta de bibliotecas
 estáveis e bem mantidas. Nada de infra, nada de banco de dados, nada de
 fila/serviço auxiliar — tudo acontece em processo único.
 
@@ -332,7 +328,7 @@ ferramentas.
 
 Quer compartilhar sua instância com a comunidade? O guia
 [**docs/DEPLOY_PUBLIC.md**](docs/DEPLOY_PUBLIC.md) mostra como subir o
-findata-br no seu PC/WSL com **Cloudflare Tunnel** em ~20 min, custo R$ 0:
+Dados Financeiros Abertos no seu PC/WSL com **Cloudflare Tunnel** em ~20 min, custo R$ 0:
 HTTPS automático, URL fixa, proteção contra DDoS e limite de chamadas embutido. Quando a
 URL pública estiver no ar, qualquer pessoa pode apontar o Claude Desktop /
 Cursor / Codex pra ela e usar as rotas como ferramentas MCP.
@@ -432,7 +428,7 @@ ficam marcados separadamente para validação contra fontes públicas reais.
 ---
 
 
-findata-br é **código aberto pra durar** — MIT, sem CLA, sem adotar fornecedor
+Dados Financeiros Abertos é **código aberto pra durar** — MIT, sem CLA, sem adotar fornecedor
 comercial como dependência central. O roteiro depende de quem usa: se você sentir falta de uma fonte
 (ANBIMA, SUSEP, BNDES, ...), abra uma
 [chamado usando o modelo "Nova fonte"](https://github.com/robertoecf/findata-br/issues/new?template=new-source.yml).

@@ -1,4 +1,4 @@
-"""findata-br registry — flat FTS5 catalog of CNPJ-keyed entities.
+"""Dados Financeiros Abertos registry — flat FTS5 catalog of CNPJ-keyed entities.
 
 Embedded in the wheel at ``src/findata/data/registry.sqlite`` (built offline by
 ``scripts/build_registry.py``, refreshed weekly by CI). One ``MATCH`` query

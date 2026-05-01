@@ -1,6 +1,6 @@
 """Authentication helpers for sources that require credentials.
 
-The findata-br public API (BCB, CVM, B3, IBGE, IPEA, Tesouro) is 100% free
+The Dados Financeiros Abertos public API (BCB, CVM, B3, IBGE, IPEA, Tesouro) is 100% free
 and never needs credentials. Some adjacent Brazilian financial data sources
 (ANBIMA, SUSEP, BNDES, etc.) gate behind OAuth2 / API keys / bearer tokens
 that *the operator* has to bring themselves. This module is the generic

@@ -8,7 +8,7 @@ Yahoo Finance is useful for quick market-price retrieval by agents when the
 project does not yet expose an official B3/CVM/Bacen equivalent for the exact
 instrument or frequency.
 
-Supported first in findata-br through the public chart endpoint:
+Supported first in Dados Financeiros Abertos through the public chart endpoint:
 
 ```text
 https://query1.finance.yahoo.com/v8/finance/chart/{symbol}

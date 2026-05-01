@@ -1,4 +1,4 @@
-"""Animated CLI banner — FINDATA-BR typed out with a gradient."""
+"""Animated CLI banner — DADOS FINANCEIROS ABERTOS typed out with a gradient."""
 
 from __future__ import annotations
 
@@ -11,12 +11,10 @@ from rich.panel import Panel
 from rich.text import Text
 
 _ASCII = r"""
- ███████╗██╗███╗   ██╗██████╗  █████╗ ████████╗ █████╗        ██████╗ ██████╗
- ██╔════╝██║████╗  ██║██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗       ██╔══██╗██╔══██╗
- █████╗  ██║██╔██╗ ██║██║  ██║███████║   ██║   ███████║ █████╗██████╔╝██████╔╝
- ██╔══╝  ██║██║╚██╗██║██║  ██║██╔══██║   ██║   ██╔══██║ ╚════╝██╔══██╗██╔══██╗
- ██║     ██║██║ ╚████║██████╔╝██║  ██║   ██║   ██║  ██║       ██████╔╝██║  ██║
- ╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝       ╚═════╝ ╚═╝  ╚═╝
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ Dados Financeiros Abertos                                                  ║
+║ Dados financeiros públicos do Brasil                                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
 # Brazil-flag-inspired gradient: green → yellow → blue
@@ -59,7 +57,7 @@ def render_static_banner(console: Console | None = None) -> None:
         text.append_text(_gradient_line(line, offset=i * 2))
         text.append("\n")
     tagline = Text(
-        "  Open-source Brazilian financial data  •  BCB · CVM · B3 · IBGE · IPEA · Tesouro",
+        "  API · MCP · CLI  •  BCB · CVM · B3 · IBGE · IPEA · Tesouro",
         style="italic dim",
     )
     console.print(Align.center(text))
@@ -98,7 +96,7 @@ def render_animated_banner(
         console.print(_gradient_line(line, offset=i * 2))
 
     tagline = Text(
-        "  Open-source Brazilian financial data  •  BCB · CVM · B3 · IBGE · IPEA · Tesouro",
+        "  API · MCP · CLI  •  BCB · CVM · B3 · IBGE · IPEA · Tesouro",
         style="italic dim",
     )
     console.print(tagline)
@@ -116,7 +114,7 @@ def render_startup_panel(host: str, port: int, mcp_enabled: bool = True) -> Pane
     body.append(f"http://{host}:{port}/health", style="green underline")
     return Panel(
         body,
-        title="[bold]findata-br running[/bold]",
+        title="[bold]Dados Financeiros Abertos running[/bold]",
         border_style="#009c3b",
         padding=(1, 2),
     )

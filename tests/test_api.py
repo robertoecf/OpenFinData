@@ -33,7 +33,8 @@ def test_meta_endpoint(client: TestClient) -> None:
     r = client.get("/meta")
     assert r.status_code == 200
     body = r.json()
-    assert body["name"] == "findata-br"
+    assert body["name"] == "Dados Financeiros Abertos"
+    assert body["slug"] == "findata-br"
     assert "version" in body
     assert body["site"] == "/"
     assert body["docs"] == "/docs"

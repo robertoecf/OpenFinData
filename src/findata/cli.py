@@ -1,4 +1,4 @@
-"""CLI interface for findata-br."""
+"""CLI interface for Dados Financeiros Abertos."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from findata.sources.bcb import focus, ptax, sgs
 
 app = typer.Typer(
     name="findata",
-    help="Open-source Brazilian financial data CLI",
+    help="Dados financeiros públicos do Brasil via CLI",
     no_args_is_help=True,
     rich_markup_mode="rich",
 )
@@ -42,7 +42,7 @@ def _fmt(val: float | None, spec: str = ".2f") -> str:
 def _version_callback(value: bool) -> None:
     """Print the package version and exit when the eager flag is set."""
     if value:
-        rprint(f"findata-br [bold]{__version__}[/bold]")
+        rprint(f"Dados Financeiros Abertos [bold]{__version__}[/bold]")
         raise typer.Exit()
 
 
@@ -57,7 +57,7 @@ def _root(
         help="Show version and exit.",
     ),
 ) -> None:
-    """findata-br — Brazilian financial data CLI."""
+    """Dados Financeiros Abertos — CLI de dados financeiros públicos do Brasil."""
     _ = version  # handled by the eager callback above
 
 
@@ -66,7 +66,7 @@ def _root(
 
 @app.command()
 def banner() -> None:
-    """Print the animated findata-br banner."""
+    """Print the animated Dados Financeiros Abertos banner."""
     render_animated_banner(_console)
 
 
@@ -819,7 +819,7 @@ app.add_typer(openfinance_app, name="openfinance")
 def openfinance_resources(
     environment: str = typer.Option("production", "--env", help="production | sandbox"),
 ) -> None:
-    """List public Open Finance resources supported by findata-br."""
+    """List public Open Finance resources supported by Dados Financeiros Abertos."""
     from findata.sources.openfinance import directory as of_dir
 
     env = _openfinance_env(environment)

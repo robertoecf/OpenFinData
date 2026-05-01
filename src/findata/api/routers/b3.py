@@ -26,7 +26,10 @@ def _quotes() -> Any:
     except ImportError as exc:  # pragma: no cover — triggered only without yfinance
         raise HTTPException(
             status_code=503,
-            detail="B3 support is disabled. Install with: pip install 'findata-br[b3]'",
+            detail=(
+                "B3 support is disabled. Install with: "
+                "pip install 'findata-br[b3]'"
+            ),
         ) from exc
     return quotes
 

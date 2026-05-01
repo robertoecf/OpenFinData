@@ -1,6 +1,6 @@
 # Fontes com credenciais
 
-> **Status atual: nenhuma fonte ativa exige credenciais.** O findata-br é
+> **Status atual: nenhuma fonte ativa exige credenciais.** O Dados Financeiros Abertos é
 > 100% public-data — todas as 11 fontes públicas online (BCB, CVM, B3, IBGE,
 > IPEA, Tesouro, ANBIMA, Receita Federal, ANEEL, SUSEP e Open Finance Brasil)
 > funcionam apenas com `pip install findata-br`, sem env vars, sem cadastro,
@@ -25,7 +25,7 @@
 
 ## Por que ANBIMA não está aqui
 
-A versão 0.1 do findata-br tentou integrar ANBIMA via Sensedia API
+A versão 0.1 do Dados Financeiros Abertos tentou integrar ANBIMA via Sensedia API
 (autenticada). O OAuth2 flow funciona, mas o programa de developers da
 ANBIMA não é self-serve — pra ter acesso a produtos de dados é preciso
 ser **associado** ou ter contrato comercial. Pivotamos para os arquivos
@@ -68,7 +68,7 @@ Quirks da API ANBIMA (já validamos em testes ao vivo):
 
 Base dos Dados não entra na mesma categoria da API autenticada da ANBIMA. O
 acesso via SQL, Python e R é gratuito, mas costuma exigir login Google e um
-projeto BigQuery do próprio operador. No `findata-br`, classifique esse caminho
+projeto BigQuery do próprio operador. No `Dados Financeiros Abertos`, classifique esse caminho
 como `free_logged_in`: gratuito e self-serve, porém não anônimo/zero-setup.
 
 Datasets e funcionalidades BD Pro devem ficar marcados separadamente como
@@ -89,7 +89,7 @@ testes, docs de exemplo reais ou artefatos versionados.
 
 ## Open Finance Brasil: somente recursos públicos neste projeto
 
-A integração `openfinance` do findata-br é deliberadamente o Track A: Diretório
+A integração `openfinance` do Dados Financeiros Abertos é deliberadamente o Track A: Diretório
 público, JWKS públicos, `.well-known`, recursos publicados e Portal de Dados.
 Ela não usa API key, certificado privado, token, DCR, consentimento ou mTLS do
 operador.

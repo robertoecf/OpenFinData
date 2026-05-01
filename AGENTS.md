@@ -1,4 +1,4 @@
-# AGENTS.md — findata-br
+# AGENTS.md — Dados Financeiros Abertos
 
 This file is for coding agents working in this repository. Keep it practical:
 follow the project conventions, avoid speculative dependencies, and produce
@@ -8,8 +8,11 @@ reproducible data work.
 
 - Canonical working directory: the repository root, i.e. the directory that
   contains this `AGENTS.md`.
-- Package: `findata-br`, a Python library + REST API + MCP server + CLI for
-  Brazilian public financial data.
+- Project name: Dados Financeiros Abertos.
+- Distribution/package slug: `findata-br`.
+- Import package and CLI remain `findata` for compatibility.
+- Scope: Python library + REST API + MCP server + CLI for Brazilian public
+  financial data.
 - Prefer public, reproducible sources. Do not introduce API keys, tokens, or
   private credentials into code, tests, docs, examples, or generated artifacts.
 - Keep repo-facing Markdown disciplined and functional. Avoid decorative emoji.
@@ -106,7 +109,7 @@ Every generated chart should make it possible to audit the result later:
 
 - Save or print the exact script path, data path, and output path.
 - Export the tidy source data as CSV next to the image for one-off work.
-- Use `findata-br` APIs/CLI for data retrieval instead of ad hoc scraping when
+- Use the project APIs/CLI for data retrieval instead of ad hoc scraping when
   this repo already exposes the dataset.
 - Include source names and series identifiers in the subtitle or footer, for
   example `BCB SGS 432` or `B3 IndexStatisticsProxy`.

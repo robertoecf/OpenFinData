@@ -1,4 +1,4 @@
-# Contribuindo para o findata-br
+# Contribuindo para o Dados Financeiros Abertos
 
 > PRs são bem-vindos. Este guia explica como configurar o ambiente local e
 > quais guardrails o projeto usa — inspirado no padrão
@@ -22,7 +22,7 @@ bash scripts/git/install-hooks.sh
 
 A filosofia é espelhada no monorepo wealthuman, só que com ferramentas Python:
 
-| Papel | Em TS (wealthuman) | Em Python (findata-br) |
+| Papel | Em TS (wealthuman) | Em Python (Dados Financeiros Abertos) |
 |---|---|---|
 | Formatter + lint base | **Biome** | **Ruff** (`ruff format` + `ruff check`) |
 | AI guardrails (max-lines, max-params, magic-numbers, etc.) | **ESLint** | **Ruff Pylint rules** (`PLR*`, `C901`) |

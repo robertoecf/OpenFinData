@@ -1,5 +1,5 @@
 [Unit]
-Description=findata-br — open-source Brazilian financial data MCP server
+Description=Dados Financeiros Abertos — open-source Brazilian financial data MCP server
 Documentation=https://github.com/robertoecf/findata-br
 After=network-online.target
 Wants=network-online.target

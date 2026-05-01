@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Obrigado por colaborar! O findata-br só aceita fontes **abertas, sem
+        Obrigado por colaborar! O Dados Financeiros Abertos só aceita fontes **abertas, sem
         autenticação, com licença permissiva** (dados governamentais ou
         equivalente).
 
