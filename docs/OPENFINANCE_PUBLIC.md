@@ -87,4 +87,4 @@ Ficam fora deste módulo:
 - armazenamento de chaves, tokens ou secrets.
 
 Se esse escopo for necessário, trate como um produto separado e regulado, não
-como uma fonte pública comum do `findata-br`.
+como uma fonte pública comum do `Dados Financeiros Abertos`.

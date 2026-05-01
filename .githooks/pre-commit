@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# findata-br pre-commit hook.
+# Dados Financeiros Abertos pre-commit hook.
 # Fast lint + format-check on staged Python files. Full strict-mypy + tests
 # run on pre-push instead — this should never take more than a second or two.
 set -euo pipefail

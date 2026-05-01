@@ -218,7 +218,7 @@ insurance:
 
 ### Added — Sprint 3: public-finance accounting + federal-tax revenue
 
-Two new sources connecting findata-br to Brazil's public-sector
+Two new sources connecting Dados Financeiros Abertos to Brazil's public-sector
 accounting + federal-tax flows:
 
 - **`get_rreo / get_rgf / get_entes`** — Tesouro SICONFI API, the
@@ -552,13 +552,13 @@ credentialed source ships in hours rather than days.
     `mypy --strict` + `pytest`). Installed via
     `bash scripts/git/install-hooks.sh` → `core.hooksPath = .githooks`.
 - `CONTRIBUTING.md` documenting the guardrail philosophy and dev workflow.
-- `ROADMAP.md` section comparing findata-br against Tpessia/dados-financeiros
+- `ROADMAP.md` section comparing Dados Financeiros Abertos against Tpessia/dados-financeiros
   and gprossignoli/findata (lessons learned, what we adopt / skip).
 
 ### Changed
 
 - README fully translated to **pt-BR** and the top banner now renders as an
-  ASCII code block (`FINDATA-BR`), matching CLI-tool repo conventions
+  ASCII code block (`DADOS FINANCEIROS ABERTOS`), matching CLI-tool repo conventions
   instead of relying on a remote typing-svg image that some GitHub clients
   were failing to render.
 - Badges trimmed to working ones (CI, version, Python, license, status)
@@ -569,7 +569,7 @@ credentialed source ships in hours rather than days.
 
 ### Added
 
-- Initial public release of **findata-br**.
+- Initial public release of **Dados Financeiros Abertos**.
 - REST API (FastAPI) with routers for BCB, CVM, B3, IBGE, Tesouro.
 - Auto-generated MCP server mounted at `/mcp` (via `fastapi-mcp`).
 - CLI (`findata`) with animated gradient banner and rich-text tables.

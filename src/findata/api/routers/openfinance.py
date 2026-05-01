@@ -17,7 +17,7 @@ router = APIRouter(prefix="/openfinance", tags=["Open Finance Brasil"])
 async def resources(
     environment: of_dir.Environment = Query(default="production"),
 ) -> list[of_dir.OpenFinanceDirectoryResource]:
-    """List public Open Finance Directory resources supported by findata-br."""
+    """List public Open Finance Directory resources supported by Dados Financeiros Abertos."""
     return of_dir.public_resources(environment)
 
 
@@ -170,7 +170,7 @@ async def software_application_jwks(
 
 @router.get("/portal/datasets")
 async def portal_datasets() -> list[of_portal.OpenFinancePortalDataset]:
-    """List public Open Finance Portal datasets supported by findata-br."""
+    """List public Open Finance Portal datasets supported by Dados Financeiros Abertos."""
     return of_portal.list_datasets()
 
 

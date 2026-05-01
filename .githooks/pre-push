@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# findata-br pre-push hook.
+# Dados Financeiros Abertos pre-push hook.
 # Runs the full check suite before code leaves the machine:
 # ruff check (full tree) → mypy --strict → pytest (no integration tests).
 set -euo pipefail

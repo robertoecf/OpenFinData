@@ -36,13 +36,15 @@ from findata.http_client import close_client
 from findata.web.landing import WEB_STATIC_DIR, render_developer_page, render_landing_page
 
 _STARTED_AT = time.time()
+_PROJECT_NAME = "Dados Financeiros Abertos"
+_PROJECT_SLUG = "findata-br"
 
 
 def _resolve_version() -> str:
     try:
         from importlib.metadata import PackageNotFoundError, version
 
-        return version("findata-br")
+        return version(_PROJECT_SLUG)
     except (ImportError, PackageNotFoundError):
         return _pkg_version
 
@@ -82,12 +84,12 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="findata-br",
+    title=_PROJECT_NAME,
     description=(
-        "Open-source Brazilian financial data API. "
-        "Aggregates public data from BCB, CVM, B3, IBGE, IPEA, "
+        "Dados financeiros públicos do Brasil via API, MCP server e CLI. "
+        "Agrega dados públicos de BCB, CVM, B3, IBGE, IPEA, "
         "Tesouro Nacional, Base dos Dados, and Open Finance Brasil. "
-        "Free. No API key required."
+        "Grátis. Sem chave de API."
     ),
     version=_VERSION,
     docs_url="/api/docs",
@@ -142,9 +144,9 @@ try:
 
     _mcp = FastApiMCP(
         app,
-        name="findata-br",
+        name=_PROJECT_SLUG,
         description=(
-            "Brazilian financial data MCP server — BCB, CVM, B3, "
+            "Dados financeiros públicos do Brasil via MCP — BCB, CVM, B3, "
             "IBGE, IPEA, Tesouro, Base dos Dados, Open Finance, Yahoo experimental charts"
         ),
     )
@@ -159,7 +161,8 @@ except Exception:  # optional subsystem must never break core API
 
 def _meta_payload() -> dict[str, object]:
     return {
-        "name": "findata-br",
+        "name": _PROJECT_NAME,
+        "slug": _PROJECT_SLUG,
         "version": _VERSION,
         "site": "/",
         "docs": "/docs",

@@ -44,7 +44,7 @@ Status: **v0.1.0 — alpha, release-ready for local/self-hosted use.**
    Minimal `findata.service` unit:
    ```ini
    [Unit]
-   Description=findata-br
+   Description=Dados Financeiros Abertos
    After=network.target
 
    [Service]

@@ -1,6 +1,6 @@
 """Rate limiting for the public-facing API.
 
-findata-br is read-only and talks only to free public sources, so the limits
+Dados Financeiros Abertos is read-only and talks only to free public sources, so the limits
 exist to protect *upstream* (BCB/CVM/IBGE/IPEA/Tesouro/yfinance) and *us*
 from abusive clients — not to gate access.
 

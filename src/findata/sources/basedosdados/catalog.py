@@ -61,7 +61,10 @@ SOURCE_INFO = BaseDosDadosInfo(
             name="Python SDK",
             access="free_logged_in",
             description="Free Python access through the optional basedosdados SDK.",
-            requires=["pip install findata-br[basedosdados]", "Google/BigQuery auth for queries"],
+            requires=[
+                "pip install findata-br[basedosdados]",
+                "Google/BigQuery auth for queries",
+            ],
         ),
         AccessPath(
             name="R package",
@@ -72,7 +75,10 @@ SOURCE_INFO = BaseDosDadosInfo(
         AccessPath(
             name="BD Pro",
             access="paid_logged_in",
-            description="Subscription-only datasets/features; not part of findata-br's free core.",
+            description=(
+                "Subscription-only datasets/features; not part of the free core "
+                "of Dados Financeiros Abertos."
+            ),
             requires=["Base dos Dados paid subscription"],
         ),
     ],
@@ -81,7 +87,10 @@ SOURCE_INFO = BaseDosDadosInfo(
             "Different from ANBIMA's authenticated developer products: "
             "the free SQL/Python/R paths are self-serve, but logged-in."
         ),
-        "findata-br never ships user Google credentials or Base dos Dados paid entitlements.",
+        (
+            "Dados Financeiros Abertos never ships user Google credentials "
+            "or Base dos Dados paid entitlements."
+        ),
     ],
 )
 

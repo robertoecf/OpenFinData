@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install findata-br git hooks by pointing `core.hooksPath` at .githooks/.
+# Install Dados Financeiros Abertos git hooks by pointing `core.hooksPath` at .githooks/.
 # Idempotent — run again to refresh symlinks / permissions.
 set -euo pipefail
 

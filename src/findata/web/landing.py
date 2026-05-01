@@ -1,4 +1,4 @@
-"""Render the Python-served findata-br landing page."""
+"""Render the Python-served Dados Financeiros Abertos landing page."""
 
 from __future__ import annotations
 

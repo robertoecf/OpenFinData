@@ -1,4 +1,4 @@
--- findata-br registry — flat FTS5 catalog of CNPJ-keyed entities.
+-- Dados Financeiros Abertos registry — flat FTS5 catalog of CNPJ-keyed entities.
 --
 -- Design choice (Sprint 5): one virtual table, no separate keys/lookup tables.
 -- Tokenization (unicode61 + remove_diacritics) treats sequences of alphanumerics

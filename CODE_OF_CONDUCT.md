@@ -3,7 +3,7 @@
 ## Compromisso
 
 Como mantenedores e colaboradores, nos comprometemos a tornar a participação no
-findata-br uma experiência livre de assédio para todas as pessoas, independente
+Dados Financeiros Abertos uma experiência livre de assédio para todas as pessoas, independente
 de idade, tamanho, deficiência, etnia, identidade/expressão de gênero,
 experiência, nacionalidade, aparência, raça, religião ou orientação sexual.
 

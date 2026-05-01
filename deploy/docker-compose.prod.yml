@@ -34,7 +34,7 @@ services:
         max-size: "10m"
         max-file: "5"
 
-  # Optional — Cloudflare Tunnel to expose findata-br publicly without
+  # Optional — Cloudflare Tunnel to expose Dados Financeiros Abertos publicly without
   # touching your router. Provision a tunnel in the Cloudflare dashboard,
   # put the credentials at ./cloudflared/<tunnel-id>.json, and set
   # CF_TUNNEL_TOKEN in .env (or swap for `tunnel run --token $TOKEN`).

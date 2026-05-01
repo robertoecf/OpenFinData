@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# findata-br git guardrails
+# Dados Financeiros Abertos git guardrails
 # Inspired by wealthuman's biome+eslint pattern, adapted for Python/Ruff.
 # Split of responsibility:
 #   - Ruff   → formatting + base lint + AI guardrails (complexity, max-args, magic numbers).

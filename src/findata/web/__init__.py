@@ -1,1 +1,1 @@
-"""Web landing page assets for findata-br."""
+"""Web landing page assets for Dados Financeiros Abertos."""

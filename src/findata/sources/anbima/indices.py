@@ -22,7 +22,7 @@ import xlrd
 from pydantic import BaseModel
 
 from findata._cache import TTLCache
-from findata.http_client import get_bytes
+from findata.http_client import USER_AGENT, get_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -414,7 +414,7 @@ async def get_ima_history(
     sem = asyncio.Semaphore(_IMA_HISTORY_CONCURRENCY)
     async with httpx.AsyncClient(
         timeout=_IMA_HISTORY_TIMEOUT,
-        headers={"User-Agent": "findata-br/0.1 (+https://github.com/robertoecf/findata-br)"},
+        headers={"User-Agent": USER_AGENT},
         verify=_ima_history_ssl_context(),
     ) as client:
 
@@ -521,7 +521,9 @@ async def get_debentures(data_referencia: date | None = None) -> list[DebentureQ
                 pu_par_pct=_f_br(cells[11]),
                 duration_du=_f_br(cells[12]),
                 pct_reune=_f_br(cells[13]),
-                referencia_ntn_b=(cells[14].strip() or None) if len(cells) > 14 else None,  # noqa: PLR2004
+                referencia_ntn_b=(
+                    (cells[14].strip() or None) if len(cells) > 14 else None  # noqa: PLR2004
+                ),
             )
         )
     return rows
