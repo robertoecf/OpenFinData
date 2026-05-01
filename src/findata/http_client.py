@@ -19,10 +19,7 @@ import httpx
 
 MAX_CACHE_SIZE = 2048
 CACHE_TTL = 900  # 15 min default
-USER_AGENT = (
-    "findata-br/0.3.1 "
-    "(+https://github.com/robertoecf/findata-br)"
-)
+USER_AGENT = "findata-br/0.3.1 (+https://github.com/robertoecf/findata-br)"
 
 _cache: OrderedDict[str, tuple[float, float, Any]] = OrderedDict()  # key → (ts, ttl, data)
 _locks: weakref.WeakValueDictionary[tuple[int | None, str], asyncio.Lock] = (
@@ -266,11 +263,14 @@ async def stream_bytes(
     max_bytes: int | None = None,
 ) -> AsyncIterator[AsyncIterator[bytes]]:
     """Stream raw response bytes without caching the payload."""
-    async with httpx.AsyncClient(
-        timeout=120,
-        headers={"User-Agent": USER_AGENT},
-        verify=_ssl_context(),
-    ) as dl_client, dl_client.stream("GET", url) as resp:
+    async with (
+        httpx.AsyncClient(
+            timeout=120,
+            headers={"User-Agent": USER_AGENT},
+            verify=_ssl_context(),
+        ) as dl_client,
+        dl_client.stream("GET", url) as resp,
+    ):
         resp.raise_for_status()
         length = resp.headers.get("content-length")
         if max_bytes is not None and length is not None and int(length) > max_bytes:

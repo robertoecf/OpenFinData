@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Dados Financeiros Abertos pre-push hook.
 # Runs the full check suite before code leaves the machine:
-# ruff check (full tree) → mypy --strict → pytest (no integration tests).
+# ruff format/check (full tree) → mypy --strict → pytest (no integration tests).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"

@@ -301,8 +301,7 @@ def public_resources(environment: Environment = "production") -> list[OpenFinanc
         OpenFinanceDirectoryResource(
             name="organisation-application-jwks",
             description=(
-                "Organization-level public signing keys: "
-                "/{organisationId}/application.jwks."
+                "Organization-level public signing keys: /{organisationId}/application.jwks."
             ),
             url=f"{web}/{{organisationId}}/application.jwks",
             environment=environment,

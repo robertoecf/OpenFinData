@@ -134,8 +134,7 @@ async def lookup(query: str, limit: int = 20) -> LookupResult:
     async with aiosqlite.connect(str(REGISTRY_PATH)) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
-            "SELECT rank, payload FROM entities "
-            "WHERE searchable MATCH ? ORDER BY rank LIMIT ?",
+            "SELECT rank, payload FROM entities WHERE searchable MATCH ? ORDER BY rank LIMIT ?",
             (fts, limit),
         )
         rows = await cursor.fetchall()
@@ -149,4 +148,7 @@ async def get_meta() -> dict[str, str]:
     async with aiosqlite.connect(str(REGISTRY_PATH)) as db:
         cursor = await db.execute("SELECT key, value FROM meta")
         rows = await cursor.fetchall()
-    return {k: v for (k, v) in rows}
+    meta: dict[str, str] = {}
+    for key, value in rows:
+        meta[key] = value
+    return meta

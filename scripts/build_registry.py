@@ -308,10 +308,7 @@ async def run(args: argparse.Namespace) -> int:
 
     total = sum(source_counts.values())
     size_mb = args.output.stat().st_size / 1024 / 1024
-    print(
-        f"[build_registry] DONE: {total} entities, {size_mb:.2f} MB, "
-        f"sha256={digest[:16]}…"
-    )
+    print(f"[build_registry] DONE: {total} entities, {size_mb:.2f} MB, sha256={digest[:16]}…")
     conn.close()
     return 0
 
