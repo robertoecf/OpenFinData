@@ -452,8 +452,9 @@ Guia completo em [CONTRIBUTING.md](CONTRIBUTING.md). Resumo rápido:
 ```bash
 pip install -e '.[dev]'
 bash scripts/git/install-hooks.sh   # habilita ganchos de pre-commit + pre-push
-ruff check src tests                # lint (núcleo + proteções para agentes)
-mypy src                            # checagem estrita de tipos
+ruff format --check src tests scripts # formatação estilo Biome
+ruff check src tests scripts          # lint (núcleo + proteções para agentes)
+mypy src/findata                      # checagem estrita de tipos
 pytest                              # testes unitários + API (sem rede)
 ```
 

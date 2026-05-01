@@ -28,10 +28,7 @@ from pathlib import Path
 from typing import Any
 
 DEFAULT_BASE_URL = "https://www.dadosdemercado.com.br"
-USER_AGENT = (
-    "findata-br-public-benchmark/0.2 "
-    "(+https://github.com/robertoecf/findata-br)"
-)
+USER_AGENT = "findata-br-public-benchmark/0.2 (+https://github.com/robertoecf/findata-br)"
 HTTP_OK = 200
 DEFAULT_API_MAX_BYTES = 256 * 1024
 MAX_JSON_SHAPE_DEPTH = 3
@@ -335,9 +332,7 @@ def parse_robots_groups(body: str) -> list[RobotsGroup]:
         key_lower = key.lower()
         if key_lower == "user-agent":
             if seen_directive:
-                agents, directives, seen_directive = flush_robots_group(
-                    groups, agents, directives
-                )
+                agents, directives, seen_directive = flush_robots_group(groups, agents, directives)
             agents.append(value.lower())
         elif key_lower in {"allow", "disallow"} and agents:
             seen_directive = True
@@ -366,9 +361,7 @@ def robots_path_blocked(path: str, groups: list[RobotsGroup], user_agent: str) -
     return winner.kind == "disallow"
 
 
-def matching_robots_directives(
-    groups: list[RobotsGroup], user_agent: str
-) -> list[RobotsDirective]:
+def matching_robots_directives(groups: list[RobotsGroup], user_agent: str) -> list[RobotsDirective]:
     best_specificity = -1
     selected: list[RobotsDirective] = []
     for group in groups:
@@ -558,9 +551,7 @@ def authorized_probe_summary(result: LimitedFetch, max_bytes: int) -> dict[str, 
     return summary
 
 
-def summarize_body(
-    body: bytes, content_type: str | None, truncated: bool
-) -> dict[str, object]:
+def summarize_body(body: bytes, content_type: str | None, truncated: bool) -> dict[str, object]:
     if not body:
         return {"body_kind": "empty"}
     text = body.decode("utf-8", "replace")
@@ -586,8 +577,7 @@ def json_shape(value: object, depth: int = 0) -> dict[str, object]:
     if isinstance(value, dict):
         keys = sorted(str(key) for key in value)
         properties = {
-            str(key): json_shape(item, depth + 1)
-            for key, item in list(value.items())[:25]
+            str(key): json_shape(item, depth + 1) for key, item in list(value.items())[:25]
         }
         return {
             "type": "object",
@@ -634,8 +624,6 @@ def collect_static_assets(
                 if keep_referenced_literal(url, base_url)
             )
     return results, sorted(literals)
-
-
 
 
 def keep_referenced_literal(url: str, base_url: str) -> bool:
@@ -768,8 +756,7 @@ def parse_netlog_urls(path: Path) -> set[str]:
     except json.JSONDecodeError:
         text = path.read_text(errors="ignore")
         return {
-            match.group(0).rstrip("\\,")
-            for match in re.finditer(r"https?://[^\s'\"<>]+", text)
+            match.group(0).rstrip("\\,") for match in re.finditer(r"https?://[^\s'\"<>]+", text)
         }
     urls: set[str] = set()
     for event in payload.get("events", []):
@@ -996,8 +983,7 @@ def compact_schema_summary(item: dict[str, object]) -> str:
                     if isinstance(item_shape, dict) and item_shape.get("type") == "object":
                         keys = item_shape.get("keys", [])
                         return (
-                            f"object<{collection_key}: "
-                            f"{', '.join(str(key) for key in keys[:10])}>"
+                            f"object<{collection_key}: {', '.join(str(key) for key in keys[:10])}>"
                         )
         keys = shape.get("keys", [])
         return f"object: {', '.join(str(key) for key in keys[:10])}"
@@ -1062,9 +1048,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     )
     pages = inspect_pages(base_url, robots, args.sleep) if robots_available else []
     asset_results, asset_literals = (
-        collect_static_assets(pages, base_url, robots, args.sleep)
-        if robots_available
-        else ([], [])
+        collect_static_assets(pages, base_url, robots, args.sleep) if robots_available else ([], [])
     )
     referenced: set[str] = set(asset_literals)
     for page in pages:

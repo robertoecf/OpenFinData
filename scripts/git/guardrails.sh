@@ -78,11 +78,14 @@ guardrails_pre_push() {
   local py
   py="$(guardrails_python)" || return 1
 
+  guardrails_log "ruff format --check (entire tree)"
+  "$py" -m ruff format --check src tests scripts
+
   guardrails_log "ruff check (entire tree)"
-  "$py" -m ruff check src tests
+  "$py" -m ruff check src tests scripts
 
   guardrails_log "mypy --strict"
-  "$py" -m mypy src
+  "$py" -m mypy src/findata
 
   guardrails_log "pytest (unit + API, no integration)"
   "$py" -m pytest -q

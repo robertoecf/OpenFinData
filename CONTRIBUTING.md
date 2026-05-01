@@ -56,9 +56,9 @@ Exceções conscientes:
 
 ```bash
 # Antes de commitar
-ruff format src tests            # auto-format
-ruff check src tests --fix       # auto-fix o que dá
-mypy src                         # type check
+ruff format src tests scripts    # auto-format
+ruff check src tests scripts --fix # auto-fix o que dá
+mypy src/findata                 # type check
 pytest                           # unit + API (rápido, ~1s)
 
 # Ou deixe os hooks fazerem: git commit dispara o pre-commit; git push dispara o pre-push.
@@ -73,8 +73,8 @@ Instalados via `bash scripts/git/install-hooks.sh`, que aponta
   - `ruff check` + `ruff format --check` nos arquivos `.py` staged.
   - `ggshield secret scan pre-commit` (se `ggshield` estiver instalado).
 - **pre-push** — rede de segurança completa:
-  - `ruff check` no repo inteiro.
-  - `mypy --strict` em `src/`.
+  - `ruff format --check` + `ruff check` no repo inteiro (`src`, `tests`, `scripts`).
+  - `mypy --strict` em `src/findata`.
   - `pytest -q` (unit + API; integration fica só na CI).
 
 Pra desinstalar: `git config --unset core.hooksPath`.

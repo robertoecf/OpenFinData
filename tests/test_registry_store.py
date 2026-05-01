@@ -10,13 +10,7 @@ import pytest
 
 from findata.registry import store
 
-SCHEMA_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "src"
-    / "findata"
-    / "registry"
-    / "schema.sql"
-)
+SCHEMA_PATH = Path(__file__).resolve().parent.parent / "src" / "findata" / "registry" / "schema.sql"
 
 
 @pytest.fixture

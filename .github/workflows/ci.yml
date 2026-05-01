@@ -32,11 +32,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e '.[dev]'
 
-      - name: Ruff
-        run: ruff check src tests
+      - name: Ruff format
+        run: ruff format --check src tests scripts
+
+      - name: Ruff lint
+        run: ruff check src tests scripts
 
       - name: Mypy
-        run: mypy src
+        run: mypy src/findata
 
       - name: Pytest
         run: pytest -v
