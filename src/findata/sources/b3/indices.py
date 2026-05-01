@@ -18,8 +18,8 @@ Each constituent comes back as::
         "cod": "PETR4",
         "asset": "PETROBRAS",
         "type": "PN  ERJ N2",
-        "part": "7,537",                # weight, percent (Brazilian decimal)
-        "theoricalQty": "4.410.960.450" # shares × 1
+        "part": "7,537",  # weight, percent (Brazilian decimal)
+        "theoricalQty": "4.410.960.450",  # shares × 1
     }
 
 Source: ``https://sistemaswebb3-listados.b3.com.br``

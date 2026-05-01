@@ -119,8 +119,8 @@ PORTAL_DATASETS: dict[str, OpenFinancePortalDataset] = {
 }
 
 _HTML_FILE_RE = re.compile(
-    r'<div[^>]*>\s*(CSV|XLSX|JSON)\s*</div>\s*'
-    r'<div[^>]*>\s*<p>([^<]+)</p>\s*<p[^>]*>([^<]+)</p>\s*</div>\s*'
+    r"<div[^>]*>\s*(CSV|XLSX|JSON)\s*</div>\s*"
+    r"<div[^>]*>\s*<p>([^<]+)</p>\s*<p[^>]*>([^<]+)</p>\s*</div>\s*"
     r'<a href="/api/download\?id=([0-9a-fA-F-]+)"',
     re.DOTALL,
 )

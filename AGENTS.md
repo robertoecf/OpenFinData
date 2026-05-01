@@ -26,10 +26,14 @@ Before a code change is considered ready, run the smallest relevant check first,
 then the full gate from the repository root before merging or release work:
 
 ```bash
+.venv/bin/ruff format --check src/ tests/ scripts/
 .venv/bin/ruff check src/ tests/ scripts/
 .venv/bin/python -m mypy src/findata
 .venv/bin/python -m pytest tests/ -q
 ```
+
+Ruff owns the Biome-like formatter/lint baseline and the ESLint-like AI
+guardrails configured in `pyproject.toml`.
 
 For documentation-only edits, at least run:
 
