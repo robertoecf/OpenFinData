@@ -318,7 +318,9 @@
     }
 
     const normalizedTime = normalizeMixedTimes(Array.from(deduped.values()));
-    const data = normalizedTime.data.sort((a, b) => timeSortValue(a.time) - timeSortValue(b.time));
+    const data = normalizedTime.data.sort((a, b) => (
+      normalizedTime.hasIntraday ? a.time - b.time : a.time.localeCompare(b.time)
+    ));
     if (!data.length) throw new Error("Nenhum ponto com data e valor numérico foi encontrado.");
     if (data.length > MAX_POINTS) {
       throw new Error(`Endpoint retornou ${data.length} pontos; use um recorte menor que ${MAX_POINTS}.`);
