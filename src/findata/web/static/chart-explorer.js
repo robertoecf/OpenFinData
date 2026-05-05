@@ -198,30 +198,58 @@
     return Math.floor(date.getTime() / 1000);
   };
 
-  const parseTime = (value) => {
-    if (typeof value === "number") {
-      const date = new Date(value > 1e11 ? value : value * 1000);
-      return timestampFromDate(date);
-    }
-    if (typeof value !== "string") return null;
-    const text = String(value).trim();
-    if (/^\d{10,13}$/.test(text)) {
-      const timestamp = Number(text);
-      const date = new Date(timestamp > 1e11 ? timestamp : timestamp * 1000);
-      return timestampFromDate(date);
-    }
+  const isValidDateParts = (year, month, day) => {
+    const y = Number(year);
+    const m = Number(month);
+    const d = Number(day);
+    if (y < 1900 || y > 2200 || m < 1 || m > 12 || d < 1 || d > 31) return false;
+    const date = new Date(Date.UTC(y, m - 1, d));
+    return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
+  };
 
-    let match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+  const parseCompactPeriod = (text) => {
+    let match = text.match(/^(\d{4})(\d{2})(\d{2})$/);
+    if (match && isValidDateParts(match[1], match[2], match[3])) {
+      return `${match[1]}-${match[2]}-${match[3]}`;
+    }
 
     match = text.match(/^(\d{4})(\d{2})$/);
-    if (match) return `${match[1]}-${match[2]}-01`;
+    if (match && isValidDateParts(match[1], match[2], "01")) return `${match[1]}-${match[2]}-01`;
+
+    return null;
+  };
+
+  const parseUnixTimestamp = (text, { allowShortSeconds = false } = {}) => {
+    if (!/^\d+$/.test(text)) return null;
+    const isSeconds = text.length === 10 || (allowShortSeconds && (text === "0" || text.length <= 9));
+    const isMilliseconds = text.length >= 12 && text.length <= 13;
+    if (!isSeconds && !isMilliseconds) return null;
+    const timestamp = Number(text);
+    if (!Number.isSafeInteger(timestamp)) return null;
+    const date = new Date(isMilliseconds ? timestamp : timestamp * 1000);
+    return timestampFromDate(date);
+  };
+
+  const parseTime = (value) => {
+    const text = String(value).trim();
+    const compactPeriod = parseCompactPeriod(text);
+    if (compactPeriod) return compactPeriod;
+
+    if (typeof value === "number") {
+      return parseUnixTimestamp(text, { allowShortSeconds: true });
+    }
+    if (typeof value !== "string") return null;
+    const unixTimestamp = parseUnixTimestamp(text);
+    if (unixTimestamp !== null) return unixTimestamp;
+
+    let match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (match && isValidDateParts(match[3], match[2], match[1])) return `${match[3]}-${match[2]}-${match[1]}`;
 
     match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+    if (match && isValidDateParts(match[1], match[2], match[3])) return `${match[1]}-${match[2]}-${match[3]}`;
 
     match = text.match(/^(\d{4})-(\d{2})-(\d{2})T00:00:00/);
-    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+    if (match && isValidDateParts(match[1], match[2], match[3])) return `${match[1]}-${match[2]}-${match[3]}`;
 
     const parsed = new Date(text);
     return timestampFromDate(parsed);
@@ -251,6 +279,35 @@
   };
 
   const hasOhlc = (record) => ["open", "high", "low", "close"].every((key) => record[key] !== undefined);
+
+  const timeSortValue = (time) => {
+    if (typeof time === "number") return time;
+    return timestampFromDate(new Date(`${time}T00:00:00Z`));
+  };
+
+  const dedupeByTime = (data) => {
+    const deduped = new Map();
+    for (const point of data) deduped.set(point.time, point);
+    return Array.from(deduped.values());
+  };
+
+  const normalizeMixedTimes = (data) => {
+    const hasIntraday = data.some((point) => typeof point.time === "number");
+    if (!hasIntraday) return { data, hasIntraday };
+    const normalizedData = [];
+    for (const point of data) {
+      if (typeof point.time === "number") {
+        normalizedData.push(point);
+        continue;
+      }
+      const time = timeSortValue(point.time);
+      if (time !== null) normalizedData.push({ ...point, time });
+    }
+    return {
+      hasIntraday,
+      data: normalizedData,
+    };
+  };
 
   const normalizeData = (payload, options) => {
     const records = recordsFrom(payload);
@@ -288,12 +345,10 @@
       if (value !== null) deduped.set(time, { time, value });
     }
 
-    const data = Array.from(deduped.values()).sort((a, b) => {
-      if (typeof a.time === "number" && typeof b.time === "number") {
-        return a.time - b.time;
-      }
-      return String(a.time).localeCompare(String(b.time));
-    });
+    const normalizedTime = normalizeMixedTimes(Array.from(deduped.values()));
+    const data = dedupeByTime(normalizedTime.data).sort((a, b) => (
+      normalizedTime.hasIntraday ? a.time - b.time : a.time.localeCompare(b.time)
+    ));
     if (!data.length) throw new Error("Nenhum ponto com data e valor numérico foi encontrado.");
     if (data.length > MAX_POINTS) {
       throw new Error(`Endpoint retornou ${data.length} pontos; use um recorte menor que ${MAX_POINTS}.`);
@@ -304,7 +359,7 @@
       kind: shouldUseCandles ? "candlestick" : "line",
       valueKey,
       dateKey,
-      hasIntraday: data.some((point) => typeof point.time === "number"),
+      hasIntraday: normalizedTime.hasIntraday,
     };
   };
 

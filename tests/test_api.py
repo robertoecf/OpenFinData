@@ -116,6 +116,16 @@ def test_chart_explorer_asset(client: TestClient) -> None:
     assert "/tesouro/bonds/history" not in r.text
     assert 'options.type === "candlestick" || (!options.field && hasOhlc(firstRecord))' in r.text
     assert "timestampFromDate" in r.text
+    assert "isValidDateParts" in r.text
+    assert "parseCompactPeriod" in r.text
+    assert "parseUnixTimestamp" in r.text
+    assert "allowShortSeconds" in r.text
+    assert "parseUnixTimestamp(text, { allowShortSeconds: true })" in r.text
+    assert "unixTimestamp !== null" in r.text
+    assert "dedupeByTime(normalizedTime.data)" in r.text
+    assert "normalizeMixedTimes" in r.text
+    assert "if (time !== null)" in r.text
+    assert "normalizedTime.hasIntraday ? a.time - b.time : a.time.localeCompare(b.time)" in r.text
     assert "timeVisible: normalized.hasIntraday" in r.text
     assert "Yahoo Finance" not in r.text
 
