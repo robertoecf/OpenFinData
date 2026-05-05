@@ -38,6 +38,7 @@ from findata.web.landing import WEB_STATIC_DIR, render_developer_page, render_la
 _STARTED_AT = time.time()
 _PROJECT_NAME = "Dados Financeiros Abertos"
 _PROJECT_SLUG = "findata-br"
+_PROJECT_STATEMENT = "Infraestrutura open source para dados financeiros públicos do Brasil."
 
 
 def _resolve_version() -> str:
@@ -86,10 +87,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     title=_PROJECT_NAME,
     description=(
-        "Dados financeiros públicos do Brasil via API, MCP server e CLI. "
-        "Agrega dados públicos de BCB, CVM, B3, IBGE, IPEA, "
-        "Tesouro Nacional, Base dos Dados, and Open Finance Brasil. "
-        "Grátis. Sem chave de API."
+        f"{_PROJECT_STATEMENT} "
+        "Expõe fontes públicas por API REST, servidor MCP, biblioteca Python e CLI. "
+        "Integra BCB, CVM, B3, IBGE, IPEA, Tesouro Nacional, Base dos Dados "
+        "e Open Finance Brasil. Sem chave de API nas fontes principais."
     ),
     version=_VERSION,
     docs_url="/api/docs",
@@ -146,8 +147,8 @@ try:
         app,
         name=_PROJECT_SLUG,
         description=(
-            "Dados financeiros públicos do Brasil via MCP — BCB, CVM, B3, "
-            "IBGE, IPEA, Tesouro, Base dos Dados, Open Finance, Yahoo experimental charts"
+            f"{_PROJECT_STATEMENT} MCP para BCB, CVM, B3, IBGE, IPEA, "
+            "Tesouro, Base dos Dados, Open Finance e gráficos experimentais."
         ),
     )
     _mcp.mount_http()  # Serves MCP at /mcp (fastapi-mcp >=0.4)
@@ -163,6 +164,7 @@ def _meta_payload() -> dict[str, object]:
     return {
         "name": _PROJECT_NAME,
         "slug": _PROJECT_SLUG,
+        "statement": _PROJECT_STATEMENT,
         "version": _VERSION,
         "site": "/",
         "docs": "/docs",

@@ -3,14 +3,14 @@
 ```text
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ Dados Financeiros Abertos                                                  ║
-║ Dados financeiros públicos do Brasil para API, MCP, CLI e agentes.         ║
+║ Infraestrutura aberta para dados financeiros públicos do Brasil.           ║
 ║ BCB · CVM · B3 · IBGE · IPEA · Tesouro · Open Finance                      ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
 <div align="center">
 
-**API + servidor MCP + CLI de código aberto para dados financeiros brasileiros.**
+**Infraestrutura open source para dados financeiros públicos do Brasil — API REST, MCP, CLI e Python.**
 
 _Agrega dados públicos de BCB, CVM, B3, IBGE, IPEA, Tesouro Nacional e Open Finance Brasil._
 _De graça. Sem chave de API. Sem truques de limite de chamadas. Só Python._
