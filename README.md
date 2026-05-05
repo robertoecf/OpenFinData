@@ -42,7 +42,8 @@ públicos do Open Finance Brasil. O projeto não exige chaves de API para as
 fontes principais, não consulta dados privados de clientes e mantém integrações
 reproduzíveis com testes sem rede.
 
-Leia também: [MANIFESTO.txt](MANIFESTO.txt).
+Leia também: [MANIFESTO.txt](MANIFESTO.txt) e
+[docs/CHART_STANDARDS.md](docs/CHART_STANDARDS.md).
 
 
 ```text

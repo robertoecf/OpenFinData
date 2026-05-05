@@ -894,9 +894,242 @@ h3 { margin-bottom: 8px; font-size: 1.35rem; letter-spacing: -0.045em; }
 .registry::before { content: "▰"; }
 .registry { color: var(--blue); background: rgba(0, 80, 255, 0.12); }
 
+.charts-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.42fr);
+  gap: 44px;
+  padding: 86px 0 28px;
+  align-items: end;
+}
+
+.charts-copy h1 {
+  max-width: 920px;
+  margin-bottom: 22px;
+  font-size: clamp(3rem, 5.6vw, 5.1rem);
+  line-height: 0.96;
+  letter-spacing: -0.074em;
+}
+
+.charts-note {
+  padding: 26px;
+  border: 1px solid rgba(0, 39, 118, 0.12);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(18px) saturate(1.18);
+}
+
+.charts-note strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--blue-deep);
+  font-size: 1.18rem;
+  letter-spacing: -0.03em;
+}
+
+.charts-note p,
+.control-hint,
+.chart-footer,
+.chart-header p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.chart-lab {
+  margin-bottom: 70px;
+  padding: 26px;
+  border: 1px solid rgba(0, 39, 118, 0.11);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 223, 0, 0.22), transparent 20rem),
+    radial-gradient(circle at 94% 4%, rgba(0, 80, 255, 0.14), transparent 22rem),
+    rgba(255, 255, 255, 0.82);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(24px) saturate(1.18);
+}
+
+.chart-controls {
+  margin-bottom: 22px;
+}
+
+.control-row {
+  display: grid;
+  grid-template-columns: 1.25fr minmax(260px, 1.6fr) minmax(120px, 0.4fr) auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.chart-controls label {
+  display: grid;
+  gap: 8px;
+  color: var(--blue-deep);
+  font-size: 0.8rem;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.chart-controls input,
+.chart-controls select {
+  width: 100%;
+  height: 52px;
+  border: 1px solid rgba(0, 39, 118, 0.16);
+  border-radius: 12px;
+  padding: 0 14px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.chart-controls input:focus,
+.chart-controls select:focus {
+  border-color: var(--blue);
+  outline: 3px solid rgba(0, 80, 255, 0.14);
+}
+
+.control-hint {
+  margin: 12px 0 0;
+  font-size: 0.92rem;
+}
+
+.control-hint code {
+  color: var(--blue-deep);
+  font-weight: 780;
+}
+
+.chart-shell {
+  overflow: hidden;
+  border: 1px solid rgba(0, 39, 118, 0.16);
+  border-radius: 22px;
+  background: var(--white);
+  box-shadow: 0 20px 54px rgba(0, 39, 118, 0.08);
+}
+
+.chart-header,
+.chart-footer {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px;
+}
+
+.chart-header {
+  position: relative;
+  border-bottom: 1px solid rgba(0, 39, 118, 0.1);
+  background: linear-gradient(90deg, rgba(255, 223, 0, 0.13), rgba(0, 168, 89, 0.07), rgba(0, 80, 255, 0.08));
+}
+
+.chart-header::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  content: "";
+  background: linear-gradient(180deg, var(--green), var(--yellow), var(--blue));
+}
+
+.chart-header span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--green-deep);
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chart-header h2 {
+  font-size: clamp(1.6rem, 3vw, 2.35rem);
+}
+
+.chart-header p {
+  max-width: 360px;
+  margin: 0;
+  text-align: right;
+  font-weight: 760;
+}
+
+.chart-header p[data-kind="ok"] { color: var(--green-deep); }
+.chart-header p[data-kind="error"] { color: var(--red); }
+
+.chart-meta-grid {
+  display: grid;
+  grid-template-columns: 1.3fr repeat(2, minmax(180px, 0.5fr));
+  gap: 12px;
+  padding: 18px 22px 0;
+}
+
+.chart-meta-card {
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 39, 118, 0.14);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.92));
+}
+
+.chart-meta-card.primary {
+  border-color: rgba(0, 80, 255, 0.28);
+  background: linear-gradient(90deg, rgba(255, 223, 0, 0.18), rgba(0, 168, 89, 0.08), rgba(0, 80, 255, 0.1));
+}
+
+.chart-meta-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chart-meta-card strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+.chart-source-note {
+  margin: 0 22px 20px;
+  padding: 12px 14px;
+  border-left: 5px solid var(--green);
+  border-radius: 12px;
+  color: var(--muted);
+  background: rgba(0, 168, 89, 0.07);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.chart-source-note strong {
+  color: var(--blue-deep);
+}
+
+.chart-source-note a {
+  color: var(--blue);
+  font-weight: 850;
+}
+
+.chart-root {
+  min-height: 500px;
+}
+
+.chart-footer {
+  border-top: 1px solid rgba(0, 39, 118, 0.1);
+  font-size: 0.9rem;
+  background: linear-gradient(90deg, rgba(255, 253, 242, 0.82), rgba(248, 251, 255, 0.94));
+}
+
+.chart-footer a {
+  color: var(--blue);
+  font-weight: 820;
+}
+
 @media (max-width: 1040px) {
   .docs-hero,
-  .docs-heading {
+  .docs-heading,
+  .charts-hero {
     grid-template-columns: 1fr;
   }
   .docs-hero {
@@ -912,6 +1145,12 @@ h3 { margin-bottom: 8px; font-size: 1.35rem; letter-spacing: -0.045em; }
   }
   .tool-grid,
   .docs-footer .footer-grid {
+    grid-template-columns: 1fr;
+  }
+  .control-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .chart-meta-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -944,5 +1183,27 @@ h3 { margin-bottom: 8px; font-size: 1.35rem; letter-spacing: -0.045em; }
     padding: 12px 0;
     border-left: 0;
     border-top: 1px solid rgba(0, 39, 118, 0.1);
+  }
+  .charts-hero {
+    padding-top: 58px;
+  }
+  .charts-copy h1 {
+    font-size: clamp(2.7rem, 12vw, 4rem);
+  }
+  .chart-lab {
+    width: min(100% - 28px, 1200px);
+    padding: 16px;
+  }
+  .control-row,
+  .chart-header,
+  .chart-footer {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .chart-header p {
+    text-align: left;
+  }
+  .chart-root {
+    min-height: 420px;
   }
 }

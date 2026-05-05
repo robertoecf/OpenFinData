@@ -12,6 +12,7 @@ _WEB_DIR = Path(__file__).resolve().parent
 WEB_STATIC_DIR = _WEB_DIR / "static"
 _LANDING_TEMPLATE_PATH = _WEB_DIR / "templates" / "index.html"
 _DOCS_TEMPLATE_PATH = _WEB_DIR / "templates" / "docs.html"
+_CHARTS_TEMPLATE_PATH = _WEB_DIR / "templates" / "charts.html"
 
 
 @lru_cache(maxsize=4)
@@ -63,6 +64,21 @@ def render_developer_page(
     """Return the custom developer console page."""
     return _render_template(
         _DOCS_TEMPLATE_PATH,
+        version=version,
+        sources=sources,
+        mcp_enabled=mcp_enabled,
+    )
+
+
+def render_charts_page(
+    *,
+    version: str,
+    sources: dict[str, str],
+    mcp_enabled: bool,
+) -> HTMLResponse:
+    """Return the browser chart explorer page."""
+    return _render_template(
+        _CHARTS_TEMPLATE_PATH,
         version=version,
         sources=sources,
         mcp_enabled=mcp_enabled,

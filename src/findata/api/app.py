@@ -33,7 +33,12 @@ from findata.api.routers import (
 from findata.http_client import MAX_CACHE_SIZE as _CACHE_MAX
 from findata.http_client import _cache as _http_cache
 from findata.http_client import close_client
-from findata.web.landing import WEB_STATIC_DIR, render_developer_page, render_landing_page
+from findata.web.landing import (
+    WEB_STATIC_DIR,
+    render_charts_page,
+    render_developer_page,
+    render_landing_page,
+)
 
 _STARTED_AT = time.time()
 _PROJECT_NAME = "Dados Financeiros Abertos"
@@ -168,6 +173,7 @@ def _meta_payload() -> dict[str, object]:
         "version": _VERSION,
         "site": "/",
         "docs": "/docs",
+        "charts": "/charts",
         "swagger": "/api/docs",
         "redoc": "/redoc",
         "mcp": "/mcp" if _MCP_ENABLED else None,
@@ -187,6 +193,15 @@ async def root() -> HTMLResponse:
 @app.get("/docs", include_in_schema=False)
 async def developer_docs() -> HTMLResponse:
     return render_developer_page(
+        version=_VERSION,
+        sources=ADVERTISED_SOURCES,
+        mcp_enabled=_MCP_ENABLED,
+    )
+
+
+@app.get("/charts", include_in_schema=False)
+async def charts() -> HTMLResponse:
+    return render_charts_page(
         version=_VERSION,
         sources=ADVERTISED_SOURCES,
         mcp_enabled=_MCP_ENABLED,

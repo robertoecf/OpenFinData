@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dados Financeiros Abertos — gráficos</title>
+    <meta
+      name="description"
+      content="Explorador visual de séries temporais dos endpoints públicos do findata-br, com gráficos interativos no navegador."
+    />
+    <link rel="stylesheet" href="/site/site.css" />
+    <script src="/site/site.js" defer></script>
+    <script
+      src="https://unpkg.com/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js"
+      defer
+    ></script>
+    <script src="/site/chart-explorer.js" defer></script>
+  </head>
+  <body class="charts-page">
+    <canvas class="field" aria-hidden="true"></canvas>
+    <div class="noise" aria-hidden="true"></div>
+    <div class="cursor-glow" aria-hidden="true"></div>
+
+    <header class="shell nav-shell">
+      <a class="brand" href="/" aria-label="findata-br">Dados Financeiros Abertos</a>
+      <nav aria-label="Navegação de gráficos">
+        <a href="/docs">API docs</a>
+        <a href="/api/docs">Swagger</a>
+        <a href="https://github.com/robertoecf/findata-br">GitHub</a>
+        <a href="/">Home</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="charts-hero shell" aria-labelledby="charts-title">
+        <div class="charts-copy reveal">
+          <p class="eyebrow">REST → JSON → canvas</p>
+          <h1 id="charts-title">Visualize os dados públicos como séries interativas.</h1>
+          <p class="lead">
+            Escolha uma série pronta ou cole qualquer endpoint JSON do findata-br. O explorador
+            tenta detectar campos de data e valor automaticamente; dados tabulares continuam
+            disponíveis na API, mas só séries temporais viram gráfico.
+          </p>
+        </div>
+
+        <aside class="charts-note reveal" aria-label="Escopo do visualizador">
+          <strong>{{ source_count }} fontes públicas</strong>
+          <p>
+            Os dados continuam vindo dos endpoints do projeto. A biblioteca de gráficos é apenas
+            a camada de visualização no navegador.
+          </p>
+        </aside>
+      </section>
+
+      <section class="chart-lab shell reveal" aria-labelledby="chart-lab-title">
+        <form class="chart-controls" data-chart-form>
+          <div class="control-row">
+            <label>
+              <span>Série pronta</span>
+              <select data-chart-preset aria-label="Série pronta"></select>
+            </label>
+            <label class="endpoint-input">
+              <span>Endpoint</span>
+              <input data-chart-url type="text" spellcheck="false" />
+            </label>
+            <label>
+              <span>Campo</span>
+              <input data-chart-field type="text" spellcheck="false" placeholder="auto" />
+            </label>
+            <button class="button primary" type="submit">Plotar</button>
+          </div>
+          <p class="control-hint">
+            Exemplos aceitos: <code>/bcb/series/name/selic?n=20</code>,
+            <code>/ipea/series/BM12_TJOVER12?top=120</code>,
+            <code>/yahoo/chart/%5EBVSP?range=1y&amp;interval=1d</code>.
+          </p>
+        </form>
+
+        <div class="chart-shell">
+          <div class="chart-header">
+            <div>
+              <span data-chart-source>BCB SGS 432</span>
+              <h2 data-chart-title>Taxa Selic</h2>
+            </div>
+            <p data-chart-status>Carregando série inicial…</p>
+          </div>
+          <div class="chart-meta-grid" aria-label="Metadados dos dados">
+            <div class="chart-meta-card primary">
+              <span>Fonte primária</span>
+              <strong>Dados Abertos de Mercado (findata-br)</strong>
+            </div>
+            <div class="chart-meta-card">
+              <span>Extração</span>
+              <strong data-chart-extracted>carregando</strong>
+            </div>
+            <div class="chart-meta-card">
+              <span>Recorte dos dados</span>
+              <strong data-chart-cutoff>carregando</strong>
+            </div>
+          </div>
+          <div id="chart-root" class="chart-root" aria-label="Gráfico interativo"></div>
+          <p class="chart-source-note" data-chart-source-note>
+            <strong>Fontes dos dados.</strong> Fonte primária/curadoria:
+            <a href="https://github.com/robertoecf/findata-br">Dados Abertos de Mercado (findata-br)</a>.
+            Subsets originais: BCB SGS 432.
+          </p>
+          <div class="chart-footer">
+            <span data-chart-summary>Fonte: endpoint público findata-br.</span>
+            <span>
+              Gráfico:
+              <a href="https://www.tradingview.com/lightweight-charts/" rel="noreferrer">
+                Lightweight Charts™
+              </a>
+            </span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer docs-footer">
+      <div class="shell footer-grid">
+        <div>
+          <strong>Dados Financeiros Abertos</strong>
+          <p>Gráficos interativos para endpoints públicos e reproduzíveis.<br />v{{ version }}</p>
+        </div>
+        <div><a href="/docs">Documentação</a><p>REST, OpenAPI e MCP.</p></div>
+        <div><a href="/meta">Meta</a><p>/meta</p></div>
+        <div><a href="/stats">Stats</a><p>/stats</p></div>
+        <div><a href="/">Home</a><p>Landing page</p></div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -41,6 +41,7 @@ def test_meta_endpoint(client: TestClient) -> None:
     assert "version" in body
     assert body["site"] == "/"
     assert body["docs"] == "/docs"
+    assert body["charts"] == "/charts"
     assert body["swagger"] == "/api/docs"
     assert "bcb" in body["sources"]
     assert "openfinance" in body["sources"]
@@ -54,8 +55,28 @@ def test_developer_docs_page(client: TestClient) -> None:
     assert "Developer console" in r.text
     assert "REST API, OpenAPI schema, MCP endpoint" in r.text
     assert "Console técnico" not in r.text
+    assert "/charts" in r.text
     assert "/api/docs" in r.text
     assert "/openapi.json" in r.text
+
+
+def test_charts_page(client: TestClient) -> None:
+    r = client.get("/charts")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+    assert "lightweight-charts@5.2.0" in r.text
+    assert "/site/chart-explorer.js" in r.text
+    assert "camada de visualização" in r.text
+    assert 'href="https://www.tradingview.com/lightweight-charts/"' in r.text
+    assert 'href="https://github.com/robertoecf/findata-br"' in r.text
+
+
+def test_chart_explorer_asset(client: TestClient) -> None:
+    r = client.get("/site/chart-explorer.js")
+    assert r.status_code == 200
+    assert "LightweightCharts" in r.text
+    assert "attributionLogo: false" in r.text
+    assert "bcbSeriesEndpoint(432, 24)" in r.text
 
 
 def test_swagger_ui_moved_to_api_docs(client: TestClient) -> None:
