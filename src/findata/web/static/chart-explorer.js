@@ -243,13 +243,13 @@
     if (unixTimestamp !== null) return unixTimestamp;
 
     let match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+    if (match && isValidDateParts(match[3], match[2], match[1])) return `${match[3]}-${match[2]}-${match[1]}`;
 
     match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+    if (match && isValidDateParts(match[1], match[2], match[3])) return `${match[1]}-${match[2]}-${match[3]}`;
 
     match = text.match(/^(\d{4})-(\d{2})-(\d{2})T00:00:00/);
-    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+    if (match && isValidDateParts(match[1], match[2], match[3])) return `${match[1]}-${match[2]}-${match[3]}`;
 
     const parsed = new Date(text);
     return timestampFromDate(parsed);
@@ -282,17 +282,30 @@
 
   const timeSortValue = (time) => {
     if (typeof time === "number") return time;
-    return timestampFromDate(new Date(`${time}T00:00:00Z`)) ?? 0;
+    return timestampFromDate(new Date(`${time}T00:00:00Z`));
+  };
+
+  const dedupeByTime = (data) => {
+    const deduped = new Map();
+    for (const point of data) deduped.set(point.time, point);
+    return Array.from(deduped.values());
   };
 
   const normalizeMixedTimes = (data) => {
     const hasIntraday = data.some((point) => typeof point.time === "number");
     if (!hasIntraday) return { data, hasIntraday };
+    const normalizedData = [];
+    for (const point of data) {
+      if (typeof point.time === "number") {
+        normalizedData.push(point);
+        continue;
+      }
+      const time = timeSortValue(point.time);
+      if (time !== null) normalizedData.push({ ...point, time });
+    }
     return {
       hasIntraday,
-      data: data.map((point) => (
-        typeof point.time === "number" ? point : { ...point, time: timeSortValue(point.time) }
-      )),
+      data: normalizedData,
     };
   };
 
@@ -333,7 +346,7 @@
     }
 
     const normalizedTime = normalizeMixedTimes(Array.from(deduped.values()));
-    const data = normalizedTime.data.sort((a, b) => (
+    const data = dedupeByTime(normalizedTime.data).sort((a, b) => (
       normalizedTime.hasIntraday ? a.time - b.time : a.time.localeCompare(b.time)
     ));
     if (!data.length) throw new Error("Nenhum ponto com data e valor numérico foi encontrado.");
