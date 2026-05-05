@@ -5,6 +5,8 @@ These tests use respx to mock outbound HTTP calls, so no real network is hit.
 
 from __future__ import annotations
 
+from html.parser import HTMLParser
+
 import httpx
 import pytest
 import respx
@@ -12,6 +14,27 @@ from fastapi.testclient import TestClient
 
 from findata.api.app import app
 from findata.http_client import clear_cache
+
+
+class _DocsHeadParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.html_attrs: dict[str, str | None] = {}
+        self.in_head = False
+        self.description: str | None = None
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attr_map = dict(attrs)
+        if tag == "html":
+            self.html_attrs = attr_map
+        elif tag == "head":
+            self.in_head = True
+        elif self.in_head and tag == "meta" and attr_map.get("name") == "description":
+            self.description = attr_map.get("content")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "head":
+            self.in_head = False
 
 
 @pytest.fixture
@@ -51,10 +74,15 @@ def test_developer_docs_page(client: TestClient) -> None:
     r = client.get("/docs")
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
-    assert '<html lang="en">' in r.text
-    assert "Developer console" in r.text
-    assert "REST API, OpenAPI schema, MCP endpoint" in r.text
-    assert "Console técnico" not in r.text
+    parser = _DocsHeadParser()
+    parser.feed(r.text)
+    assert parser.html_attrs.get("lang") == "en"
+    assert parser.description is not None
+    assert "Developer console" in parser.description
+    assert "REST API" in parser.description
+    assert "OpenAPI schema" in parser.description
+    assert "MCP endpoint" in parser.description
+    assert "Console técnico" not in parser.description
     assert "/charts" in r.text
     assert "/api/docs" in r.text
     assert "/openapi.json" in r.text
