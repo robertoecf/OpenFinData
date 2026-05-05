@@ -35,6 +35,9 @@ def test_meta_endpoint(client: TestClient) -> None:
     body = r.json()
     assert body["name"] == "Dados Financeiros Abertos"
     assert body["slug"] == "findata-br"
+    assert (
+        body["statement"] == "Infraestrutura open source para dados financeiros públicos do Brasil."
+    )
     assert "version" in body
     assert body["site"] == "/"
     assert body["docs"] == "/docs"
