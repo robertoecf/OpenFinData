@@ -198,12 +198,23 @@
     return Math.floor(date.getTime() / 1000);
   };
 
+  const isValidDateParts = (year, month, day) => {
+    const y = Number(year);
+    const m = Number(month);
+    const d = Number(day);
+    if (y < 1900 || y > 2200 || m < 1 || m > 12 || d < 1 || d > 31) return false;
+    const date = new Date(Date.UTC(y, m - 1, d));
+    return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
+  };
+
   const parseCompactPeriod = (text) => {
     let match = text.match(/^(\d{4})(\d{2})(\d{2})$/);
-    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+    if (match && isValidDateParts(match[1], match[2], match[3])) {
+      return `${match[1]}-${match[2]}-${match[3]}`;
+    }
 
     match = text.match(/^(\d{4})(\d{2})$/);
-    if (match) return `${match[1]}-${match[2]}-01`;
+    if (match && isValidDateParts(match[1], match[2], "01")) return `${match[1]}-${match[2]}-01`;
 
     return null;
   };
