@@ -112,6 +112,11 @@ def test_chart_explorer_asset(client: TestClient) -> None:
     assert "bcbSeriesEndpoint(432, 24)" in r.text
     assert "MAX_POINTS = 5000" in r.text
     assert "REQUEST_TIMEOUT_MS = 15000" in r.text
+    assert "new URL(rawEndpoint, window.location.origin)" in r.text
+    assert "/tesouro/bonds/history" not in r.text
+    assert 'options.type === "candlestick" || (!options.field && hasOhlc(firstRecord))' in r.text
+    assert "timestampFromDate" in r.text
+    assert "timeVisible: normalized.hasIntraday" in r.text
     assert "Yahoo Finance" not in r.text
 
 
