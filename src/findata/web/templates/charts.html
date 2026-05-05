@@ -3,15 +3,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Dados Financeiros Abertos — gráficos</title>
+    <title>Dados Financeiros Abertos — labs de gráficos</title>
     <meta
       name="description"
-      content="Explorador visual de séries temporais dos endpoints públicos do findata-br, com gráficos interativos no navegador."
+      content="Labs experimental para visualizar séries temporais dos endpoints públicos do findata-br no navegador."
     />
     <link rel="stylesheet" href="/site/site.css" />
     <script src="/site/site.js" defer></script>
     <script
       src="https://unpkg.com/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js"
+      integrity="sha384-q1KYLSKHgBnW5tWYGGR8+6YV4/iPy31dILoF2I1OD7XiVUvHEp/TaxIQVmB0j3R2"
+      crossorigin="anonymous"
       defer
     ></script>
     <script src="/site/chart-explorer.js" defer></script>
@@ -34,20 +36,20 @@
     <main>
       <section class="charts-hero shell" aria-labelledby="charts-title">
         <div class="charts-copy reveal">
-          <p class="eyebrow">REST → JSON → canvas</p>
-          <h1 id="charts-title">Visualize os dados públicos como séries interativas.</h1>
+          <p class="eyebrow">Labs experimental · REST → JSON → canvas</p>
+          <h1 id="charts-title">Visualizador beta de séries públicas.</h1>
           <p class="lead">
-            Escolha uma série pronta ou cole qualquer endpoint JSON do findata-br. O explorador
-            tenta detectar campos de data e valor automaticamente; dados tabulares continuam
-            disponíveis na API, mas só séries temporais viram gráfico.
+            Este experimento mostra como a infraestrutura do findata-br pode virar gráficos
+            auditáveis. O produto principal continua sendo API, biblioteca Python, CLI e MCP;
+            aqui só endpoints temporais e leves entram no canvas.
           </p>
         </div>
 
         <aside class="charts-note reveal" aria-label="Escopo do visualizador">
-          <strong>{{ source_count }} fontes públicas</strong>
+          <strong>Visualizador beta</strong>
           <p>
-            Os dados continuam vindo dos endpoints do projeto. A biblioteca de gráficos é apenas
-            a camada de visualização no navegador.
+            Presets usam fontes públicas oficiais já expostas pelo projeto. Endpoints
+            experimentais, pesados ou não temporais ficam fora desta primeira vitrine.
           </p>
         </aside>
       </section>
@@ -71,8 +73,8 @@
           </div>
           <p class="control-hint">
             Exemplos aceitos: <code>/bcb/series/name/selic?n=20</code>,
-            <code>/ipea/series/BM12_TJOVER12?top=120</code>,
-            <code>/yahoo/chart/%5EBVSP?range=1y&amp;interval=1d</code>.
+            <code>/ipea/series/BM12_TJOVER12?top=120</code> e
+            <code>/ibge/indicators/ipca_mensal?periods=48</code>.
           </p>
         </form>
 
@@ -109,7 +111,7 @@
             <span>
               Gráfico:
               <a href="https://www.tradingview.com/lightweight-charts/" rel="noreferrer">
-                Lightweight Charts™
+                TradingView Lightweight Charts™
               </a>
             </span>
           </div>
@@ -121,7 +123,7 @@
       <div class="shell footer-grid">
         <div>
           <strong>Dados Financeiros Abertos</strong>
-          <p>Gráficos interativos para endpoints públicos e reproduzíveis.<br />v{{ version }}</p>
+          <p>Labs experimental para gráficos auditáveis de endpoints públicos.<br />v{{ version }}</p>
         </div>
         <div><a href="/docs">Documentação</a><p>REST, OpenAPI e MCP.</p></div>
         <div><a href="/meta">Meta</a><p>/meta</p></div>

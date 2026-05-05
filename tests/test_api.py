@@ -83,6 +83,7 @@ def test_developer_docs_page(client: TestClient) -> None:
     assert "OpenAPI schema" in parser.description
     assert "MCP endpoint" in parser.description
     assert "Console técnico" not in parser.description
+    assert "Open chart lab" in r.text
     assert "/charts" in r.text
     assert "/api/docs" in r.text
     assert "/openapi.json" in r.text
@@ -93,10 +94,14 @@ def test_charts_page(client: TestClient) -> None:
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
     assert "lightweight-charts@5.2.0" in r.text
+    assert "integrity=" in r.text
     assert "/site/chart-explorer.js" in r.text
-    assert "camada de visualização" in r.text
+    assert "Visualizador beta" in r.text
+    assert "produto principal continua sendo API" in r.text
     assert 'href="https://www.tradingview.com/lightweight-charts/"' in r.text
+    assert "TradingView Lightweight Charts™" in r.text
     assert 'href="https://github.com/robertoecf/findata-br"' in r.text
+    assert "%5EBVSP" not in r.text
 
 
 def test_chart_explorer_asset(client: TestClient) -> None:
@@ -105,6 +110,9 @@ def test_chart_explorer_asset(client: TestClient) -> None:
     assert "LightweightCharts" in r.text
     assert "attributionLogo: false" in r.text
     assert "bcbSeriesEndpoint(432, 24)" in r.text
+    assert "MAX_POINTS = 5000" in r.text
+    assert "REQUEST_TIMEOUT_MS = 15000" in r.text
+    assert "Yahoo Finance" not in r.text
 
 
 def test_swagger_ui_moved_to_api_docs(client: TestClient) -> None:

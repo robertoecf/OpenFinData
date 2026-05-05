@@ -3,6 +3,17 @@
 Este padrão vale para gráficos gerados pelo Dados Financeiros Abertos,
 incluindo páginas interativas, screenshots e artefatos avulsos.
 
+## Superfícies públicas
+
+Gráficos no site devem ser tratados como camada de visualização. Enquanto o
+explorador for experimental, usar linguagem de `Labs`, não CTA principal do
+produto. O produto principal continua sendo API REST, biblioteca Python, CLI e
+MCP.
+
+Presets públicos devem priorizar fontes oficiais/auditáveis já integradas no
+projeto. Fontes experimentais ou indiretas, como Yahoo/yfinance, não entram na
+vitrine principal.
+
 ## Identidade visual
 
 - Fundo claro com glow discreto nas cores do projeto.
@@ -47,10 +58,16 @@ A última linha deve ficar compacta:
 - Biblioteca de visualização, se houver exigência de atribuição.
 
 Quando usar TradingView Lightweight Charts com `attributionLogo: false`, manter
-um link discreto para:
+o aviso de copyright no código-fonte e um link visível para:
 
 ```text
 https://www.tradingview.com/lightweight-charts/
+```
+
+Texto recomendado no rodapé da página:
+
+```text
+Gráfico: TradingView Lightweight Charts™
 ```
 
 ## Regra de fonte primária

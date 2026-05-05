@@ -20,6 +20,14 @@
     white: "#ffffff",
   };
   const PRIMARY_SOURCE = "Dados Abertos de Mercado (findata-br)";
+  const MAX_POINTS = 5000;
+  const REQUEST_TIMEOUT_MS = 15000;
+  const ALLOWED_ENDPOINT_PREFIXES = [
+    "/bcb/series/",
+    "/ibge/indicators/",
+    "/ipea/series/",
+    "/tesouro/bonds/history",
+  ];
 
   const isoDate = (date) => date.toISOString().slice(0, 10);
 
@@ -89,23 +97,6 @@
       source: "IBGE Agregados 7060/63",
       color: BRAND.blue,
     },
-    {
-      id: "b3-petr4",
-      label: "B3 via yfinance — PETR4",
-      endpoint: "/b3/history/PETR4?period=1y&interval=1d",
-      title: "PETR4 — candles diários",
-      source: "B3/yfinance history",
-      type: "candlestick",
-    },
-    {
-      id: "yahoo-ibov",
-      label: "Yahoo experimental — Ibovespa",
-      endpoint: "/yahoo/chart/%5EBVSP?range=1y&interval=1d",
-      field: "close",
-      title: "Ibovespa — fechamento diário",
-      source: "Yahoo Finance v8 chart (experimental)",
-      color: BRAND.blue,
-    },
   ];
 
   const DATE_KEYS = [
@@ -171,6 +162,12 @@
     nodes.preset.addEventListener("change", () => setPreset(activePreset()));
   };
 
+  const assertAllowedEndpoint = (endpoint) => {
+    if (!ALLOWED_ENDPOINT_PREFIXES.some((prefix) => endpoint.startsWith(prefix))) {
+      throw new Error("Labs aceita apenas endpoints temporais leves de BCB, IBGE, IPEA e Tesouro.");
+    }
+  };
+
   const normalizeEndpoint = (value) => {
     const trimmed = value.trim();
     if (!trimmed) throw new Error("Informe um endpoint.");
@@ -179,9 +176,13 @@
       if (url.origin !== window.location.origin) {
         throw new Error("Use endpoints do próprio findata-br para evitar CORS e fontes opacas.");
       }
-      return `${url.pathname}${url.search}`;
+      const endpoint = `${url.pathname}${url.search}`;
+      assertAllowedEndpoint(endpoint);
+      return endpoint;
     }
-    return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+    const endpoint = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+    assertAllowedEndpoint(endpoint);
+    return endpoint;
   };
 
   const recordsFrom = (payload) => {
@@ -273,6 +274,9 @@
 
     const data = Array.from(deduped.values()).sort((a, b) => String(a.time).localeCompare(String(b.time)));
     if (!data.length) throw new Error("Nenhum ponto com data e valor numérico foi encontrado.");
+    if (data.length > MAX_POINTS) {
+      throw new Error(`Endpoint retornou ${data.length} pontos; use um recorte menor que ${MAX_POINTS}.`);
+    }
 
     return {
       data,
@@ -340,10 +344,24 @@
       : { endpoint, field, title: endpoint, source: "Endpoint findata-br" };
 
     setStatus("Buscando endpoint…");
-    const response = await fetch(endpoint, { headers: { Accept: "application/json" } });
-    if (!response.ok) throw new Error(`Endpoint retornou HTTP ${response.status}.`);
-
-    const payload = await response.json();
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    let payload;
+    try {
+      const response = await fetch(endpoint, {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`Endpoint retornou HTTP ${response.status}.`);
+      payload = await response.json();
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        throw new Error("Endpoint demorou demais para o Labs. Use um recorte menor.");
+      }
+      throw error;
+    } finally {
+      window.clearTimeout(timeout);
+    }
     const normalized = normalizeData(payload, options);
     renderSeries(normalized, options);
 
@@ -358,7 +376,17 @@
     if (nodes.sourceNote) {
       nodes.sourceNote.innerHTML = `<strong>Fontes dos dados.</strong> Fonte primária/curadoria: <a href="https://github.com/robertoecf/findata-br">${PRIMARY_SOURCE}</a>. Subsets originais: ${options.source || "endpoint findata-br"}.`;
     }
-    nodes.summary.textContent = `${normalized.data.length} pontos · ${first} a ${last} · data=${normalized.dateKey} · valor=${normalized.valueKey || "OHLC"}`;
+    const auditUrl = new URL(endpoint, window.location.origin);
+    const auditPath = `${auditUrl.pathname}${auditUrl.search}`;
+    const auditLink = document.createElement("a");
+    auditLink.href = auditPath;
+    auditLink.textContent = "JSON auditável";
+    nodes.summary.replaceChildren(
+      auditLink,
+      document.createTextNode(
+        ` · ${normalized.data.length} pontos · ${first} a ${last} · data=${normalized.dateKey} · valor=${normalized.valueKey || "OHLC"}`,
+      ),
+    );
     setStatus("Série plotada.", "ok");
   };
 
