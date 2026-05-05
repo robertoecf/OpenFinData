@@ -64,6 +64,7 @@ def test_meta_endpoint(client: TestClient) -> None:
     assert "version" in body
     assert body["site"] == "/"
     assert body["docs"] == "/docs"
+    assert body["sources_page"] == "/sources"
     assert body["charts"] == "/charts"
     assert body["swagger"] == "/api/docs"
     assert "bcb" in body["sources"]
@@ -84,7 +85,22 @@ def test_developer_docs_page(client: TestClient) -> None:
     assert "MCP endpoint" in parser.description
     assert "Console técnico" not in parser.description
     assert "Open chart lab" in r.text
+    assert "Sources and endpoints" in r.text
+    assert "/sources" in r.text
     assert "/charts" in r.text
+    assert "/api/docs" in r.text
+    assert "/openapi.json" in r.text
+
+
+def test_sources_page(client: TestClient) -> None:
+    r = client.get("/sources")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+    assert "Fontes e endpoints" in r.text
+    assert "BCB" in r.text
+    assert "Base dos Dados" in r.text
+    assert "/bcb/series/name/{name}" in r.text
+    assert "/basedosdados/datasets" in r.text
     assert "/api/docs" in r.text
     assert "/openapi.json" in r.text
 

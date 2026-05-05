@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dados Financeiros Abertos — fontes e endpoints</title>
+    <meta
+      name="description"
+      content="Fontes e endpoints do Dados Financeiros Abertos: BCB, Base dos Dados, CVM, B3, IBGE, IPEA, Tesouro, Open Finance, ANBIMA e demais fontes públicas."
+    />
+    <link rel="stylesheet" href="/site/site.css" />
+    <script src="/site/site.js" defer></script>
+  </head>
+  <body class="docs-page">
+    <canvas class="field" aria-hidden="true"></canvas>
+    <div class="noise" aria-hidden="true"></div>
+    <div class="cursor-glow" aria-hidden="true"></div>
+
+    <header class="shell nav-shell">
+      <a class="brand" href="/" aria-label="findata-br">Dados Financeiros Abertos</a>
+      <nav aria-label="Navegação de fontes">
+        <a href="/docs">API docs</a>
+        <a href="/sources">Fontes</a>
+        <a href="/charts">Labs</a>
+        <a href="/api/docs">Swagger</a>
+        <a href="https://github.com/robertoecf/findata-br">GitHub</a>
+        <a href="/">Home</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="docs-hero shell" id="overview" aria-labelledby="sources-title">
+        <div class="docs-copy reveal">
+          <p class="eyebrow">Fontes · endpoints · notas operacionais</p>
+          <h1 id="sources-title">Uma aba só para fonte, cobertura e rota.</h1>
+          <p class="lead">
+            O README fica objetivo; esta página concentra o mapa operacional das fontes
+            brasileiras e os endpoints representativos. Para o contrato completo, use
+            Swagger, ReDoc ou o schema OpenAPI.
+          </p>
+
+          <div class="hero-actions docs-actions" aria-label="Ações de fontes">
+            <a class="button primary" href="/api/docs">Abrir Swagger <span aria-hidden="true">↗</span></a>
+            <a class="button secondary" href="/redoc">Abrir ReDoc <span aria-hidden="true">↗</span></a>
+            <a class="button secondary" href="/openapi.json">OpenAPI JSON <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+
+        <aside class="health-card tilt reveal" aria-label="Resumo das fontes">
+          <div class="health-title"><span></span><strong>Fontes anunciadas</strong><small>v{{ version }}</small></div>
+          <dl>
+            <div><dt>Total</dt><dd data-stat="source-count">{{ source_count }}</dd></div>
+            <div><dt>Chaves nas fontes principais</dt><dd>0</dd></div>
+            <div><dt>Swagger</dt><dd>/api/docs</dd></div>
+            <div><dt>MCP</dt><dd>/mcp</dd></div>
+          </dl>
+        </aside>
+      </section>
+
+      <section class="section shell docs-section" id="sources" aria-labelledby="source-map-title">
+        <div class="section-heading docs-heading reveal">
+          <h2 id="source-map-title"><span class="section-dot green"></span>Mapa de fontes</h2>
+          <p>Resumo de cobertura, rota principal e nota de acesso.</p>
+        </div>
+
+        <div class="endpoint-grid">
+          <article class="endpoint-card reveal tilt" data-tags="bcb macro selic ptax focus"><span class="source-glyph bank"></span><div><strong>BCB</strong><small>SGS, PTAX e Focus</small><code>/bcb/series/name/{name}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="basedosdados public bigquery"><span class="source-glyph registry"></span><div><strong>Base dos Dados</strong><small>catálogo e BigQuery gratuito com login</small><code>/basedosdados/datasets</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="cvm companies funds markets"><span class="source-glyph cvm"></span><div><strong>CVM</strong><small>companhias, demonstrativos, fundos, IPE e FCA</small><code>/cvm/companies/search</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="tesouro bonds fiscal"><span class="source-glyph tesouro"></span><div><strong>Tesouro</strong><small>Tesouro Direto e SICONFI</small><code>/tesouro/bonds/history</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="ibge macro indicators"><span class="source-glyph ibge"></span><div><strong>IBGE</strong><small>indicadores e IPCA detalhado</small><code>/ibge/indicators/{name}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="ipea macro series"><span class="source-glyph ipea"></span><div><strong>IPEA Data</strong><small>catálogo e séries OData</small><code>/ipea/series/{sercodigo}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="openfinance public directory"><span class="source-glyph openfinance"></span><div><strong>Open Finance</strong><small>diretório público e portal de dados</small><code>/openfinance/participants</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="b3 markets quotes cotahist indices"><span class="source-glyph b3"></span><div><strong>B3</strong><small>cotações, COTAHIST e índices</small><code>/b3/quote/{ticker}</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="anbima ima ettj debentures"><span class="source-glyph anbima"></span><div><strong>ANBIMA</strong><small>arquivos públicos IMA, ETTJ e debêntures</small><code>/anbima/ima</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="receita tax"><span class="source-glyph receita"></span><div><strong>Receita Federal</strong><small>arrecadação e tributos</small><code>/receita/arrecadacao</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="aneel energy"><span class="source-glyph aneel"></span><div><strong>ANEEL</strong><small>leilões de geração e transmissão</small><code>/aneel/leiloes/geracao</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="susep insurance"><span class="source-glyph susep"></span><div><strong>SUSEP</strong><small>entidades supervisionadas</small><code>/susep/empresas/search</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="registry offline ticker cnpj"><span class="source-glyph registry"></span><div><strong>Registro offline</strong><small>CNPJ, ticker, cod_cvm e nome</small><code>/registry/lookup</code></div></article>
+          <article class="endpoint-card reveal tilt" data-tags="yahoo experimental"><span class="source-glyph chart"></span><div><strong>Yahoo Finance</strong><small>experimental, não oficial</small><code>/yahoo/chart/{symbol}</code></div></article>
+        </div>
+      </section>
+
+      <section class="section shell docs-section" id="endpoints" aria-labelledby="endpoints-title">
+        <div class="section-heading reveal">
+          <h2 id="endpoints-title"><span class="section-dot blue"></span>Rotas rápidas</h2>
+          <p>Exemplos suficientes para começar. O contrato completo fica no OpenAPI.</p>
+        </div>
+
+        <div class="fast-grid">
+          <article class="fast-card reveal tilt"><span class="interface-glyph rest"></span><h3>Macro</h3><p>BCB e IPEA</p><pre><code>GET /bcb/series/name/selic?n=10
+GET /ipea/series/BM12_TJOVER12?top=12</code></pre><button type="button" data-copy="GET /bcb/series/name/selic?n=10">Copiar</button></article>
+          <article class="fast-card reveal tilt"><span class="interface-glyph rest"></span><h3>Mercado</h3><p>B3, CVM e ANBIMA</p><pre><code>GET /b3/quote/PETR4
+GET /cvm/companies/search?q=Petrobras
+GET /anbima/ima?index=IMA-B</code></pre><button type="button" data-copy="GET /b3/quote/PETR4">Copiar</button></article>
+          <article class="fast-card reveal tilt"><span class="interface-glyph rest"></span><h3>Dados públicos</h3><p>Open Finance, IBGE e Tesouro</p><pre><code>GET /openfinance/participants?role=DADOS
+GET /ibge/ipca/groups
+GET /tesouro/bonds/search?q=IPCA</code></pre><button type="button" data-copy="GET /openfinance/participants?role=DADOS">Copiar</button></article>
+          <article class="fast-card reveal tilt"><span class="interface-glyph cli"></span><h3>CLI</h3><p>Mesma fonte no terminal</p><pre><code>findata bcb get selic -n 10
+findata registry lookup PETR4
+findata cvm search Petrobras</code></pre><button type="button" data-copy="findata registry lookup PETR4">Copiar</button></article>
+        </div>
+      </section>
+
+      <section class="section shell docs-section raw-tools" id="notes" aria-labelledby="notes-title">
+        <div class="section-heading reveal">
+          <h2 id="notes-title"><span class="section-dot green"></span>Notas de acesso</h2>
+          <p>Regras que não devem ficar escondidas no README.</p>
+        </div>
+        <div class="tool-grid">
+          <article class="tool-card reveal tilt"><span class="tool-glyph openapi">BD</span><div><small>Base dos Dados</small><strong>Gratuito com login para BigQuery</strong><p>Use `FINDATA_BD_BILLING_PROJECT_ID` para consultas SQL locais. BD Pro permanece marcado como pago.</p><b>Ver docs/SOURCES_AND_ENDPOINTS.md</b></div></article>
+          <article class="tool-card reveal tilt"><span class="tool-glyph swagger">AN</span><div><small>ANBIMA</small><strong>Arquivos públicos, não Sensedia</strong><p>O módulo atual consome XLS/CSV/TXT públicos de `www.anbima.com.br/informacoes/*`.</p><b>Ver docs/SOURCES_WITH_AUTH.md</b></div></article>
+          <article class="tool-card reveal tilt"><span class="tool-glyph redoc">YF</span><div><small>Yahoo Finance</small><strong>Experimental e não oficial</strong><p>Prefira fontes oficiais para produção. O endpoint existe para exploração e compatibilidade.</p><b>Use com cuidado</b></div></article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer docs-footer">
+      <div class="shell footer-grid">
+        <div><strong>Dados Financeiros Abertos</strong><p>Fontes, endpoints e notas operacionais.<br />v{{ version }}</p></div>
+        <div><a href="/docs">API docs</a><p>Console técnico.</p></div>
+        <div><a href="/api/docs">Swagger</a><p>/api/docs</p></div>
+        <div><a href="/charts">Labs</a><p>Gráficos experimentais.</p></div>
+        <div><a href="/">Home</a><p>Landing page.</p></div>
+      </div>
+    </footer>
+  </body>
+</html>

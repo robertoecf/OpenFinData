@@ -38,6 +38,7 @@ from findata.web.landing import (
     render_charts_page,
     render_developer_page,
     render_landing_page,
+    render_sources_page,
 )
 
 _STARTED_AT = time.time()
@@ -173,6 +174,7 @@ def _meta_payload() -> dict[str, object]:
         "version": _VERSION,
         "site": "/",
         "docs": "/docs",
+        "sources_page": "/sources",
         "charts": "/charts",
         "swagger": "/api/docs",
         "redoc": "/redoc",
@@ -193,6 +195,15 @@ async def root() -> HTMLResponse:
 @app.get("/docs", include_in_schema=False)
 async def developer_docs() -> HTMLResponse:
     return render_developer_page(
+        version=_VERSION,
+        sources=ADVERTISED_SOURCES,
+        mcp_enabled=_MCP_ENABLED,
+    )
+
+
+@app.get("/sources", include_in_schema=False)
+async def sources_page() -> HTMLResponse:
+    return render_sources_page(
         version=_VERSION,
         sources=ADVERTISED_SOURCES,
         mcp_enabled=_MCP_ENABLED,

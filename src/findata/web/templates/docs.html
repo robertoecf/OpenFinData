@@ -20,7 +20,7 @@
       <a class="brand" href="/" aria-label="findata-br">Dados Financeiros Abertos</a>
       <nav aria-label="Developer navigation">
         <a href="#overview">Overview</a>
-        <a href="#endpoints">Endpoints</a>
+        <a href="/sources">Sources</a>
         <a href="#mcp">MCP</a>
         <a href="/charts">Labs</a>
         <a href="https://github.com/robertoecf/findata-br">GitHub</a>
@@ -41,6 +41,7 @@
           <div class="hero-actions docs-actions" aria-label="Developer actions">
             <a class="button primary" href="/api/docs">Open Swagger UI <span aria-hidden="true">↗</span></a>
             <a class="button secondary" href="/charts">Open chart lab <span aria-hidden="true">↗</span></a>
+            <a class="button secondary" href="/sources">Sources and endpoints <span aria-hidden="true">↗</span></a>
             <a class="button secondary" href="/redoc">Open ReDoc <span aria-hidden="true">↗</span></a>
             <button class="button ghost" type="button" data-copy="/openapi.json">Copy OpenAPI URL</button>
           </div>
@@ -90,39 +91,18 @@
         </div>
       </section>
 
-      <section class="section shell docs-section" id="endpoints" aria-labelledby="endpoint-title">
+      <section class="section shell docs-section" id="sources" aria-labelledby="sources-title">
         <div class="section-heading docs-heading reveal">
-          <h2 id="endpoint-title"><span class="section-dot green"></span>Endpoint families</h2>
-          <div class="endpoint-controls" aria-label="Endpoint filters">
-            <label class="search-box">
-              <span aria-hidden="true">⌕</span>
-              <input data-endpoint-search type="search" placeholder="Search endpoints..." />
-            </label>
-            <select aria-label="Source filter" data-endpoint-select>
-              <option value="">All sources</option>
-              <option value="macro">Macro</option>
-              <option value="markets">Markets</option>
-              <option value="public">Public data</option>
-            </select>
-          </div>
+          <h2 id="sources-title"><span class="section-dot green"></span>Source and endpoint reference moved</h2>
+          <p>
+            Endpoint families and source-level notes now live in a dedicated tab so this
+            console stays focused on developer entry points.
+          </p>
         </div>
 
-        <div class="endpoint-grid">
-          <article class="endpoint-card reveal tilt" data-tags="bcb macro selic ptax focus"><span class="source-glyph bank"></span><div><strong>BCB</strong><small>128 endpoints</small><code>/bcb/series/name/{name}</code></div></article>
-          <article class="endpoint-card reveal tilt" data-tags="cvm markets funds companies"><span class="source-glyph cvm"></span><div><strong>CVM</strong><small>86 endpoints</small><code>/cvm/companies/{cvm}</code></div></article>
-          <article class="endpoint-card reveal tilt" data-tags="b3 markets bolsa quotes"><span class="source-glyph b3"></span><div><strong>B3</strong><small>64 endpoints</small><code>/b3/assets/{codigo}</code></div></article>
-          <article class="endpoint-card reveal tilt" data-tags="ibge macro public indicators"><span class="source-glyph ibge"></span><div><strong>IBGE</strong><small>58 endpoints</small><code>/ibge/indicators/{id}</code></div></article>
-          <article class="endpoint-card reveal tilt" data-tags="ipea macro public series"><span class="source-glyph ipea"></span><div><strong>IPEA</strong><small>43 endpoints</small><code>/ipea/indicators/{id}</code></div></article>
-          <article class="endpoint-card reveal tilt" data-tags="tesouro public bonds fiscal"><span class="source-glyph tesouro"></span><div><strong>Tesouro</strong><small>37 endpoints</small><code>/tesouro/titulos/{id}</code></div></article>
-          <article class="endpoint-card reveal tilt" data-tags="open finance public directory"><span class="source-glyph openfinance"></span><div><strong>Open Finance</strong><small>29 endpoints</small><code>/open-finance/{resource}</code></div></article>
-          <article class="endpoint-card reveal tilt" data-tags="anbima markets funds"><span class="source-glyph anbima"></span><div><strong>ANBIMA</strong><small>22 endpoints</small><code>/anbima/funds/{id}</code></div></article>
-          <article class="endpoint-card reveal tilt" data-tags="receita public cnpj tax"><span class="source-glyph receita"></span><div><strong>Receita</strong><small>18 endpoints</small><code>/receita/cnpj/{cnpj}</code></div></article>
-          <article class="endpoint-card reveal tilt" data-tags="aneel public energy"><span class="source-glyph aneel"></span><div><strong>ANEEL</strong><small>16 endpoints</small><code>/aneel/series/{id}</code></div></article>
-          <article class="endpoint-card reveal tilt" data-tags="susep public insurance"><span class="source-glyph susep"></span><div><strong>SUSEP</strong><small>14 endpoints</small><code>/susep/plans/{id}</code></div></article>
-          <article class="endpoint-card reveal tilt" data-tags="registry offline ticker cnpj"><span class="source-glyph registry"></span><div><strong>Registry</strong><small>12 endpoints</small><code>/registry/lookup/{query}</code></div></article>
+        <div class="center-action reveal">
+          <a class="button secondary" href="/sources">Open sources and endpoints <span aria-hidden="true">›</span></a>
         </div>
-
-        <div class="center-action reveal"><a class="button secondary" href="/api/docs">View all endpoints <span aria-hidden="true">›</span></a></div>
       </section>
 
       <section class="section shell docs-section" id="mcp" aria-labelledby="fast-title">
@@ -160,9 +140,9 @@ Content-Type: application/json</code></pre><button type="button" data-copy="POST
       <div class="shell footer-grid">
         <div><strong>Dados Financeiros Abertos</strong><p>Open data. Open infra. Open Brazil.<br />v{{ version }} · MIT License</p></div>
         <div><a href="https://github.com/robertoecf/findata-br">GitHub</a><p>github.com/robertoecf/findata-br</p></div>
+        <div><a href="/sources">Sources</a><p>Sources and endpoints</p></div>
         <div><a href="/health">Health</a><p>/health</p></div>
         <div><a href="/stats">Stats</a><p>/stats</p></div>
-        <div><a href="/">Home</a><p>Landing page</p></div>
       </div>
     </footer>
   </body>
