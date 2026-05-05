@@ -198,24 +198,37 @@
     return Math.floor(date.getTime() / 1000);
   };
 
-  const parseTime = (value) => {
-    if (typeof value === "number") {
-      const date = new Date(value > 1e11 ? value : value * 1000);
-      return timestampFromDate(date);
-    }
-    if (typeof value !== "string") return null;
-    const text = String(value).trim();
-    if (/^\d{10,13}$/.test(text)) {
-      const timestamp = Number(text);
-      const date = new Date(timestamp > 1e11 ? timestamp : timestamp * 1000);
-      return timestampFromDate(date);
-    }
-
-    let match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+  const parseCompactPeriod = (text) => {
+    let match = text.match(/^(\d{4})(\d{2})(\d{2})$/);
+    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
 
     match = text.match(/^(\d{4})(\d{2})$/);
     if (match) return `${match[1]}-${match[2]}-01`;
+
+    return null;
+  };
+
+  const parseUnixTimestamp = (text) => {
+    if (!/^\d{10,13}$/.test(text)) return null;
+    const timestamp = Number(text);
+    const date = new Date(timestamp > 1e11 ? timestamp : timestamp * 1000);
+    return timestampFromDate(date);
+  };
+
+  const parseTime = (value) => {
+    const text = String(value).trim();
+    const compactPeriod = parseCompactPeriod(text);
+    if (compactPeriod) return compactPeriod;
+
+    if (typeof value === "number") {
+      return parseUnixTimestamp(text);
+    }
+    if (typeof value !== "string") return null;
+    const unixTimestamp = parseUnixTimestamp(text);
+    if (unixTimestamp) return unixTimestamp;
+
+    let match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (match) return `${match[3]}-${match[2]}-${match[1]}`;
 
     match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (match) return `${match[1]}-${match[2]}-${match[3]}`;
@@ -251,6 +264,22 @@
   };
 
   const hasOhlc = (record) => ["open", "high", "low", "close"].every((key) => record[key] !== undefined);
+
+  const timeSortValue = (time) => {
+    if (typeof time === "number") return time;
+    return timestampFromDate(new Date(`${time}T00:00:00Z`)) ?? 0;
+  };
+
+  const normalizeMixedTimes = (data) => {
+    const hasIntraday = data.some((point) => typeof point.time === "number");
+    if (!hasIntraday) return { data, hasIntraday };
+    return {
+      hasIntraday,
+      data: data.map((point) => (
+        typeof point.time === "number" ? point : { ...point, time: timeSortValue(point.time) }
+      )),
+    };
+  };
 
   const normalizeData = (payload, options) => {
     const records = recordsFrom(payload);
@@ -288,12 +317,8 @@
       if (value !== null) deduped.set(time, { time, value });
     }
 
-    const data = Array.from(deduped.values()).sort((a, b) => {
-      if (typeof a.time === "number" && typeof b.time === "number") {
-        return a.time - b.time;
-      }
-      return String(a.time).localeCompare(String(b.time));
-    });
+    const normalizedTime = normalizeMixedTimes(Array.from(deduped.values()));
+    const data = normalizedTime.data.sort((a, b) => timeSortValue(a.time) - timeSortValue(b.time));
     if (!data.length) throw new Error("Nenhum ponto com data e valor numérico foi encontrado.");
     if (data.length > MAX_POINTS) {
       throw new Error(`Endpoint retornou ${data.length} pontos; use um recorte menor que ${MAX_POINTS}.`);
@@ -304,7 +329,7 @@
       kind: shouldUseCandles ? "candlestick" : "line",
       valueKey,
       dateKey,
-      hasIntraday: data.some((point) => typeof point.time === "number"),
+      hasIntraday: normalizedTime.hasIntraday,
     };
   };
 
