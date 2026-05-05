@@ -26,7 +26,6 @@
     "/bcb/series/",
     "/ibge/indicators/",
     "/ipea/series/",
-    "/tesouro/bonds/history",
   ];
 
   const isoDate = (date) => date.toISOString().slice(0, 10);
@@ -164,23 +163,23 @@
 
   const assertAllowedEndpoint = (endpoint) => {
     if (!ALLOWED_ENDPOINT_PREFIXES.some((prefix) => endpoint.startsWith(prefix))) {
-      throw new Error("Labs aceita apenas endpoints temporais leves de BCB, IBGE, IPEA e Tesouro.");
+      throw new Error("Labs aceita apenas endpoints temporais leves de BCB, IBGE e IPEA.");
     }
   };
 
   const normalizeEndpoint = (value) => {
     const trimmed = value.trim();
     if (!trimmed) throw new Error("Informe um endpoint.");
-    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-      const url = new URL(trimmed);
-      if (url.origin !== window.location.origin) {
-        throw new Error("Use endpoints do próprio findata-br para evitar CORS e fontes opacas.");
-      }
-      const endpoint = `${url.pathname}${url.search}`;
-      assertAllowedEndpoint(endpoint);
-      return endpoint;
+    const rawEndpoint = trimmed.startsWith("http://") || trimmed.startsWith("https://")
+      ? trimmed
+      : trimmed.startsWith("/")
+        ? trimmed
+        : `/${trimmed}`;
+    const url = new URL(rawEndpoint, window.location.origin);
+    if (url.origin !== window.location.origin) {
+      throw new Error("Use endpoints do próprio findata-br para evitar CORS e fontes opacas.");
     }
-    const endpoint = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+    const endpoint = `${url.pathname}${url.search}`;
     assertAllowedEndpoint(endpoint);
     return endpoint;
   };
@@ -194,21 +193,38 @@
     return null;
   };
 
+  const timestampFromDate = (date) => {
+    if (Number.isNaN(date.getTime())) return null;
+    return Math.floor(date.getTime() / 1000);
+  };
+
   const parseTime = (value) => {
-    if (typeof value !== "string" && typeof value !== "number") return null;
+    if (typeof value === "number") {
+      const date = new Date(value > 1e11 ? value : value * 1000);
+      return timestampFromDate(date);
+    }
+    if (typeof value !== "string") return null;
     const text = String(value).trim();
+    if (/^\d{10,13}$/.test(text)) {
+      const timestamp = Number(text);
+      const date = new Date(timestamp > 1e11 ? timestamp : timestamp * 1000);
+      return timestampFromDate(date);
+    }
+
     let match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (match) return `${match[3]}-${match[2]}-${match[1]}`;
 
     match = text.match(/^(\d{4})(\d{2})$/);
     if (match) return `${match[1]}-${match[2]}-01`;
 
-    match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+
+    match = text.match(/^(\d{4})-(\d{2})-(\d{2})T00:00:00/);
     if (match) return `${match[1]}-${match[2]}-${match[3]}`;
 
     const parsed = new Date(text);
-    if (Number.isNaN(parsed.getTime())) return null;
-    return parsed.toISOString().slice(0, 10);
+    return timestampFromDate(parsed);
   };
 
   const asNumber = (value) => {
@@ -248,7 +264,7 @@
     const dateKey = firstKey(firstRecord, DATE_KEYS);
     if (!dateKey) throw new Error("Não encontrei campo de data conhecido.");
 
-    const shouldUseCandles = options.type === "candlestick" || hasOhlc(firstRecord);
+    const shouldUseCandles = options.type === "candlestick" || (!options.field && hasOhlc(firstRecord));
     const valueKey = chooseValueKey(records, options.field);
     const deduped = new Map();
 
@@ -272,7 +288,12 @@
       if (value !== null) deduped.set(time, { time, value });
     }
 
-    const data = Array.from(deduped.values()).sort((a, b) => String(a.time).localeCompare(String(b.time)));
+    const data = Array.from(deduped.values()).sort((a, b) => {
+      if (typeof a.time === "number" && typeof b.time === "number") {
+        return a.time - b.time;
+      }
+      return String(a.time).localeCompare(String(b.time));
+    });
     if (!data.length) throw new Error("Nenhum ponto com data e valor numérico foi encontrado.");
     if (data.length > MAX_POINTS) {
       throw new Error(`Endpoint retornou ${data.length} pontos; use um recorte menor que ${MAX_POINTS}.`);
@@ -283,10 +304,11 @@
       kind: shouldUseCandles ? "candlestick" : "line",
       valueKey,
       dateKey,
+      hasIntraday: data.some((point) => typeof point.time === "number"),
     };
   };
 
-  const makeChart = () => {
+  const makeChart = (normalized) => {
     if (chart) chart.remove();
     chart = LightweightCharts.createChart(root, {
       autoSize: true,
@@ -301,14 +323,14 @@
         vertLines: { visible: false },
       },
       rightPriceScale: { borderColor: BRAND.line },
-      timeScale: { borderColor: BRAND.line, timeVisible: false },
+      timeScale: { borderColor: BRAND.line, timeVisible: normalized.hasIntraday },
       crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
     });
     return chart;
   };
 
   const renderSeries = (normalized, options) => {
-    const nextChart = makeChart();
+    const nextChart = makeChart(normalized);
     if (normalized.kind === "candlestick") {
       const series = nextChart.addSeries(LightweightCharts.CandlestickSeries, {
         upColor: BRAND.green,
