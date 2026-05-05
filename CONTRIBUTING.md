@@ -1,9 +1,7 @@
 # Contribuindo para o Dados Financeiros Abertos
 
 > PRs são bem-vindos. Este guia explica como configurar o ambiente local e
-> quais guardrails o projeto usa — inspirado no padrão
-> [Biome+ESLint+pre-commit do monorepo wealthuman](https://github.com/wealthuman),
-> adaptado para Python.
+> quais guardrails de formatação, lint, tipos e testes o projeto usa.
 
 ## Setup em 30 segundos
 
@@ -20,31 +18,30 @@ bash scripts/git/install-hooks.sh
 
 ## Os três tools da casa
 
-A filosofia é espelhada no monorepo wealthuman, só que com ferramentas Python:
+A filosofia separa responsabilidades entre formatação, lint, tipos e testes:
 
-| Papel | Em TS (wealthuman) | Em Python (Dados Financeiros Abertos) |
+| Papel | Ferramenta neste projeto | Responsabilidade |
 |---|---|---|
-| Formatter + lint base | **Biome** | **Ruff** (`ruff format` + `ruff check`) |
-| AI guardrails (max-lines, max-params, magic-numbers, etc.) | **ESLint** | **Ruff Pylint rules** (`PLR*`, `C901`) |
-| Type checking | `tsc --noEmit` | **Mypy** (`--strict`) |
-| Testes | Vitest / Jest | **Pytest** (`-m "not integration"` por padrão) |
-| Secret scan | ggshield | **ggshield** (opcional, no pre-commit) |
+| Formatter + lint base | **Ruff** (`ruff format` + `ruff check`) | Formatação e higiene de código |
+| Guardrails de IA | **Ruff Pylint rules** (`PLR*`, `C901`) | Limites de complexidade, parâmetros e magic numbers |
+| Type checking | **Mypy** (`--strict`) | Tipos estritos |
+| Testes | **Pytest** (`-m "not integration"` por padrão) | Testes unitários e de API sem rede |
+| Secret scan | **ggshield** (opcional, no pre-commit) | Detecção local de segredos |
 
 ## Guardrails de IA (Pylint Refactor rules)
 
-O `pyproject.toml` habilita as mesmas guardrails que o wealthuman usa no
-`eslint.config.mjs`, só que via Ruff:
+O `pyproject.toml` concentra as guardrails de IA via Ruff:
 
-| Regra ESLint (wealthuman) | Equivalente Ruff | Limite |
+| Guardrail | Regra Ruff | Limite |
 |---|---|---|
-| `max-lines-per-function` | — (PLR0915 statements) | 50 statements |
-| `max-params` | `PLR0913` | 6 (FastAPI handlers precisam) |
-| `no-magic-numbers` | `PLR2004` | Constantes nomeadas obrigatórias |
+| Tamanho de função | `PLR0915` statements | 50 statements |
+| Parâmetros | `PLR0913` | 6 (FastAPI handlers precisam) |
+| Magic numbers | `PLR2004` | Constantes nomeadas obrigatórias |
 | (complexidade) | `C901` (McCabe) | 10 |
 | (branches) | `PLR0912` | 12 |
 | (returns) | `PLR0911` | 6 |
-| `no-console` | `T201` | `print()` proibido fora de `banner.py` |
-| `eslint-plugin-security` | `S` (flake8-bandit) | Ativo |
+| Print acidental | `T201` | `print()` proibido fora de `banner.py` |
+| Segurança básica | `S` (flake8-bandit) | Ativo |
 
 Exceções conscientes:
 

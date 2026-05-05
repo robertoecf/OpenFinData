@@ -81,7 +81,6 @@ curl 'http://localhost:8000/registry/lookup?q=PETR4'
 ```
 
 - Site local: `http://localhost:8000/`
-- Fontes e endpoints: `http://localhost:8000/sources`
 - Swagger: `http://localhost:8000/api/docs`
 - ReDoc: `http://localhost:8000/redoc`
 - MCP: `http://localhost:8000/mcp`
@@ -90,8 +89,7 @@ curl 'http://localhost:8000/registry/lookup?q=PETR4'
 
 O README mantém só o mapa de alto nível. A matriz completa de fontes, endpoints,
 notas de autenticação e exemplos de consulta fica em
-[docs/SOURCES_AND_ENDPOINTS.md](docs/SOURCES_AND_ENDPOINTS.md) e na aba
-`/sources` do site.
+[docs/SOURCES_AND_ENDPOINTS.md](docs/SOURCES_AND_ENDPOINTS.md).
 
 Fontes hoje expostas: BCB, Base dos Dados, CVM, Tesouro, IBGE, IPEA, Open
 Finance Brasil, B3, Yahoo Finance experimental, ANBIMA, Receita Federal, ANEEL,

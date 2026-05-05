@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Dados Financeiros Abertos git guardrails
-# Inspired by wealthuman's biome+eslint pattern, adapted for Python/Ruff.
+# Python/Ruff guardrail pattern for this repository.
 # Split of responsibility:
 #   - Ruff   → formatting + base lint + AI guardrails (complexity, max-args, magic numbers).
 #   - Mypy   → strict type checking.

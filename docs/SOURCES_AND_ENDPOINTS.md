@@ -4,7 +4,6 @@ Esta página concentra o detalhe operacional que saiu do README: fontes, famíli
 de endpoints, notas de autenticação e exemplos mínimos de consulta.
 
 Para testar interativamente, rode `findata serve` e abra `/api/docs` ou `/redoc`.
-A aba web `/sources` traz a mesma visão resumida no site local.
 
 ## Mapa de fontes
 
