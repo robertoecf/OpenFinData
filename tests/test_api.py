@@ -5,6 +5,8 @@ These tests use respx to mock outbound HTTP calls, so no real network is hit.
 
 from __future__ import annotations
 
+import re
+
 import httpx
 import pytest
 import respx
@@ -51,7 +53,7 @@ def test_developer_docs_page(client: TestClient) -> None:
     r = client.get("/docs")
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
-    assert 'lang="en"' in r.text
+    assert re.search(r'<html\b[^>]*\blang="en"', r.text)
     assert "Developer console" in r.text
     assert "REST API" in r.text
     assert "OpenAPI schema" in r.text
