@@ -208,10 +208,14 @@
     return null;
   };
 
-  const parseUnixTimestamp = (text) => {
-    if (!/^\d{10,13}$/.test(text)) return null;
+  const parseUnixTimestamp = (text, { allowShortSeconds = false } = {}) => {
+    if (!/^\d+$/.test(text)) return null;
+    const isSeconds = text.length === 10 || (allowShortSeconds && (text === "0" || text.length <= 9));
+    const isMilliseconds = text.length >= 12 && text.length <= 13;
+    if (!isSeconds && !isMilliseconds) return null;
     const timestamp = Number(text);
-    const date = new Date(timestamp > 1e11 ? timestamp : timestamp * 1000);
+    if (!Number.isSafeInteger(timestamp)) return null;
+    const date = new Date(isMilliseconds ? timestamp : timestamp * 1000);
     return timestampFromDate(date);
   };
 
@@ -221,11 +225,11 @@
     if (compactPeriod) return compactPeriod;
 
     if (typeof value === "number") {
-      return parseUnixTimestamp(text);
+      return parseUnixTimestamp(text, { allowShortSeconds: true });
     }
     if (typeof value !== "string") return null;
     const unixTimestamp = parseUnixTimestamp(text);
-    if (unixTimestamp) return unixTimestamp;
+    if (unixTimestamp !== null) return unixTimestamp;
 
     let match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (match) return `${match[3]}-${match[2]}-${match[1]}`;
