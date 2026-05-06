@@ -541,7 +541,7 @@ credentialed source ships in hours rather than days.
   series with endpoints for catalog listing, by-SERCODIGO values,
   metadata, and full-text search. CLI: `findata ipea {catalog,get,search}`.
 - IPEA router at `/ipea/*` and curated built-in catalog.
-- **Git guardrails** inspired by wealthuman's biome+eslint split:
+- **Git guardrails** for Python formatting, lint, types, tests, and security:
   - Ruff now enforces AI guardrails (complexity `C901`, max-args `PLR0913`,
     magic-value `PLR2004`, branches `PLR0912`, returns `PLR0911`, stmts
     `PLR0915`), flake8-bandit `S*`, `no-print` `T201`, `ERA` commented-out.

@@ -88,11 +88,11 @@ line-ending = "lf"
 docstring-code-format = true
 
 [tool.ruff.lint]
-# Philosophy (inspired by wealthuman's biome + eslint split):
-#   - Formatting:       Ruff formatter → like Biome's formatter.
+# Philosophy:
+#   - Formatting:       Ruff formatter.
 #   - Core hygiene:     E/W/F/I/N/UP/B/SIM/RUF + small plugins
-#                       → like Biome's recommended linting and import cleanup.
-#   - AI guardrails:    C901/PLR0911-13-15/PLR2004 → like ESLint's max-* and
+#                       → recommended linting and import cleanup.
+#   - AI guardrails:    C901/PLR0911-13-15/PLR2004 → max-size and
 #     no-magic-numbers rules; catch functions/branches/returns that balloon
 #     beyond what a human or model can reason about in one screen.
 select = [
