@@ -62,13 +62,20 @@ O registro embarcado resolve identificadores de múltiplas fontes em uma única
 consulta:
 
 ```python
+import asyncio
+
 from findata.registry import lookup
 
-await lookup("33000167000101")
-await lookup("33.000.167/0001-01")
-await lookup("PETR4")
-await lookup("9512")
-await lookup("petrobras")
+
+async def main() -> None:
+    await lookup("33000167000101")
+    await lookup("33.000.167/0001-01")
+    await lookup("PETR4")
+    await lookup("9512")
+    await lookup("petrobras")
+
+
+asyncio.run(main())
 ```
 
 A base é SQLite/FTS5, embarcada no pacote e reconstruída pelo fluxo de release.
