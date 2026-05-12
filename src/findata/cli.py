@@ -299,6 +299,41 @@ def b3_index(
     rprint(table)
 
 
+@b3_app.command("index-monthly")
+def b3_index_monthly(
+    symbol: str = typer.Argument(help="Index symbol (e.g. IBOV, IBXX, SMLL, IFIX)"),
+    start: str | None = typer.Option(None, "--start", help="Initial date (YYYY-MM-DD)"),
+    end: str | None = typer.Option(None, "--end", help="Final date (YYYY-MM-DD)"),
+    months: int = typer.Option(120, "--months", "-n", min=1, max=360),
+) -> None:
+    """Show monthly B3 index closing levels from IndexStatisticsProxy."""
+    from findata.sources.b3 import get_index_monthly_evolution
+
+    start_date = date.fromisoformat(start) if start else None
+    end_date = date.fromisoformat(end) if end else None
+    rows = _run(get_index_monthly_evolution(symbol, start=start_date, end=end_date, months=months))
+    if not rows:
+        rprint(f"[yellow]No monthly data for index {symbol}.[/yellow]")
+        return
+
+    table = Table(title=f"{symbol.upper()} — evolução mensal")
+    table.add_column("Date", style="cyan")
+    table.add_column("Period")
+    table.add_column("Close", justify="right", style="bold")
+    table.add_column("Partial", justify="center")
+    max_shown = 60
+    for point in rows[-max_shown:]:
+        table.add_row(
+            point.date,
+            point.period,
+            f"{point.close:,.2f}",
+            "yes" if point.partial_month else "",
+        )
+    rprint(table)
+    if len(rows) > max_shown:
+        rprint(f"[dim](showing last {max_shown} of {len(rows)} monthly points)[/dim]")
+
+
 # ── Tesouro commands ───────────────────────────────────────────────
 
 tesouro_app = typer.Typer(help="Tesouro Direto treasury bonds", no_args_is_help=True)

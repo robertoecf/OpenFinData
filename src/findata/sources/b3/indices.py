@@ -29,12 +29,18 @@ from __future__ import annotations
 
 import base64
 import json
+from calendar import monthrange
+from datetime import date
+from typing import Any
 
 from pydantic import BaseModel
 
 from findata.http_client import get_json
 
 INDEX_PROXY = "https://sistemaswebb3-listados.b3.com.br/indexProxy/indexCall/GetPortfolioDay"
+INDEX_STATISTICS_PROXY = (
+    "https://sistemaswebb3-listados.b3.com.br/indexStatisticsProxy/IndexCall/GetMonthlyEvolution"
+)
 
 # Indices known to ship via this endpoint. The list is open — B3 publishes
 # many more; we curate the ones investors actually trade against.
@@ -104,8 +110,22 @@ class IndexPortfolio(BaseModel):
     componentes: list[IndexConstituent]
 
 
+class IndexMonthlyPoint(BaseModel):
+    """Monthly closing level for a B3 index."""
+
+    date: str  # period-end date, clipped to requested end for partial current month
+    period: str  # YYYY-MM
+    year: int
+    month: int
+    close: float
+    indice: str
+    provider_index: str
+    partial_month: bool = False
+
+
 _DEFAULT_PAGE_SIZE = 200
 _MAX_PAGES = 10  # safety cap: largest index has ~250 issues
+_MONTHS_IN_YEAR = 12
 
 
 def _encode_query(index: str, page_size: int = _DEFAULT_PAGE_SIZE, page_number: int = 1) -> str:
@@ -117,6 +137,73 @@ def _encode_query(index: str, page_size: int = _DEFAULT_PAGE_SIZE, page_number: 
         "segment": "1",
     }
     return base64.b64encode(json.dumps(payload).encode("utf-8")).decode("ascii")
+
+
+def _encode_monthly_evolution_query(index: str, start: date, end: date) -> str:
+    payload = {
+        "language": "pt-br",
+        "index": index.upper(),
+        "dateInitial": start.isoformat(),
+        "dateFinal": end.isoformat(),
+    }
+    return base64.b64encode(json.dumps(payload).encode("utf-8")).decode("ascii")
+
+
+def _coerce_date(value: date | str | None) -> date | None:
+    if value is None:
+        return None
+    if isinstance(value, date):
+        return value
+    return date.fromisoformat(value)
+
+
+def _month_window_start(end: date, months: int) -> date:
+    if months < 1:
+        raise ValueError("months must be >= 1")
+    month_index = end.year * 12 + (end.month - 1) - (months - 1)
+    return date(month_index // 12, month_index % 12 + 1, 1)
+
+
+def _period_end(year: int, month: int, requested_end: date) -> tuple[date, bool]:
+    last = date(year, month, monthrange(year, month)[1])
+    partial = year == requested_end.year and month == requested_end.month and requested_end < last
+    return (requested_end, True) if partial else (last, False)
+
+
+def _f_number(value: Any) -> float | None:
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, int | float):
+        return float(value)
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        return float(value.replace(".", "").replace(",", "."))
+    except ValueError:
+        return None
+
+
+def _row_to_monthly_point(
+    row: dict[str, Any], sym: str, requested_end: date
+) -> IndexMonthlyPoint | None:
+    year = row.get("year")
+    month = row.get("month")
+    close = _f_number(row.get("indexClosingRate"))
+    if not isinstance(year, int) or not isinstance(month, int) or close is None:
+        return None
+    if month not in range(1, _MONTHS_IN_YEAR + 1):
+        return None
+    period_end, partial = _period_end(year, month, requested_end)
+    return IndexMonthlyPoint(
+        date=period_end.isoformat(),
+        period=f"{year:04d}-{month:02d}",
+        year=year,
+        month=month,
+        close=close,
+        indice=sym,
+        provider_index=sym,
+        partial_month=partial,
+    )
 
 
 def _f_redutor(s: str | None) -> float | None:
@@ -177,6 +264,47 @@ async def get_index_portfolio(index: str) -> IndexPortfolio:
         redutor=_f_redutor(header.get("reductor")),
         componentes=components,
     )
+
+
+async def get_index_monthly_evolution(
+    index: str,
+    start: date | str | None = None,
+    end: date | str | None = None,
+    months: int = 120,
+) -> list[IndexMonthlyPoint]:
+    """Fetch monthly closing levels from B3's IndexStatisticsProxy endpoint.
+
+    Args:
+        index: B3 index symbol accepted by the statistics endpoint, for example
+            ``"IBOV"``/``"IBOVESPA"``, ``"SMLL"``, ``"IFIX"`` or ``"IBXX"``.
+        start: Optional initial date. If omitted, the last ``months`` calendar
+            buckets ending at ``end`` are requested.
+        end: Optional final date. Defaults to today. If the final month is
+            partial, the returned point date is clipped to this value.
+        months: Number of monthly buckets to request when ``start`` is omitted.
+    """
+    sym = index.strip().upper()
+    if not sym:
+        raise ValueError("index symbol is required")
+
+    end_date = _coerce_date(end) or date.today()
+    start_date = _coerce_date(start) or _month_window_start(end_date, months)
+    if start_date > end_date:
+        raise ValueError("start date must be on or before end date")
+
+    encoded = _encode_monthly_evolution_query(sym, start_date, end_date)
+    payload = await get_json(f"{INDEX_STATISTICS_PROXY}/{encoded}", cache_ttl=3600)
+    if not isinstance(payload, list):
+        raise ValueError("B3 monthly evolution response was not a list")
+
+    points = [
+        point
+        for row in payload
+        if isinstance(row, dict)
+        for point in [_row_to_monthly_point(row, sym, end_date)]
+        if point is not None
+    ]
+    return sorted(points, key=lambda point: (point.year, point.month))
 
 
 async def list_known_indices() -> dict[str, str]:

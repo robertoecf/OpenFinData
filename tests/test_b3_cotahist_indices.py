@@ -15,6 +15,7 @@ import io
 import json
 import re
 import zipfile
+from datetime import date
 
 import httpx
 import pytest
@@ -29,7 +30,9 @@ from findata.sources.b3.cotahist import (
 )
 from findata.sources.b3.indices import (
     KNOWN_INDICES,
+    _encode_monthly_evolution_query,
     _encode_query,
+    get_index_monthly_evolution,
     get_index_portfolio,
     list_known_indices,
 )
@@ -350,3 +353,42 @@ async def test_get_index_portfolio_handles_pagination() -> None:
     p = await get_index_portfolio("ITAG")
     assert call_count["n"] == 2
     assert {c.ticker for c in p.componentes} == {"AAAA3", "BBBB3", "CCCC3"}
+
+
+def test_encode_monthly_evolution_query_is_round_trippable_base64_json() -> None:
+    encoded = _encode_monthly_evolution_query("ibov", date(2026, 1, 1), date(2026, 5, 11))
+    decoded = json.loads(base64.b64decode(encoded).decode("utf-8"))
+    assert decoded == {
+        "language": "pt-br",
+        "index": "IBOV",
+        "dateInitial": "2026-01-01",
+        "dateFinal": "2026-05-11",
+    }
+
+
+@respx.mock
+async def test_get_index_monthly_evolution_normalizes_b3_rows() -> None:
+    respx.get(re.compile(r"https://.*indexStatisticsProxy/IndexCall/GetMonthlyEvolution/.+")).mock(
+        return_value=httpx.Response(
+            200,
+            json=[
+                {"month": 1, "year": 2026, "indexClosingRate": 181363.9},
+                {"month": 5, "year": 2026, "indexClosingRate": "181.908,87"},
+            ],
+        )
+    )
+
+    rows = await get_index_monthly_evolution(
+        "ibov",
+        start=date(2026, 1, 1),
+        end=date(2026, 5, 11),
+    )
+
+    assert [row.period for row in rows] == ["2026-01", "2026-05"]
+    assert rows[0].date == "2026-01-31"
+    assert rows[0].close == 181363.9
+    assert rows[0].partial_month is False
+    assert rows[1].date == "2026-05-11"
+    assert rows[1].close == 181908.87
+    assert rows[1].partial_month is True
+    assert rows[1].indice == "IBOV"

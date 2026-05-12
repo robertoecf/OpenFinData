@@ -87,107 +87,57 @@ export FINDATA_BD_BILLING_PROJECT_ID="<google-cloud-project-id>"
 
 ## Graphics and chart generation standards
 
-Agents will sometimes use this repo to generate exploratory charts for users.
-Those charts should be clear, source-backed, and reproducible without turning the
-library into a plotting package.
+Agents may use this repo to generate exploratory charts for users. Treat the
+Chart Lab (`/charts`, `src/findata/web/templates/charts.html`,
+`src/findata/web/static/chart-explorer.js`) as the canonical visual and
+informational reference, but not as a mandatory renderer.
 
-### Dependency policy
+Short runbook for any one-off chart request:
+
+1. Generate an audit data file next to the visual artifact, preferably tidy CSV.
+2. Generate a clear visual artifact (SVG, PNG, HTML, or Lightweight Charts HTML)
+   with the same minimum information block used by Chart Lab.
+3. Save or print the script/route used, data path, visual output path, and
+   renderer.
+4. Keep temporary scripts, CSVs, PNGs, SVGs, and HTML files outside the repo
+   unless the user explicitly asks for a committed example.
+
+Minimum information contract for every chart:
+
+- clear title stating exactly what is compared;
+- frequency and period;
+- primary source/curation: `Dados Financeiros Abertos (findata-br)`;
+- extraction timestamp in BRT;
+- effective data cutoff: first and last date actually plotted;
+- original source subsets/series identifiers, such as `BCB SGS 432` or
+  `B3 IndexStatisticsProxy`;
+- final technical line with audit data path, script/route path, renderer, and
+  relevant transformations;
+- audit data saved next to the visual artifact for one-off work.
+
+Dependency and renderer policy:
 
 - Do **not** add plotting libraries such as matplotlib, seaborn, plotly, altair,
   bokeh, or pandas as project dependencies just to make a chart.
-- Prefer no-library outputs when possible:
-  1. CSV data export.
-  2. Hand-authored SVG using Python standard library string templates or
-     `xml.etree.ElementTree`.
-  3. Single-file HTML with inline SVG when interactivity or browser rendering is
-     useful.
-- If a one-off local script uses a plotting library already installed on the
-  machine, keep that script and its PNG/SVG outputs outside the repo unless the
-  user explicitly asks to add an example.
-- If a chart becomes a committed example, keep it dependency-light and place
-  reusable code under `examples/` or docs assets only after confirming scope.
+- Prefer dependency-light outputs: tidy CSV plus hand-authored SVG or
+  single-file HTML/inline SVG.
+- PNG is acceptable for screenshot/raster delivery, but keep the CSV/script so it
+  is not the only artifact.
+- TradingView Lightweight Charts is the interactive Chart Lab renderer and the
+  canonical visual/informational reference. Use it for interactive HTML when it
+  helps, not as a universal obligation.
+- If HTML/Lightweight Charts is used, keep attribution/copyright behavior aligned
+  with `docs/CHART_STANDARDS.md` and the visible footer/link pattern.
 
-### Reproducibility contract
+Use the Chart Lab color tokens consistently:
 
-Every generated chart should make it possible to audit the result later:
+- text principal: `#07132c`;
+- juros/macro: orange `#ff7a1a`;
+- mercado/B3: blue `#0050ff`;
+- fonte/validação: green `#00a859`.
 
-- Save or print the exact script path, data path, and output path.
-- Export the tidy source data as CSV next to the image for one-off work.
-- Use the project APIs/CLI for data retrieval instead of ad hoc scraping when
-  this repo already exposes the dataset.
-- Include source names and series identifiers in the subtitle or footer, for
-  example `BCB SGS 432` or `B3 IndexStatisticsProxy`.
-- Include the consultation date or data cutoff date. Prefer ISO dates in file
-  metadata and human labels in pt-BR (`Consulta em 2026-04-29`).
-- Do not interpolate, forward-fill, or resample silently. State the frequency and
-  transformation in the subtitle: monthly, daily close, 12-month sum, end-of-month,
-  forward-filled policy rate, etc.
-
-### Visual style
-
-Default chart style for financial/economic time series:
-
-- Canvas: 16:9 or wide report format. Good defaults: `1600x900` or SVG
-  `viewBox="0 0 1600 900"`.
-- Background: white or near-white (`#ffffff` / `#f8fafc`).
-- Text color: dark slate (`#111827` for titles, `#4b5563` for secondary text).
-- Grid: light horizontal grid only (`#e5e7eb`), no heavy chart junk.
-- Borders/spines: thin and low-contrast (`#d1d5db`) or omitted.
-- Typography: system sans-serif stack (`Inter`, `SF Pro`, `Segoe UI`, `Arial`,
-  `sans-serif`). Title should be bold and larger than every other label.
-- Use line widths thick enough for screenshots (`3px` to `5px` in SVG).
-- Use color intentionally and consistently:
-  - BCB / interest-rate series: orange `#d97706`.
-  - B3 / equity-index series: blue `#2563eb`.
-  - Neutral comparison: slate `#64748b`.
-  - Negative or warning: red `#dc2626`.
-- Do not rely on color alone. Use legend labels, direct labels, or line style
-  differences where possible.
-
-### Axes, labels, and formatting
-
-- Titles should say exactly what is compared: `Selic meta vs Ibovespa`.
-- Subtitles should include frequency, date range, and source mapping:
-  `Dados mensais: jan/2016 a abr/2026. Selic = BCB SGS 432; Ibovespa = B3.`
-- Axis labels must include units:
-  - `Selic meta (% a.a.)`
-  - `Ibovespa (mil pontos)`
-  - `Valor (R$ bilhões)`
-  - `Variação (% a.m.)`
-- Prefer pt-BR month labels in user-facing charts: `jan/2026`, `abr/2026`.
-- Use Brazilian numeric conventions in annotations when the output is for a
-  Brazilian audience: decimal comma in prose, `R$`, `% a.a.`, `% a.m.`.
-- Dual axes are acceptable only for unlike units. If used, color each axis label
-  and tick labels to match its series, and mention both units in the legend.
-- For policy rates such as Selic meta, prefer a step line when the data changes
-  discretely. For market indexes, prefer a continuous line.
-- Bars should normally start at zero. Line charts may use a narrowed y-axis, but
-  the scale must remain visible and honest.
-
-### Annotations and footers
-
-- Add a compact final-value annotation when it improves readability, e.g.
-  `Último ponto (abr/2026): Selic 14,75% a.a. | Ibovespa 188.619 pts`.
-- Footer should include sources and consultation date, not generic claims.
-- Keep legends inside unused whitespace or above the plot; avoid covering data.
-- Avoid decorative logos, watermarks, shadows, gradients, and 3D effects unless
-  explicitly requested.
-
-### File naming and placement
-
-For one-off user-requested graphics, prefer a temporary work directory outside
-this repo and use snake_case names:
-
-```text
-selic_meta_vs_ibovespa.py
-selic_meta_vs_ibovespa_mensal.csv
-selic_meta_vs_ibovespa.svg
-selic_meta_vs_ibovespa.png   # optional, only if specifically needed
-```
-
-Only commit chart artifacts when they are part of documented examples or a docs
-page. If committed, include the script or generation instructions next to the
-artifact so future agents can regenerate it.
+See `docs/CHART_STANDARDS.md` for the detailed specification, renderer decision
+matrix, templates, and examples of source/technical lines.
 
 ## Release and handoff guardrails
 
