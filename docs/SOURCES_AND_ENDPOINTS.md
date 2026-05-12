@@ -18,7 +18,7 @@ Para testar interativamente, rode `findata serve` e abra `/api/docs` ou `/redoc`
 | IBGE | Indicadores econômicos, IPCA e grupos/subitens | `/ibge/indicators`, `/ibge/indicators/{name}`, `/ibge/ipca/breakdown`, `/ibge/ipca/groups` | Não |
 | IPEA Data | Catálogo e séries macroeconômicas OData | `/ipea/catalog`, `/ipea/search`, `/ipea/series/{sercodigo}`, `/ipea/metadata/{sercodigo}` | Não |
 | Open Finance Brasil | Diretório público, participantes, recursos, JWKS e Portal de Dados | `/openfinance/resources`, `/openfinance/participants`, `/openfinance/endpoints`, `/openfinance/directory/api-resources`, `/openfinance/portal/datasets` | Não para dados públicos |
-| B3 | Cotações, COTAHIST oficial e composição teórica de índices | `/b3/quote/{ticker}`, `/b3/history/{ticker}`, `/b3/quotes`, `/b3/cotahist/year/{year}`, `/b3/indices`, `/b3/indices/{symbol}` | Não |
+| B3 | Cotações, COTAHIST oficial, composição teórica e evolução mensal de índices | `/b3/quote/{ticker}`, `/b3/history/{ticker}`, `/b3/quotes`, `/b3/cotahist/year/{year}`, `/b3/indices`, `/b3/indices/{symbol}`, `/b3/indices/{symbol}/monthly` | Não |
 | Yahoo Finance | Endpoint experimental de gráfico de preços | `/yahoo/chart/{symbol}` | Não; fonte não oficial |
 | ANBIMA | IMA, ETTJ e debêntures via arquivos públicos | `/anbima/ima`, `/anbima/ettj`, `/anbima/debentures` | Não para os arquivos usados |
 | Receita Federal | Arrecadação por período, UF e tributo | `/receita/arrecadacao`, `/receita/tributos` | Não |
@@ -35,6 +35,7 @@ curl 'http://localhost:8000/bcb/focus/annual?indicator=IPCA&top=3'
 curl 'http://localhost:8000/cvm/companies/search?q=petrobras'
 curl 'http://localhost:8000/cvm/funds/daily?cnpj=00.280.302/0001-60&limit=5'
 curl 'http://localhost:8000/b3/quote/PETR4'
+curl 'http://localhost:8000/b3/indices/IBOV/monthly?start=2026-01-01&end=2026-05-11'
 curl 'http://localhost:8000/b3/cotahist/year/2025?limit=5'
 curl 'http://localhost:8000/openfinance/participants?role=DADOS&limit=20'
 curl 'http://localhost:8000/registry/lookup?q=PETR4'
@@ -52,6 +53,7 @@ findata ipea search desemprego
 findata openfinance participants --role DADOS -n 20
 findata cvm search Petrobras
 findata b3 quote PETR4
+findata b3 index-monthly IBOV --start 2026-01-01 --end 2026-05-11
 findata anbima ima -i IMA-B
 findata registry lookup "33.000.167/0001-01"
 ```

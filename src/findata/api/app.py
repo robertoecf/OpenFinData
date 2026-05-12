@@ -65,7 +65,7 @@ ADVERTISED_SOURCES: dict[str, str] = {
     "ibge": "IBGE (economic indicators)",
     "ipea": "IPEA Data (~8k macro series, long historical coverage)",
     "openfinance": "Open Finance Brasil (public Directory + indicator Portal)",
-    "b3": "B3 (stock quotes via yfinance)",
+    "b3": "B3 (official COTAHIST, indices, and optional stock quotes)",
     "yahoo": "Yahoo Finance chart endpoint (experimental, unofficial)",
     "anbima": "ANBIMA (IMA family, ETTJ, debêntures — public file downloads)",
     "receita": "Receita Federal (federal tax collection)",

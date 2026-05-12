@@ -81,9 +81,14 @@ curl 'http://localhost:8000/registry/lookup?q=PETR4'
 ```
 
 - Site local: `http://localhost:8000/`
+- Chart Lab: `http://localhost:8000/charts`
 - Swagger: `http://localhost:8000/api/docs`
 - ReDoc: `http://localhost:8000/redoc`
 - MCP: `http://localhost:8000/mcp`
+
+O Chart Lab é a referência visual e informacional para gráficos do projeto, mas
+o renderer pode ser SVG, PNG, HTML inline ou TradingView Lightweight Charts. O
+contrato detalhado fica em [docs/CHART_STANDARDS.md](docs/CHART_STANDARDS.md).
 
 ## Fontes suportadas
 
