@@ -150,3 +150,23 @@ async def index_portfolio(symbol: str) -> indices.IndexPortfolio:
     quantity. Refreshed quarterly by B3.
     """
     return await indices.get_index_portfolio(symbol)
+
+
+@router.get("/indices/{symbol}/monthly")
+async def index_monthly_evolution(
+    symbol: str,
+    start: date | None = Query(default=None, description="Initial date, YYYY-MM-DD"),
+    end: date | None = Query(default=None, description="Final date, YYYY-MM-DD"),
+    months: int = Query(120, ge=1, le=360, description="Window size when start is omitted"),
+) -> list[indices.IndexMonthlyPoint]:
+    """Monthly closing levels for a B3 index via IndexStatisticsProxy.
+
+    Useful for charting Ibovespa (`IBOV`) or other B3 index levels without
+    relying on unofficial market-data providers.
+    """
+    try:
+        return await indices.get_index_monthly_evolution(
+            symbol, start=start, end=end, months=months
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc

@@ -19,13 +19,16 @@
     red: "#ef4444",
     white: "#ffffff",
   };
-  const PRIMARY_SOURCE = "Dados Abertos de Mercado (findata-br)";
+  const PRIMARY_SOURCE = "Dados Financeiros Abertos (findata-br)";
+  const CHART_SCRIPT = "src/findata/web/static/chart-explorer.js";
+  const CHART_RENDERER = "TradingView Lightweight Charts 5.2.0";
   const MAX_POINTS = 5000;
   const REQUEST_TIMEOUT_MS = 15000;
   const ALLOWED_ENDPOINT_PREFIXES = [
     "/bcb/series/",
     "/ibge/indicators/",
     "/ipea/series/",
+    "/b3/indices/",
   ];
 
   const isoDate = (date) => date.toISOString().slice(0, 10);
@@ -67,6 +70,7 @@
       field: "valor",
       title: "Taxa Selic",
       source: "BCB SGS 432",
+      frequency: "diária",
       color: BRAND.orange,
     },
     {
@@ -76,7 +80,8 @@
       field: "valor",
       title: "IPCA mensal",
       source: "BCB SGS 433",
-      color: BRAND.blue,
+      frequency: "mensal",
+      color: BRAND.orange,
     },
     {
       id: "ipea-selic-over",
@@ -85,6 +90,7 @@
       field: "valor",
       title: "Selic over acumulada no mês",
       source: "IPEA Data BM12_TJOVER12",
+      frequency: "mensal",
       color: BRAND.orange,
     },
     {
@@ -94,6 +100,21 @@
       field: "valor",
       title: "IPCA mensal — IBGE",
       source: "IBGE Agregados 7060/63",
+      frequency: "mensal",
+      color: BRAND.orange,
+    },
+    {
+      id: "b3-ibov-monthly",
+      label: "B3 — Ibovespa mensal",
+      endpoint: () => {
+        const start = isoDate(monthsAgo(120));
+        const end = isoDate(new Date());
+        return `/b3/indices/IBOV/monthly?start=${start}&end=${end}`;
+      },
+      field: "close",
+      title: "Ibovespa mensal",
+      source: "B3 IndexStatisticsProxy",
+      frequency: "mensal",
       color: BRAND.blue,
     },
   ];
@@ -418,7 +439,7 @@
     const usesPresetEndpoint = endpoint === presetEndpoint;
     const options = usesPresetEndpoint
       ? { ...preset, endpoint: presetEndpoint, field: field || preset.field || "" }
-      : { endpoint, field, title: endpoint, source: "Endpoint findata-br" };
+      : { endpoint, field, title: endpoint, source: "Endpoint findata-br", frequency: "não inferida" };
 
     setStatus("Buscando endpoint…");
     const controller = new AbortController();
@@ -461,7 +482,7 @@
     nodes.summary.replaceChildren(
       auditLink,
       document.createTextNode(
-        ` · ${normalized.data.length} pontos · ${first} a ${last} · data=${normalized.dateKey} · valor=${normalized.valueKey || "OHLC"}`,
+        ` · Script: ${CHART_SCRIPT} · Renderer: ${CHART_RENDERER} · Frequência: ${options.frequency || "não inferida"} · ${normalized.data.length} pontos · ${first} a ${last} · data=${normalized.dateKey} · valor=${normalized.valueKey || "OHLC"}`,
       ),
     );
     setStatus("Série plotada.", "ok");

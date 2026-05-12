@@ -5,6 +5,7 @@ These tests use respx to mock outbound HTTP calls, so no real network is hit.
 
 from __future__ import annotations
 
+import re
 from html.parser import HTMLParser
 
 import httpx
@@ -211,3 +212,28 @@ def test_bcb_series_name_happy_path(client: TestClient) -> None:
     data = r.json()
     assert len(data) == 3
     assert data[0]["valor"] == 11.25
+
+
+@respx.mock
+def test_b3_index_monthly_route(client: TestClient) -> None:
+    respx.get(re.compile(r"https://.*indexStatisticsProxy/IndexCall/GetMonthlyEvolution/.+")).mock(
+        return_value=httpx.Response(
+            200,
+            json=[
+                {"month": 1, "year": 2026, "indexClosingRate": 181363.9},
+                {"month": 5, "year": 2026, "indexClosingRate": 181908.87},
+            ],
+        )
+    )
+
+    r = client.get(
+        "/b3/indices/IBOV/monthly",
+        params={"start": "2026-01-01", "end": "2026-05-11"},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data[0]["period"] == "2026-01"
+    assert data[0]["date"] == "2026-01-31"
+    assert data[1]["date"] == "2026-05-11"
+    assert data[1]["close"] == 181908.87
+    assert data[1]["partial_month"] is True
