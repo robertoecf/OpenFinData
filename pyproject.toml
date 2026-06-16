@@ -68,11 +68,10 @@ Issues = "https://github.com/robertoecf/findata-br/issues"
 Documentation = "https://github.com/robertoecf/findata-br#readme"
 
 [tool.hatch.build.targets.wheel]
+# `packages` already captures the web/static and web/templates assets that
+# live inside the package, so no `force-include` is needed — adding one
+# duplicates those paths and makes hatchling abort the wheel build.
 packages = ["src/findata"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"src/findata/web/static" = "findata/web/static"
-"src/findata/web/templates" = "findata/web/templates"
 
 [tool.hatch.build.targets.sdist]
 include = ["src/findata", "tests", "README.md", "LICENSE", "pyproject.toml"]
