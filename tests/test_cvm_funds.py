@@ -129,6 +129,22 @@ async def test_holdings_block_whitelist() -> None:
     assert all(r.bloco == "BLC_4" for r in rows)
 
 
+@respx.mock
+async def test_holdings_bare_digit_cnpj_matches_punctuated() -> None:
+    """CVM stores CNPJs punctuated; a bare-digit query must still match.
+
+    Regression: the reader used to compare raw strings, so ``12345678000199``
+    never matched the stored ``12.345.678/0001-99`` and returned no holdings.
+    """
+    respx.get(re.compile(r"https://.*cda_fi_202603\.zip")).mock(
+        return_value=httpx.Response(200, content=_make_cda_zip())
+    )
+    rows = await get_fund_holdings("12345678000199", year=2026, month=3)
+    assert len(rows) == 3  # identical to the punctuated query
+    assert {r.bloco for r in rows} == {"BLC_4", "BLC_8"}
+    assert all(r.cnpj == "12.345.678/0001-99" for r in rows)  # output keeps CVM format
+
+
 # ── LAMINA ───────────────────────────────────────────────────────
 
 
