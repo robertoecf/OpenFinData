@@ -104,13 +104,16 @@ def test_meta_endpoint(client: TestClient) -> None:
 
 
 def test_app_registers_registry_routes() -> None:
-    """Smoke: registry routes are present in FastAPI's routing table.
+    """Smoke: registry routes are registered and exposed by the app.
 
-    fastapi-mcp discovers tools by walking ``app.routes``; if the routes
-    aren't registered, the MCP server can't expose them. We verify the
-    routes are there as a proxy for "the MCP companion will see them".
+    fastapi-mcp discovers tools from the OpenAPI schema; if the routes
+    aren't exposed, the MCP server can't expose them. We assert against
+    ``app.openapi()`` as a proxy for "the MCP companion will see them".
+    (Walking ``app.routes`` no longer works: since FastAPI 0.137 /
+    Starlette 1.3 included routers are kept as lazy ``_IncludedRouter``
+    wrappers, so their child paths aren't flattened into ``app.routes``.)
     """
-    paths = {getattr(r, "path", "") for r in app.routes}
+    paths = app.openapi()["paths"]
     assert "/registry/lookup" in paths
     assert "/registry/meta" in paths
 
