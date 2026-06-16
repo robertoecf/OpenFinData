@@ -14,6 +14,13 @@ adheres to [Semantic Versioning](https://semver.org/).
   (`22187946000141`) — exactly what the `--help` text advertises — got
   "No holdings". Both sides are now normalized to digits before comparing,
   so punctuated and bare forms return identical results.
+- **`cvm holdings` silently dropped BLC_2 (cotas de fundos).** CDA free-text
+  fund names contain stray double-quotes; the default `csv` dialect treated
+  them as quote chars and swallowed delimiters/newlines across rows, so whole
+  blocks parsed to garbage and matched nothing — the CLI printed a partial
+  table that looked complete. For a fund-of-funds (FIC) this hid ~99.8% of the
+  portfolio (e.g. Verde FIC's R$ 850.657.058,68 Verde Master position). The
+  reader now passes `quoting=csv.QUOTE_NONE`, keeping every `"` literal.
 
 ## [0.3.1] — 2026-04-29
 

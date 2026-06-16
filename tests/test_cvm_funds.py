@@ -145,6 +145,46 @@ async def test_holdings_bare_digit_cnpj_matches_punctuated() -> None:
     assert all(r.cnpj == "12.345.678/0001-99" for r in rows)  # output keeps CVM format
 
 
+def _make_cda_blc2_zip() -> bytes:
+    """BLC_2 (cotas de fundos) zip whose free-text name has a stray quote.
+
+    The first invested-fund name opens a double-quote that is only closed on
+    the next row. The default csv dialect treats ``"`` as a quote char, so it
+    swallows the delimiter/newline and merges both rows into one — silently
+    dropping the second fund-of-funds position. Real CDA files carry exactly
+    this pattern, which made an entire FIC portfolio vanish.
+    """
+    header = (
+        "TP_FUNDO_CLASSE;CNPJ_FUNDO_CLASSE;DENOM_SOCIAL;DT_COMPTC;TP_APLIC;"
+        "TP_ATIVO;EMISSOR_LIGADO;QT_POS_FINAL;VL_MERC_POS_FINAL;DS_ATIVO\n"
+    )
+    rows = (
+        "FIC;22.187.946/0001-41;VERDE FIC;2025-12-31;Cotas de Fundos;Cota de FI;"
+        'N;850657.05;850657058.68;"VERDE MASTER FIC\n'
+        "FIC;22.187.946/0001-41;VERDE FIC;2025-12-31;Cotas de Fundos;Cota de FI;"
+        'N;100;500000.00;OUTRO" FUNDO INVESTIDO\n'
+    )
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("cda_fi_BLC_2_202512.csv", (header + rows).encode("iso-8859-1"))
+    return buf.getvalue()
+
+
+@respx.mock
+async def test_holdings_blc2_stray_quote_not_dropped() -> None:
+    """A BLC_2 row with a stray quote in the fund name must not be dropped."""
+    respx.get(re.compile(r"https://.*cda_fi_202512\.zip")).mock(
+        return_value=httpx.Response(200, content=_make_cda_blc2_zip())
+    )
+    rows = await get_fund_holdings("22.187.946/0001-41", year=2025, month=12)
+    assert len(rows) == 2  # both fund-of-funds positions survive parsing
+    assert all(r.bloco == "BLC_2" for r in rows)
+    assert rows[0].valor_mercado == 850657058.68  # ~99.8% of PL — the big one
+    assert rows[1].valor_mercado == 500000.00
+    # stray quote is kept literally, not treated as a CSV quote char
+    assert rows[0].descricao == '"VERDE MASTER FIC'
+
+
 # ── LAMINA ───────────────────────────────────────────────────────
 
 

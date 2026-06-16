@@ -158,7 +158,15 @@ async def get_fund_holdings(
             if wanted_blocks is not None and block not in wanted_blocks:
                 continue
             with zf.open(entry) as f:
-                reader = csv.DictReader(io.StringIO(f.read().decode("iso-8859-1")), delimiter=";")
+                # CDA free-text names (esp. BLC_2 cotas de fundos) carry stray
+                # double-quotes; the default dialect would treat them as quote
+                # chars and swallow delimiters across rows, silently dropping
+                # whole blocks. QUOTE_NONE keeps every '"' as a literal char.
+                reader = csv.DictReader(
+                    io.StringIO(f.read().decode("iso-8859-1")),
+                    delimiter=";",
+                    quoting=csv.QUOTE_NONE,
+                )
                 for row in reader:
                     row_cnpj = _digits(row.get("CNPJ_FUNDO_CLASSE") or row.get("CNPJ_FUNDO"))
                     if row_cnpj != cnpj_norm:
