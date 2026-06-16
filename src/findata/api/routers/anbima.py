@@ -46,3 +46,19 @@ async def debentures(
         needle = emissor.upper()
         rows = [r for r in rows if needle in r.emissor.upper()]
     return rows[:limit]
+
+
+@router.get("/tpf")
+async def tpf(
+    data: date | None = Query(default=None),
+    titulo: str | None = Query(
+        default=None, description="Filter by bond type, e.g. LTN, NTN-B, LFT"
+    ),
+    limit: int = Query(default=1000, ge=1, le=5000),
+) -> list[anbima.TPFQuote]:
+    """Daily secondary-market reference rates for federal government bonds (TPF)."""
+    rows = await anbima.get_tpf(data)
+    if titulo:
+        needle = titulo.upper()
+        rows = [r for r in rows if needle in r.titulo.upper()]
+    return rows[:limit]

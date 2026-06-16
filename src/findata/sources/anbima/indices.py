@@ -32,6 +32,7 @@ IMA_HISTORY_URL = "https://www.anbima.com.br/informacoes/ima/arqs/ima_completo.x
 IMA_HISTORY_DOWNLOAD_URL = "https://www.anbima.com.br/informacoes/ima/ima-sh-down.asp"
 ETTJ_URL = "https://www.anbima.com.br/informacoes/est-termo/CZ-down.asp"
 DEBENTURES_URL = "https://www.anbima.com.br/informacoes/merc-sec-debentures/arqs/db{ymd}.txt"
+TPF_URL = "https://www.anbima.com.br/informacoes/merc-sec/arqs/ms{ymd}.txt"
 
 
 # ── Models ────────────────────────────────────────────────────────
@@ -89,6 +90,26 @@ class DebentureQuote(BaseModel):
     referencia_ntn_b: str | None = None
 
 
+class TPFQuote(BaseModel):
+    """Secondary-market reference rates for a federal government bond (TPF)."""
+
+    data_referencia: str  # YYYY-MM-DD
+    titulo: str  # LTN, LFT, NTN-B, NTN-C, NTN-F, ...
+    codigo_selic: str
+    data_base_emissao: str  # YYYY-MM-DD
+    data_vencimento: str  # YYYY-MM-DD
+    taxa_compra_pct: float | None = None
+    taxa_venda_pct: float | None = None
+    taxa_indicativa_pct: float | None = None
+    pu: float | None = None
+    desvio_padrao: float | None = None
+    intervalo_ind_inf_d0_pct: float | None = None
+    intervalo_ind_sup_d0_pct: float | None = None
+    intervalo_ind_inf_d1_pct: float | None = None
+    intervalo_ind_sup_d1_pct: float | None = None
+    criterio: str | None = None
+
+
 # ── Helpers ───────────────────────────────────────────────────────
 
 
@@ -123,6 +144,17 @@ def _date_to_iso(s: str) -> str:
     if len(y) == _TWO_DIGIT_YEAR_LEN:
         y = ("20" + y) if int(y) < _TWO_DIGIT_YEAR_PIVOT else ("19" + y)
     return f"{y}-{int(m):02d}-{int(d):02d}"
+
+
+_COMPACT_DATE_LEN = 8  # YYYYMMDD
+
+
+def _compact_to_iso(s: str) -> str:
+    """The TPF file ships dates as compact YYYYMMDD. Normalise to YYYY-MM-DD."""
+    s = s.strip()
+    if len(s) == _COMPACT_DATE_LEN and s.isdigit():
+        return f"{s[0:4]}-{s[4:6]}-{s[6:8]}"
+    return _date_to_iso(s)
 
 
 # ── IMA (snapshot of the latest trading day) ─────────────────────
@@ -523,6 +555,60 @@ async def get_debentures(data_referencia: date | None = None) -> list[DebentureQ
                 pct_reune=_f_br(cells[13]),
                 referencia_ntn_b=(
                     (cells[14].strip() or None) if len(cells) > 14 else None  # noqa: PLR2004
+                ),
+            )
+        )
+    return rows
+
+
+# ── Títulos Públicos Federais (daily TXT) ────────────────────────
+
+_TPF_MIN_COLS = 14
+_TPF_CRITERIO_IDX = 14
+
+
+async def get_tpf(data_referencia: date | None = None) -> list[TPFQuote]:
+    """Daily secondary-market reference rates for federal government bonds (TPF).
+
+    The same `@`-separated layout as the debêntures file: a title line, a
+    blank line, a header row starting with ``Titulo``, then one row per
+    outstanding bond (LTN, LFT, NTN-B, NTN-C, NTN-F). Dates arrive compact
+    (``YYYYMMDD``); rates are Brazilian-formatted decimals.
+    """
+    d = data_referencia or date.today()
+    ymd = d.strftime("%y%m%d")
+    raw = await get_bytes(TPF_URL.format(ymd=ymd), cache_ttl=3600)
+    text = raw.decode("latin1", errors="replace")
+    reader = csv.reader(io.StringIO(text), delimiter="@")
+    rows: list[TPFQuote] = []
+    header_seen = False
+    for cells in reader:
+        if not cells or len(cells) < _TPF_MIN_COLS:
+            continue
+        if not header_seen:
+            if cells[0].strip().lower() == "titulo":
+                header_seen = True
+            continue
+        rows.append(
+            TPFQuote(
+                titulo=cells[0].strip(),
+                data_referencia=_compact_to_iso(cells[1]),
+                codigo_selic=cells[2].strip(),
+                data_base_emissao=_compact_to_iso(cells[3]),
+                data_vencimento=_compact_to_iso(cells[4]),
+                taxa_compra_pct=_f_br(cells[5]),
+                taxa_venda_pct=_f_br(cells[6]),
+                taxa_indicativa_pct=_f_br(cells[7]),
+                pu=_f_br(cells[8]),
+                desvio_padrao=_f_br(cells[9]),
+                intervalo_ind_inf_d0_pct=_f_br(cells[10]),
+                intervalo_ind_sup_d0_pct=_f_br(cells[11]),
+                intervalo_ind_inf_d1_pct=_f_br(cells[12]),
+                intervalo_ind_sup_d1_pct=_f_br(cells[13]),
+                criterio=(
+                    (cells[_TPF_CRITERIO_IDX].strip() or None)
+                    if len(cells) > _TPF_CRITERIO_IDX
+                    else None
                 ),
             )
         )

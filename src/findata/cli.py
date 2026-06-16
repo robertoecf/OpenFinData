@@ -766,6 +766,43 @@ def anbima_debentures(
     rprint(table)
 
 
+@anbima_app.command("tpf")
+def anbima_tpf(
+    d: str | None = typer.Option(None, "--date", "-d"),
+    titulo: str | None = typer.Option(None, "--titulo", "-t"),
+    n: int = typer.Option(50, "--last", "-n"),
+) -> None:
+    """Daily secondary-market reference rates for federal government bonds (TPF)."""
+    from findata.sources.anbima import get_tpf
+
+    dt = date.fromisoformat(d) if d else None
+    rows = _run(get_tpf(dt))
+    if titulo:
+        needle = titulo.upper()
+        rows = [r for r in rows if needle in r.titulo.upper()]
+    rows = rows[:n]
+    if not rows:
+        rprint("[yellow]No TPF quotes matched.[/yellow]")
+        return
+    table = Table(title=f"ANBIMA: Títulos Públicos ({dt or 'today'})")
+    table.add_column("Title", style="cyan")
+    table.add_column("Maturity", style="blue")
+    table.add_column("Rate Indicative %", style="green", justify="right")
+    table.add_column("Buy %", justify="right")
+    table.add_column("Sell %", justify="right")
+    table.add_column("PU R$", justify="right")
+    for r in rows:
+        table.add_row(
+            r.titulo,
+            r.data_vencimento,
+            _fmt(r.taxa_indicativa_pct, ".4f"),
+            _fmt(r.taxa_compra_pct, ".4f"),
+            _fmt(r.taxa_venda_pct, ".4f"),
+            _fmt(r.pu, ".2f"),
+        )
+    rprint(table)
+
+
 # ── IPEA commands ──────────────────────────────────────────────────
 
 ipea_app = typer.Typer(help="IPEA Data — macro series catalog", no_args_is_help=True)
