@@ -160,10 +160,10 @@ def _coerce_date(value: date | str | None) -> date | None:
 def _month_window_start(end: date, months: int) -> date:
     if months < 1:
         raise ValueError("months must be >= 1")
-    month_index = end.year * 12 + (end.month - 1) - (months - 1)
-    if month_index < 12:
+    month_index = end.year * _MONTHS_IN_YEAR + (end.month - 1) - (months - 1)
+    if month_index < _MONTHS_IN_YEAR:
         return date.min
-    return date(month_index // 12, month_index % 12 + 1, 1)
+    return date(month_index // _MONTHS_IN_YEAR, month_index % _MONTHS_IN_YEAR + 1, 1)
 
 
 def _period_end(year: int, month: int, requested_end: date) -> tuple[date, bool]:
