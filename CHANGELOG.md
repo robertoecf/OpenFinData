@@ -6,6 +6,15 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`cvm holdings` ignored bare-digit CNPJs.** The CDA reader compared the
+  CNPJ argument to the stored value as raw strings, but CVM stores CNPJs
+  punctuated (`22.187.946/0001-41`). A user passing bare digits
+  (`22187946000141`) — exactly what the `--help` text advertises — got
+  "No holdings". Both sides are now normalized to digits before comparing,
+  so punctuated and bare forms return identical results.
+
 ## [0.3.1] — 2026-04-29
 
 Patch release fixing 5 bugs caught in adversarial review of v0.3.0 by
