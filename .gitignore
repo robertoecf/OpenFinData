@@ -9,6 +9,7 @@ build/
 .venv/
 venv/
 env/
+uv.lock
 .env
 .env.local
 .mypy_cache/
