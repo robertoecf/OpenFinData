@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 import sys
 import zipfile
 
@@ -42,6 +43,13 @@ from findata.sources.cvm._directory import CVM_BASE
 csv.field_size_limit(min(sys.maxsize, 2**31 - 1))
 
 CDA_URL = f"{CVM_BASE}/FI/DOC/CDA/DADOS/cda_fi_{{ym}}.zip"
+
+_NON_DIGIT = re.compile(r"\D")
+
+
+def _digits(value: str | None) -> str:
+    """Strip a CNPJ down to its digits so punctuated and bare forms compare equal."""
+    return _NON_DIGIT.sub("", value or "")
 
 
 class FundHolding(BaseModel):
@@ -139,7 +147,7 @@ async def get_fund_holdings(
     """
     ym = f"{year}{month:02d}"
     raw = await get_bytes(CDA_URL.format(ym=ym), cache_ttl=86400)
-    cnpj_norm = cnpj.strip()
+    cnpj_norm = _digits(cnpj)
     wanted_blocks = {b.upper() for b in blocks} if blocks else None
     holdings: list[FundHolding] = []
     with zipfile.ZipFile(io.BytesIO(raw)) as zf:
@@ -150,9 +158,17 @@ async def get_fund_holdings(
             if wanted_blocks is not None and block not in wanted_blocks:
                 continue
             with zf.open(entry) as f:
-                reader = csv.DictReader(io.StringIO(f.read().decode("iso-8859-1")), delimiter=";")
+                # CDA free-text names (esp. BLC_2 cotas de fundos) carry stray
+                # double-quotes; the default dialect would treat them as quote
+                # chars and swallow delimiters across rows, silently dropping
+                # whole blocks. QUOTE_NONE keeps every '"' as a literal char.
+                reader = csv.DictReader(
+                    io.StringIO(f.read().decode("iso-8859-1")),
+                    delimiter=";",
+                    quoting=csv.QUOTE_NONE,
+                )
                 for row in reader:
-                    row_cnpj = (row.get("CNPJ_FUNDO_CLASSE") or row.get("CNPJ_FUNDO", "")).strip()
+                    row_cnpj = _digits(row.get("CNPJ_FUNDO_CLASSE") or row.get("CNPJ_FUNDO"))
                     if row_cnpj != cnpj_norm:
                         continue
                     h = _row_to_holding(row, block, include_raw=include_raw)
