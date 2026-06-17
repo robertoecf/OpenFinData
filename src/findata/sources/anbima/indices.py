@@ -626,8 +626,8 @@ async def get_tpf(data_referencia: date | None = None) -> list[TPFQuote]:
         if not cells or len(cells) < _TPF_MIN_COLS:
             continue
         if not header_seen:
-            # Tolerate an accented header ("Título") — the file is latin-1.
-            if _norm_header(cells[0]).startswith("titul"):
+        if not header_seen:
+            if cells[0].strip().lower().startswith("tit"):
                 header_seen = True
             continue
         rows.append(
