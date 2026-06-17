@@ -13,6 +13,7 @@ import io
 import logging
 import ssl
 import time
+import unicodedata
 from datetime import date, timedelta
 from enum import StrEnum
 from typing import Any
@@ -149,11 +150,22 @@ def _date_to_iso(s: str) -> str:
 _COMPACT_DATE_LEN = 8  # YYYYMMDD
 
 
+def _norm_header(s: str) -> str:
+    """Lower-case and strip accents so 'Título' and 'Titulo' compare equal."""
+    nfkd = unicodedata.normalize("NFKD", s.strip().lower())
+    return "".join(c for c in nfkd if not unicodedata.combining(c))
+
+
 def _compact_to_iso(s: str) -> str:
     """The TPF file ships dates as compact YYYYMMDD. Normalise to YYYY-MM-DD."""
     s = s.strip()
     if len(s) == _COMPACT_DATE_LEN and s.isdigit():
-        return f"{s[0:4]}-{s[4:6]}-{s[6:8]}"
+        iso = f"{s[0:4]}-{s[4:6]}-{s[6:8]}"
+        try:
+            date.fromisoformat(iso)
+        except ValueError:
+            return s  # shape matched but not a real date — keep raw, don't fabricate
+        return iso
     return _date_to_iso(s)
 
 
@@ -516,6 +528,30 @@ async def get_ettj(data_referencia: date | None = None) -> list[ETTJDataPoint]:
     return rows
 
 
+# ── Daily @-separated TXT files (debêntures + TPF) ───────────────
+
+_HTTP_NOT_FOUND = 404
+_ANBIMA_TXT_MAX_BYTES = 8 * 1024 * 1024  # daily TXT is tiny; cap pathological bodies
+
+
+async def _fetch_anbima_txt(url: str, label: str, d: date) -> str | None:
+    """Fetch a daily ANBIMA ``@``-separated TXT file for date ``d``.
+
+    Returns the decoded text, or ``None`` when upstream has no file for that
+    day (weekends/holidays → HTTP 404). Other HTTP errors are logged and
+    re-raised so callers fail loudly rather than returning a silent empty.
+    """
+    try:
+        raw = await get_bytes(url, cache_ttl=3600, max_bytes=_ANBIMA_TXT_MAX_BYTES)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == _HTTP_NOT_FOUND:
+            logger.debug("No %s file published for %s", label, d)
+            return None
+        logger.warning("%s fetch failed for %s: HTTP %s", label, d, exc.response.status_code)
+        raise
+    return raw.decode("latin1", errors="replace")
+
+
 # ── Debêntures (daily TXT) ───────────────────────────────────────
 
 
@@ -523,8 +559,9 @@ async def get_debentures(data_referencia: date | None = None) -> list[DebentureQ
     """Daily secondary-market quotes for outstanding debentures."""
     d = data_referencia or date.today()
     ymd = d.strftime("%y%m%d")
-    raw = await get_bytes(DEBENTURES_URL.format(ymd=ymd), cache_ttl=3600)
-    text = raw.decode("latin1", errors="replace")
+    text = await _fetch_anbima_txt(DEBENTURES_URL.format(ymd=ymd), "debentures", d)
+    if text is None:
+        return []
     iso = d.strftime("%Y-%m-%d")
     reader = csv.reader(io.StringIO(text), delimiter="@")
     rows: list[DebentureQuote] = []
@@ -558,6 +595,8 @@ async def get_debentures(data_referencia: date | None = None) -> list[DebentureQ
                 ),
             )
         )
+    if not header_seen:
+        logger.warning("debentures file for %s had no recognisable header row", d)
     return rows
 
 
@@ -577,8 +616,9 @@ async def get_tpf(data_referencia: date | None = None) -> list[TPFQuote]:
     """
     d = data_referencia or date.today()
     ymd = d.strftime("%y%m%d")
-    raw = await get_bytes(TPF_URL.format(ymd=ymd), cache_ttl=3600)
-    text = raw.decode("latin1", errors="replace")
+    text = await _fetch_anbima_txt(TPF_URL.format(ymd=ymd), "TPF", d)
+    if text is None:
+        return []
     reader = csv.reader(io.StringIO(text), delimiter="@")
     rows: list[TPFQuote] = []
     header_seen = False
@@ -586,7 +626,8 @@ async def get_tpf(data_referencia: date | None = None) -> list[TPFQuote]:
         if not cells or len(cells) < _TPF_MIN_COLS:
             continue
         if not header_seen:
-            if cells[0].strip().lower() == "titulo":
+            # Tolerate an accented header ("Título") — the file is latin-1.
+            if _norm_header(cells[0]).startswith("titul"):
                 header_seen = True
             continue
         rows.append(
@@ -612,4 +653,6 @@ async def get_tpf(data_referencia: date | None = None) -> list[TPFQuote]:
                 ),
             )
         )
+    if not header_seen:
+        logger.warning("TPF file for %s had no recognisable header row", d)
     return rows
