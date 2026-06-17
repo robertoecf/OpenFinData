@@ -1,8 +1,10 @@
 name: Rebuild Registry
 
 # Weekly rebuild of src/findata/data/registry.sqlite from upstream sources.
-# If the new content hash differs from the current commit, a PR is opened
-# automatically — keeping a human in the loop instead of pushing to main.
+# If the new content hash differs from the current commit, the rebuilt file
+# is validated against the registry tests, then opened as a PR and squash-
+# merged automatically — fully hands-off, but every change still lands as a
+# PR in the history and only merges on a green test run.
 #
 # Manual trigger via "Run workflow" button is also supported for ad-hoc
 # regeneration (e.g. after a data-quality fix in scripts/build_registry.py).
@@ -17,7 +19,7 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
-# Only one rebuild PR at a time — if last week's still open, skip.
+# Only one rebuild at a time — never overlap with a previous run.
 concurrency:
   group: rebuild-registry
   cancel-in-progress: false
@@ -75,8 +77,17 @@ jobs:
           print(f"sources={meta.get('sources_json','')}")
           PY
 
-      - name: Open PR if content changed
-        if: steps.before.outputs.sha != steps.after.outputs.sha
+      # Gate the merge on the rebuilt data actually working. test_registry_router
+      # runs against the *real* embedded registry.sqlite we just regenerated, so
+      # a broken/empty rebuild fails here and never reaches main.
+      - name: Validate rebuilt registry
+        if: success() && steps.before.outputs.sha != steps.after.outputs.sha
+        run: |
+          python -m pytest tests/test_registry_router.py -q
+
+      - name: Open PR
+        id: cpr
+        if: success() && steps.before.outputs.sha != steps.after.outputs.sha
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -85,7 +96,8 @@ jobs:
           delete-branch: true
           title: "chore(registry): weekly rebuild"
           body: |
-            Automated weekly rebuild of `src/findata/data/registry.sqlite`.
+            Automated weekly rebuild of `src/findata/data/registry.sqlite`,
+            validated against the registry tests and squash-merged automatically.
 
             **Before**
               - sha256: `${{ steps.before.outputs.sha }}`
@@ -99,8 +111,29 @@ jobs:
           labels: registry-update,automated
           add-paths: src/findata/data/registry.sqlite
 
+      # PRs opened by the built-in token don't trigger CI (anti-recursion), so
+      # there's nothing for native --auto to wait on. The data is already
+      # validated above, so squash-merge it directly; retry to ride out the
+      # brief window where GitHub is still computing mergeability post-create.
+      - name: Auto-merge PR
+        if: success() && steps.cpr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr="${{ steps.cpr.outputs.pull-request-number }}"
+          for attempt in 1 2 3 4 5 6; do
+            if gh pr merge "$pr" --squash --delete-branch; then
+              echo "Merged PR #$pr"
+              exit 0
+            fi
+            echo "PR #$pr not mergeable yet (attempt $attempt); waiting…"
+            sleep 5
+          done
+          echo "::error::Failed to auto-merge PR #$pr after retries"
+          exit 1
+
       - name: Report no-op
-        if: steps.before.outputs.sha == steps.after.outputs.sha
+        if: success() && steps.before.outputs.sha == steps.after.outputs.sha
         run: |
           echo "Registry content hash unchanged (${{ steps.after.outputs.sha }})."
-          echo "No PR opened."
+          echo "Nothing to merge."
