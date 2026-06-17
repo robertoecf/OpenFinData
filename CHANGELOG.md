@@ -6,6 +6,18 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **ANBIMA Títulos Públicos (TPF) secondary market** — `get_tpf()`,
+  `GET /anbima/tpf`, and `findata anbima tpf`. Daily reference rates for
+  outstanding federal government bonds (LTN, LFT, NTN-B, NTN-C, NTN-F) from
+  the public file `www.anbima.com.br/informacoes/merc-sec/arqs/ms{ymd}.txt`
+  — no key, no auth. Filterable by `titulo` (bond type). Hardened after
+  adversarial review: weekend/holiday HTTP 404 returns `[]` (not a 500),
+  accented header tolerated, compact dates validated, download size
+  capped, and failure boundaries logged. Same 404/size hardening applied
+  to the sibling `get_debentures` path.
+
 ### Fixed
 
 - **`cvm holdings` ignored bare-digit CNPJs.** The CDA reader compared the
