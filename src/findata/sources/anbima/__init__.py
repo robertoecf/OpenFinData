@@ -20,10 +20,12 @@ from findata.sources.anbima.indices import (
     ETTJDataPoint,
     IMADataPoint,
     IMAFamily,
+    TPFQuote,
     get_debentures,
     get_ettj,
     get_ima,
     get_ima_history,
+    get_tpf,
 )
 
 __all__ = [
@@ -31,8 +33,10 @@ __all__ = [
     "ETTJDataPoint",
     "IMADataPoint",
     "IMAFamily",
+    "TPFQuote",
     "get_debentures",
     "get_ettj",
     "get_ima",
     "get_ima_history",
+    "get_tpf",
 ]

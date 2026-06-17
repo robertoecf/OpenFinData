@@ -67,7 +67,7 @@ ADVERTISED_SOURCES: dict[str, str] = {
     "openfinance": "Open Finance Brasil (public Directory + indicator Portal)",
     "b3": "B3 (official COTAHIST, indices, and optional stock quotes)",
     "yahoo": "Yahoo Finance chart endpoint (experimental, unofficial)",
-    "anbima": "ANBIMA (IMA family, ETTJ, debêntures — public file downloads)",
+    "anbima": "ANBIMA (IMA family, ETTJ, debêntures, TPF — public file downloads)",
     "receita": "Receita Federal (federal tax collection)",
     "aneel": "ANEEL (generation and transmission auctions)",
     "susep": "SUSEP (supervised insurance entities)",

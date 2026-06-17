@@ -15,11 +15,14 @@ from findata.http_client import clear_cache
 from findata.sources.anbima.indices import (
     DEBENTURES_URL,  # noqa: F401 — exported constant, helps type-checking
     ETTJ_URL,
+    TPF_URL,  # noqa: F401 — exported constant, helps type-checking
+    _compact_to_iso,
     _date_to_iso,
     _f_br,
     _ima_cache,
     get_debentures,
     get_ettj,
+    get_tpf,
 )
 
 
@@ -111,6 +114,68 @@ async def test_debentures_parses_at_separated_txt() -> None:
     assert out[1].taxa_compra_pct is None  # "--"
 
 
+# ── Títulos Públicos (TPF) ────────────────────────────────────────
+
+
+_TPF_TXT = (
+    "ANBIMA - Associação ...\n"
+    "\n"
+    "Titulo@Data Referencia@Codigo SELIC@Data Base/Emissao@Data Vencimento@"
+    "Tx. Compra@Tx. Venda@Tx. Indicativas@PU@Desvio padrao@"
+    "Interv. Ind. Inf. (D0)@Interv. Ind. Sup. (D0)@"
+    "Interv. Ind. Inf. (D+1)@Interv. Ind. Sup. (D+1)@Criterio\n"
+    "LTN@20260612@100000@20230106@20260701@14,3812@14,3519@14,3671@993,098676@"
+    "0,00641938699644@14,2321@14,5625@14,222@14,5595@Calculado\n"
+    "LFT@20260612@210100@20000701@20260901@0,0016@-0,0034@0,0006@19201,839214@"
+    "0,00172517877914@-0,0453@0,032@-0,0468@0,0303@Calculado\n"
+)
+
+
+@respx.mock
+async def test_tpf_parses_at_separated_txt() -> None:
+    respx.get(re.compile(r"https://.*ms\d{6}\.txt")).mock(
+        return_value=httpx.Response(200, text=_TPF_TXT, headers={"Content-Type": "text/plain"})
+    )
+    out = await get_tpf(date(2026, 6, 12))
+    assert len(out) == 2
+    assert out[0].titulo == "LTN"
+    assert out[0].data_referencia == "2026-06-12"
+    assert out[0].data_vencimento == "2026-07-01"  # compact YYYYMMDD → ISO
+    assert out[0].taxa_indicativa_pct == pytest.approx(14.3671)
+    assert out[0].pu == pytest.approx(993.098676)
+    assert out[0].criterio == "Calculado"
+    assert out[1].titulo == "LFT"
+    assert out[1].taxa_venda_pct == pytest.approx(-0.0034)  # negative rate kept
+
+
+def test_compact_to_iso_validates_dates() -> None:
+    assert _compact_to_iso("20260701") == "2026-07-01"
+    # Shape matches but it isn't a real date — keep the raw token, don't fabricate.
+    assert _compact_to_iso("20261399") == "20261399"
+    # Non-compact inputs fall through to the DD/MM/YYYY normaliser.
+    assert _compact_to_iso("01/07/2026") == "2026-07-01"
+
+
+@respx.mock
+async def test_tpf_weekend_404_returns_empty() -> None:
+    """A missing daily file (weekend/holiday → HTTP 404) yields [], not a raise."""
+    respx.get(re.compile(r"https://.*ms\d{6}\.txt")).mock(return_value=httpx.Response(404))
+    out = await get_tpf(date(2026, 6, 13))  # a Saturday
+    assert out == []
+
+
+@respx.mock
+async def test_tpf_tolerates_accented_header() -> None:
+    """An accented 'Título' header must still be recognised (no silent empty)."""
+    # The real file is latin-1; send raw latin-1 bytes so "í" survives decoding.
+    accented = _TPF_TXT.replace("Titulo@", "Título@", 1).encode("latin1")
+    respx.get(re.compile(r"https://.*ms\d{6}\.txt")).mock(
+        return_value=httpx.Response(200, content=accented, headers={"Content-Type": "text/plain"})
+    )
+    out = await get_tpf(date(2026, 6, 12))
+    assert [r.titulo for r in out] == ["LTN", "LFT"]
+
+
 # ── API smoke ────────────────────────────────────────────────────
 
 
@@ -148,6 +213,39 @@ def test_anbima_debentures_filter_by_emissor() -> None:
     r = client.get("/anbima/debentures?data=2026-04-24&emissor=Vale")
     assert r.status_code == 200
     assert [d["codigo"] for d in r.json()] == ["VALE13"]
+
+
+@respx.mock
+def test_anbima_tpf_endpoint() -> None:
+    respx.get(re.compile(r"https://.*ms\d{6}\.txt")).mock(
+        return_value=httpx.Response(200, text=_TPF_TXT, headers={"Content-Type": "text/plain"})
+    )
+    client = TestClient(app)
+    r = client.get("/anbima/tpf?data=2026-06-12")
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body) == 2
+    assert body[0]["titulo"] == "LTN"
+
+
+@respx.mock
+def test_anbima_tpf_endpoint_404_is_empty_not_500() -> None:
+    respx.get(re.compile(r"https://.*ms\d{6}\.txt")).mock(return_value=httpx.Response(404))
+    client = TestClient(app)
+    r = client.get("/anbima/tpf?data=2026-06-13")
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+@respx.mock
+def test_anbima_tpf_filter_by_titulo() -> None:
+    respx.get(re.compile(r"https://.*ms\d{6}\.txt")).mock(
+        return_value=httpx.Response(200, text=_TPF_TXT, headers={"Content-Type": "text/plain"})
+    )
+    client = TestClient(app)
+    r = client.get("/anbima/tpf?data=2026-06-12&titulo=LFT")
+    assert r.status_code == 200
+    assert [d["titulo"] for d in r.json()] == ["LFT"]
 
 
 def test_root_endpoint_lists_anbima_in_main_sources() -> None:
