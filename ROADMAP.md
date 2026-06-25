@@ -79,7 +79,7 @@ Status: **v0.1.0 — alpha, release-ready for local/self-hosted use.**
 
 ## 📚 Lessons from adjacent projects
 
-### From [OpenBB-finance/OpenBB](https://github.com/OpenBB-finance/OpenBB/releases) (Python, global) — the reference 🐐
+### From [OpenBB-finance/OpenBB](https://github.com/OpenBB-finance/OpenBB) (Python, global) — the reference 🐐
 
 The closest large-scale analogue to what we're building, and the bar to measure
 against. OpenBB's Open Data Platform is a *"connect once, consume everywhere"*
@@ -88,7 +88,7 @@ FastAPI REST server, an MCP server for AI agents, Excel, and the OpenBB
 Workspace UI. That is precisely our thesis (lib + REST + CLI + MCP over a single
 normalized core), validated at scale.
 
-Worth copying:
+Evaluation:
 
 - ✅ **Single normalized core, many surfaces.** Our `sources/<source>/` feeding
   one model that the Python lib, REST, CLI and `/mcp` all reuse mirrors their
