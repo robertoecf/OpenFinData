@@ -19,7 +19,7 @@ import httpx
 
 MAX_CACHE_SIZE = 2048
 CACHE_TTL = 900  # 15 min default
-USER_AGENT = "findata-br/0.3.1 (+https://github.com/robertoecf/findata-br)"
+USER_AGENT = "openfindata/0.3.1 (+https://github.com/robertoecf/openfindata)"
 
 _cache: OrderedDict[str, tuple[float, float, Any]] = OrderedDict()  # key → (ts, ttl, data)
 _locks: weakref.WeakValueDictionary[tuple[int | None, str], asyncio.Lock] = (

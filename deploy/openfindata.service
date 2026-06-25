@@ -1,6 +1,6 @@
 [Unit]
 Description=Dados Financeiros Abertos — open-source Brazilian financial data MCP server
-Documentation=https://github.com/robertoecf/findata-br
+Documentation=https://github.com/robertoecf/openfindata
 After=network-online.target
 Wants=network-online.target
 
@@ -8,13 +8,13 @@ Wants=network-online.target
 Type=simple
 User=findata
 Group=findata
-WorkingDirectory=/opt/findata-br
-Environment="PATH=/opt/findata-br/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+WorkingDirectory=/opt/openfindata
+Environment="PATH=/opt/openfindata/.venv/bin:/usr/local/bin:/usr/bin:/bin"
 # Rate-limit tuning for public deploys. Override in a drop-in override.conf
 # if you want tighter/looser buckets per deployment.
 Environment="FINDATA_RATE_LIMIT_DEFAULT=60/minute;1000/day"
 Environment="FINDATA_RATE_LIMIT_ENABLED=true"
-ExecStart=/opt/findata-br/.venv/bin/findata serve --host 0.0.0.0 --port 8000 --no-banner
+ExecStart=/opt/openfindata/.venv/bin/findata serve --host 0.0.0.0 --port 8000 --no-banner
 Restart=on-failure
 RestartSec=5
 # Security hardening — read-only service talking to public APIs only.
@@ -22,7 +22,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/log/findata-br
+ReadWritePaths=/var/log/openfindata
 ProtectKernelTunables=true
 ProtectControlGroups=true
 MemoryMax=512M

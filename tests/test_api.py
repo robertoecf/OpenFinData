@@ -48,7 +48,7 @@ def test_root_endpoint(client: TestClient) -> None:
     r = client.get("/")
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
-    assert "findata-br" in r.text
+    assert "openfindata" in r.text
     assert "/site/site.css" in r.text
     assert "/docs" in r.text
 
@@ -58,7 +58,7 @@ def test_meta_endpoint(client: TestClient) -> None:
     assert r.status_code == 200
     body = r.json()
     assert body["name"] == "Dados Financeiros Abertos"
-    assert body["slug"] == "findata-br"
+    assert body["slug"] == "openfindata"
     assert (
         body["statement"] == "Infraestrutura open source para dados financeiros públicos do Brasil."
     )
@@ -103,7 +103,7 @@ def test_charts_page(client: TestClient) -> None:
     assert "produto principal continua sendo API" in r.text
     assert 'href="https://www.tradingview.com/lightweight-charts/"' in r.text
     assert "TradingView Lightweight Charts™" in r.text
-    assert 'href="https://github.com/robertoecf/findata-br"' in r.text
+    assert 'href="https://github.com/robertoecf/openfindata"' in r.text
     assert "%5EBVSP" not in r.text
 
 

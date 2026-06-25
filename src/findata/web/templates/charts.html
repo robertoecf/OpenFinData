@@ -6,7 +6,7 @@
     <title>Dados Financeiros Abertos — labs de gráficos</title>
     <meta
       name="description"
-      content="Labs experimental para visualizar séries temporais dos endpoints públicos do findata-br no navegador."
+      content="Labs experimental para visualizar séries temporais dos endpoints públicos do openfindata no navegador."
     />
     <link rel="stylesheet" href="/site/site.css" />
     <script src="/site/site.js" defer></script>
@@ -24,11 +24,11 @@
     <div class="cursor-glow" aria-hidden="true"></div>
 
     <header class="shell nav-shell">
-      <a class="brand" href="/" aria-label="findata-br">Dados Financeiros Abertos</a>
+      <a class="brand" href="/" aria-label="openfindata">Dados Financeiros Abertos</a>
       <nav aria-label="Navegação de gráficos">
         <a href="/docs">API docs</a>
         <a href="/api/docs">Swagger</a>
-        <a href="https://github.com/robertoecf/findata-br">GitHub</a>
+        <a href="https://github.com/robertoecf/openfindata">GitHub</a>
         <a href="/">Home</a>
       </nav>
     </header>
@@ -39,7 +39,7 @@
           <p class="eyebrow">Labs experimental · REST → JSON → canvas</p>
           <h1 id="charts-title">Visualizador beta de séries públicas.</h1>
           <p class="lead">
-            Este experimento mostra como a infraestrutura do findata-br pode virar gráficos
+            Este experimento mostra como a infraestrutura do openfindata pode virar gráficos
             auditáveis. O produto principal continua sendo API, biblioteca Python, CLI e MCP;
             aqui só endpoints temporais e leves entram no canvas.
           </p>
@@ -90,7 +90,7 @@
           <div class="chart-meta-grid" aria-label="Metadados dos dados">
             <div class="chart-meta-card primary">
               <span>Fonte primária</span>
-              <strong>Dados Financeiros Abertos (findata-br)</strong>
+              <strong>Dados Financeiros Abertos (openfindata)</strong>
             </div>
             <div class="chart-meta-card">
               <span>Extração</span>
@@ -104,11 +104,11 @@
           <div id="chart-root" class="chart-root" aria-label="Gráfico interativo"></div>
           <p class="chart-source-note" data-chart-source-note>
             <strong>Fontes dos dados.</strong> Fonte primária/curadoria:
-            <a href="https://github.com/robertoecf/findata-br">Dados Financeiros Abertos (findata-br)</a>.
+            <a href="https://github.com/robertoecf/openfindata">Dados Financeiros Abertos (openfindata)</a>.
             Subsets originais: BCB SGS 432.
           </p>
           <div class="chart-footer">
-            <span data-chart-summary>Fonte: endpoint público findata-br.</span>
+            <span data-chart-summary>Fonte: endpoint público openfindata.</span>
             <span>
               Gráfico:
               <a href="https://www.tradingview.com/lightweight-charts/" rel="noreferrer">

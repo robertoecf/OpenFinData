@@ -40,15 +40,15 @@ TLS, filtra bots, serve a URL `*.seudominio.com.br`.
 ```bash
 # dentro do WSL
 cd ~
-git clone https://github.com/robertoecf/findata-br.git
-cd findata-br
+git clone https://github.com/robertoecf/openfindata.git
+cd openfindata
 docker compose -f deploy/docker-compose.prod.yml build
 ```
 
 ### 2. Cadastre o Tunnel na Cloudflare
 
 1. Entre em <https://one.dash.cloudflare.com> → **Networks** → **Tunnels** → **Create a tunnel**.
-2. Escolha **Cloudflared**, dê um nome (ex.: `findata-br`).
+2. Escolha **Cloudflared**, dê um nome (ex.: `openfindata`).
 3. Copie o **Tunnel Token** (string longa começando com `ey...`).
 4. Na aba **Public Hostname** configure uma rota:
    - Subdomain: `findata`
@@ -89,17 +89,17 @@ Use se quiser menos overhead ou se Docker Desktop te irrita.
 ### 1. Crie usuário e diretório
 
 ```bash
-sudo useradd --system --create-home --home-dir /opt/findata-br findata
-sudo mkdir -p /var/log/findata-br
-sudo chown findata:findata /var/log/findata-br
+sudo useradd --system --create-home --home-dir /opt/openfindata findata
+sudo mkdir -p /var/log/openfindata
+sudo chown findata:findata /var/log/openfindata
 ```
 
 ### 2. Instale o Dados Financeiros Abertos
 
 ```bash
 sudo -u findata bash <<'EOF'
-cd /opt/findata-br
-git clone https://github.com/robertoecf/findata-br.git .
+cd /opt/openfindata
+git clone https://github.com/robertoecf/openfindata.git .
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -e .
@@ -109,10 +109,10 @@ EOF
 ### 3. Ative o serviço
 
 ```bash
-sudo cp /opt/findata-br/deploy/findata-br.service /etc/systemd/system/
+sudo cp /opt/openfindata/deploy/openfindata.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now findata-br
-sudo systemctl status findata-br
+sudo systemctl enable --now openfindata
+sudo systemctl status openfindata
 ```
 
 ### 4. Instale o cloudflared
@@ -126,11 +126,11 @@ sudo apt install cloudflared
 cloudflared tunnel login
 
 # Cria o tunnel e anota o UUID
-cloudflared tunnel create findata-br
+cloudflared tunnel create openfindata
 
 # Config em ~/.cloudflared/config.yml:
 cat > ~/.cloudflared/config.yml <<EOF
-tunnel: findata-br
+tunnel: openfindata
 credentials-file: /home/$USER/.cloudflared/<UUID>.json
 
 ingress:
@@ -140,7 +140,7 @@ ingress:
 EOF
 
 # DNS automático
-cloudflared tunnel route dns findata-br findata.seudominio.com.br
+cloudflared tunnel route dns openfindata findata.seudominio.com.br
 
 # Instala como serviço systemd
 sudo cloudflared service install
@@ -174,7 +174,7 @@ Depois que a URL pública estiver respondendo, adicione em
 ```jsonc
 {
   "mcpServers": {
-    "findata-br": {
+    "openfindata": {
       "url": "https://findata.seudominio.com.br/mcp"
     }
   }
@@ -194,7 +194,7 @@ usá-las automaticamente quando você perguntar coisas como:
 - `GET /health` — liveness probe (usar pra uptime monitors tipo BetterStack/UptimeRobot).
 - `GET /stats` — snapshot (uptime, cache, versão, se rate-limit ativo).
 - `GET /docs` — Swagger UI interativo pro endpoint público.
-- Logs: `docker compose logs -f findata` ou `journalctl -u findata-br -f`.
+- Logs: `docker compose logs -f findata` ou `journalctl -u openfindata -f`.
 
 ### Uptime monitor grátis
 

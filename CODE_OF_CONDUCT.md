@@ -26,7 +26,7 @@ Comportamentos inaceitáveis:
 ## Aplicação
 
 Casos podem ser reportados em privado abrindo uma
-[GitHub Discussion privada](https://github.com/robertoecf/findata-br/discussions)
+[GitHub Discussion privada](https://github.com/robertoecf/openfindata/discussions)
 ou direto para [@robertoecf](https://github.com/robertoecf).
 
 Todas as reclamações serão revisadas e investigadas.

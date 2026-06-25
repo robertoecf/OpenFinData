@@ -62,7 +62,7 @@ SOURCE_INFO = BaseDosDadosInfo(
             access="free_logged_in",
             description="Free Python access through the optional basedosdados SDK.",
             requires=[
-                "pip install findata-br[basedosdados]",
+                "pip install openfindata[basedosdados]",
                 "Google/BigQuery auth for queries",
             ],
         ),
@@ -111,7 +111,7 @@ def _load_sdk() -> Any:
         return importlib.import_module("basedosdados")
     except ModuleNotFoundError as exc:
         raise BaseDosDadosSDKNotInstalledError(
-            "Install the optional SDK with: pip install 'findata-br[basedosdados]'"
+            "Install the optional SDK with: pip install 'openfindata[basedosdados]'"
         ) from exc
 
 

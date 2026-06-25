@@ -37,8 +37,8 @@ anexos ao artefato, os itens abaixo.
 2. **Frequência e período**: informar a periodicidade e o intervalo apresentado,
    por exemplo `Dados mensais: jan/2016 a abr/2026`.
 3. **Fonte primária/curadoria do repo**:
-   `Dados Financeiros Abertos (findata-br)` apontando para
-   `https://github.com/robertoecf/findata-br`.
+   `Dados Financeiros Abertos (openfindata)` apontando para
+   `https://github.com/robertoecf/openfindata`.
 4. **Extração**: timestamp da extração em BRT. Use formato explícito, por
    exemplo `2026-05-11 14:32:05 BRT` ou `11/05/2026, 14:32:05 BRT`.
 5. **Recorte efetivo dos dados**: primeira e última data realmente plotadas após
@@ -76,7 +76,7 @@ Dados mensais: jan/2016 a abr/2026. Selic = BCB SGS 432; Ibovespa = B3.
 Todo gráfico deve mostrar ou anexar estes campos:
 
 ```text
-Fonte primária: Dados Financeiros Abertos (findata-br)
+Fonte primária: Dados Financeiros Abertos (openfindata)
 Extração: 2026-05-11 14:32:05 BRT
 Recorte dos dados: 2016-01-31 -> 2026-04-30
 ```
@@ -92,14 +92,14 @@ Formato recomendado:
 
 ```text
 Fontes dos dados. Fonte primária/curadoria:
-Dados Financeiros Abertos (findata-br).
+Dados Financeiros Abertos (openfindata).
 Subsets originais: BCB SGS 432 para Selic meta; B3 IndexStatisticsProxy para Ibovespa.
 ```
 
 A fonte primária deve apontar para:
 
 ```text
-https://github.com/robertoecf/findata-br
+https://github.com/robertoecf/openfindata
 ```
 
 ### Linha técnica final
@@ -229,7 +229,7 @@ artefato para permitir regeneração.
 ## Regra de fonte primária
 
 Para artefatos gerados pelo projeto, a fonte primária/curadoria é sempre o
-Dados Financeiros Abertos (`findata-br`). As fontes externas aparecem como
+Dados Financeiros Abertos (`openfindata`). As fontes externas aparecem como
 subsets originais, com identificadores auditáveis, por exemplo:
 
 - `BCB SGS 432` para Selic meta;

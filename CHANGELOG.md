@@ -6,6 +6,16 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Distribution slug renamed `findata-br` → `openfindata`.** The PyPI
+  distribution name is now `openfindata` (`pip install openfindata`,
+  `pip install 'openfindata[b3]'`), aligning the package slug with the
+  GitHub repository and echoing the OpenBB-style `open*` convention. The
+  importable package and CLI are unchanged (`import findata`, `findata …`).
+  Deploy artifacts follow suit: `deploy/openfindata.service` (renamed from
+  `deploy/findata-br.service`) and the default container/working-dir names.
+
 ### Added
 
 - **ANBIMA Títulos Públicos (TPF) secondary market** — `get_tpf()`,

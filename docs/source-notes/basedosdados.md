@@ -4,7 +4,7 @@ Status: supported as a free logged-in source.
 
 ## TL;DR — what this really adds
 
-Base dos Dados does **not** replace findata-br's canonical official-source
+Base dos Dados does **not** replace openfindata's canonical official-source
 adapters for BCB, CVM, IBGE, Tesouro, B3, ANBIMA or Receita. For series we
 already expose directly, such as Selic, FX, IPCA, PIB, CVM funds or Receita
 arrecadação, treat Base dos Dados as a convenience/fallback/join layer.
@@ -12,7 +12,7 @@ arrecadação, treat Base dos Dados as a convenience/fallback/join layer.
 The real addition is access to a broad, BigQuery-native analytical layer:
 
 1. **Large-table joins without local downloads** across public datasets.
-2. **Microdata and treated datasets** that are not yet native findata-br
+2. **Microdata and treated datasets** that are not yet native openfindata
    sources, especially banking, rural credit, labor, fiscal spending, trade,
    company ownership and regional socioeconomic context.
 3. **Fast exploration before implementation**: use SQL to validate whether a
@@ -28,7 +28,7 @@ High-value incremental areas are `estban`, `agencia`, `sicor`,
 
 Decision rule: keep official adapters canonical; use Base dos Dados when the
 value is joins, microdata scale, treated tables, or coverage not yet present in
-findata-br.
+openfindata.
 
 Consulta em 2026-04-30 via:
 
@@ -67,7 +67,7 @@ The public catalog currently returns:
 surface for the dataset. SQL/Python/R access still goes through BigQuery unless
 a download URL is resolved separately.
 
-## High-priority datasets for findata-br
+## High-priority datasets for openfindata
 
 These are the datasets most relevant to economics, finance, financial markets,
 and investment analysis. Prefer them before broad catalogue mirroring.
@@ -148,7 +148,7 @@ publishes tables:
 
 1. Do not mirror all 272 economics datasets into the core API.
 2. Add thin curated helpers only when they materially complement official
-   sources already in findata-br.
+   sources already in openfindata.
 3. Prefer BigQuery SQL templates and documented examples for exploratory work.
 4. Keep expensive microdata scans out of tests. Unit tests must mock network and
    must not hit BigQuery.

@@ -14,8 +14,8 @@ Status: **v0.1.0 — alpha, release-ready for local/self-hosted use.**
 1. **Run the server on WSL**
    ```bash
    # in WSL
-   git clone https://github.com/robertoecf/findata-br.git
-   cd findata-br
+   git clone https://github.com/robertoecf/openfindata.git
+   cd openfindata
    python3 -m venv .venv && . .venv/bin/activate
    pip install -e .
    findata serve --host 0.0.0.0 --port 8000
@@ -35,7 +35,7 @@ Status: **v0.1.0 — alpha, release-ready for local/self-hosted use.**
    ```
 
 3. **Publish to PyPI**
-   - Reserve the name: <https://pypi.org/project/findata-br/>
+   - Reserve the name: <https://pypi.org/project/openfindata/>
    - Create a release: `git tag v0.1.0 && git push --tags`
    - Add a `release.yml` workflow that runs on tags and publishes via
      [trusted publishing](https://docs.pypi.org/trusted-publishers/).
@@ -50,8 +50,8 @@ Status: **v0.1.0 — alpha, release-ready for local/self-hosted use.**
    [Service]
    Type=simple
    User=yourself
-   WorkingDirectory=/srv/findata-br
-   ExecStart=/srv/findata-br/.venv/bin/findata serve --host 0.0.0.0 --port 8000 --no-banner
+   WorkingDirectory=/srv/openfindata
+   ExecStart=/srv/openfindata/.venv/bin/findata serve --host 0.0.0.0 --port 8000 --no-banner
    Restart=on-failure
 
    [Install]
@@ -149,7 +149,7 @@ ideas are worth copying:
 - **Fund daily NAV** files are ~50 MB/month — same recommendation: filter by
   `cnpj=`.
 - **yfinance** is a core dependency since v0.1.0; if you use
-  `pip install findata-br --no-deps` and skip it, `/b3/*` returns `503`.
+  `pip install openfindata --no-deps` and skip it, `/b3/*` returns `503`.
 - **fastapi-mcp** is pinned at a minimum version; if your deployment picks up
   a major-version break, `/mcp` is silently disabled but the REST API keeps
   serving.

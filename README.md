@@ -3,7 +3,7 @@
 Infraestrutura open source para consultar dados financeiros públicos do Brasil em
 Python, REST, CLI e MCP.
 
-[![CI](https://img.shields.io/github/actions/workflow/status/robertoecf/findata-br/ci.yml?branch=main&label=CI&logo=github)](https://github.com/robertoecf/findata-br/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/robertoecf/openfindata/ci.yml?branch=main&label=CI&logo=github)](https://github.com/robertoecf/openfindata/actions/workflows/ci.yml)
 ![Versão](https://img.shields.io/badge/versão-0.3.1--alpha-009c3b)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue?logo=python&logoColor=white)
 [![Licença MIT](https://img.shields.io/badge/licença-MIT-yellow.svg)](LICENSE)
@@ -21,20 +21,20 @@ analistas, desenvolvedores, pesquisadores e agentes:
 - registro local para resolver CNPJ, ticker e nome.
 
 As fontes principais não exigem chaves de API e os testes unitários não acessam a
-rede. O slug de distribuição continua sendo `findata-br`; o pacote importável e a
+rede. O slug de distribuição é `openfindata`; o pacote importável e a
 CLI continuam sendo `findata`.
 
 ## Instalação
 
 ```bash
-pip install findata-br
+pip install openfindata
 ```
 
 Para desenvolvimento local:
 
 ```bash
-git clone https://github.com/robertoecf/findata-br.git
-cd findata-br
+git clone https://github.com/robertoecf/openfindata.git
+cd openfindata
 pip install -e '.[dev]'
 bash scripts/git/install-hooks.sh
 ```
