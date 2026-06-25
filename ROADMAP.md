@@ -79,6 +79,40 @@ Status: **v0.1.0 — alpha, release-ready for local/self-hosted use.**
 
 ## 📚 Lessons from adjacent projects
 
+### From [OpenBB-finance/OpenBB](https://github.com/OpenBB-finance/OpenBB/releases) (Python, global) — the reference 🐐
+
+The closest large-scale analogue to what we're building, and the bar to measure
+against. OpenBB's Open Data Platform is a *"connect once, consume everywhere"*
+layer that exposes the same standardized data across a Python SDK, a CLI, a
+FastAPI REST server, an MCP server for AI agents, Excel, and the OpenBB
+Workspace UI. That is precisely our thesis (lib + REST + CLI + MCP over a single
+normalized core), validated at scale.
+
+Worth copying:
+
+- ✅ **Single normalized core, many surfaces.** Our `sources/<source>/` feeding
+  one model that the Python lib, REST, CLI and `/mcp` all reuse mirrors their
+  architecture — we are directionally correct, keep it that way.
+- ✅ **MCP as a first-class surface.** OpenBB ships an MCP server alongside REST;
+  validates our early bet on `/mcp` instead of treating it as an afterthought.
+- 🟡 **Provider/extension system as installable packages.** OpenBB lets third
+  parties add data sources *without forking core* — separate extension repos,
+  discovered at runtime. Our `sources/` are in-tree today; a plugin/entry-point
+  mechanism is the natural path once external contributors want their own
+  source without a PR to core.
+- 🟡 **"Build once, deploy everywhere" templates.** A scaffolding command for a
+  new source (`findata new-source <name>`) would lower the contribution bar the
+  way their extension template does.
+- 🟡 **Spreadsheet surface.** Their Excel add-in is a reminder that many BR
+  analysts live in spreadsheets; a thin `=FINDATA(...)` bridge over the REST API
+  is a cheap, high-leverage future surface.
+- ❌ **AGPLv3 + enterprise Workspace/Hub.** OpenBB is AGPLv3 with a hosted
+  pro tier. We are deliberately MIT and self-host-first — do not import the
+  account/Hub/proprietary-provider machinery; it cuts against the manifesto.
+- ❌ **Global/paid-provider breadth (FMP, Polygon, etc.).** Our scope is BR
+  public sources with no API keys; chasing global paid providers would dilute
+  the "if the data is public, the infra should be too" thesis.
+
 ### From [Tpessia/dados-findanceiros](https://github.com/Tpessia/dados-financeiros) (TS/NestJS, BR)
 
 Already absorbed:
