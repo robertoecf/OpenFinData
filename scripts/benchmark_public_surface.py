@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Any
 
 DEFAULT_BASE_URL = "https://www.dadosdemercado.com.br"
-USER_AGENT = "findata-br-public-benchmark/0.2 (+https://github.com/robertoecf/findata-br)"
+USER_AGENT = "openfindata-public-benchmark/0.2 (+https://github.com/robertoecf/openfindata)"
 HTTP_OK = 200
 DEFAULT_API_MAX_BYTES = 256 * 1024
 MAX_JSON_SHAPE_DEPTH = 3

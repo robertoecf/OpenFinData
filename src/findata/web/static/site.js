@@ -85,7 +85,7 @@
       if (!button) return;
       const original = button.textContent;
       button.addEventListener("click", async () => {
-        const value = node.getAttribute("data-copy") || "pip install findata-br";
+        const value = node.getAttribute("data-copy") || "pip install openfindata";
         await navigator.clipboard?.writeText(value);
         button.textContent = document.documentElement.lang === "pt-BR" ? "copiado" : "Copied";
         window.setTimeout(() => {

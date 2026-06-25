@@ -3,8 +3,8 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-    image: findata-br:latest
-    container_name: findata-br
+    image: openfindata:latest
+    container_name: openfindata
     restart: unless-stopped
     # Publish only on loopback — Cloudflare Tunnel reaches in via `cloudflared`.
     # Change to "0.0.0.0:8000:8000" if you terminate TLS with your own nginx.
@@ -40,7 +40,7 @@ services:
   # CF_TUNNEL_TOKEN in .env (or swap for `tunnel run --token $TOKEN`).
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: findata-br-tunnel
+    container_name: openfindata-tunnel
     restart: unless-stopped
     depends_on:
       findata:

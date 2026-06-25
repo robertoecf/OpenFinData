@@ -19,7 +19,7 @@
     red: "#ef4444",
     white: "#ffffff",
   };
-  const PRIMARY_SOURCE = "Dados Financeiros Abertos (findata-br)";
+  const PRIMARY_SOURCE = "Dados Financeiros Abertos (openfindata)";
   const CHART_SCRIPT = "src/findata/web/static/chart-explorer.js";
   const CHART_RENDERER = "TradingView Lightweight Charts 5.2.0";
   const MAX_POINTS = 5000;
@@ -207,7 +207,7 @@
       const subsetSource = preset.series
         ? preset.series.map((series) => series.source).join("; ")
         : preset.source;
-      nodes.sourceNote.innerHTML = `<strong>Fontes dos dados.</strong> Fonte primária/curadoria: <a href="https://github.com/robertoecf/findata-br">${PRIMARY_SOURCE}</a>. Subsets originais: ${subsetSource}.`;
+      nodes.sourceNote.innerHTML = `<strong>Fontes dos dados.</strong> Fonte primária/curadoria: <a href="https://github.com/robertoecf/openfindata">${PRIMARY_SOURCE}</a>. Subsets originais: ${subsetSource}.`;
     }
   };
 
@@ -239,7 +239,7 @@
         : `/${trimmed}`;
     const url = new URL(rawEndpoint, window.location.origin);
     if (url.origin !== window.location.origin) {
-      throw new Error("Use endpoints do próprio findata-br para evitar CORS e fontes opacas.");
+      throw new Error("Use endpoints do próprio openfindata para evitar CORS e fontes opacas.");
     }
     const endpoint = `${url.pathname}${url.search}`;
     assertAllowedEndpoint(endpoint);
@@ -537,7 +537,7 @@
     if (nodes.extracted) nodes.extracted.textContent = extractionTimestamp();
     if (nodes.cutoff) nodes.cutoff.textContent = `${first} → ${last}`;
     if (nodes.sourceNote) {
-      nodes.sourceNote.innerHTML = `<strong>Fontes dos dados.</strong> Fonte primária/curadoria: <a href="https://github.com/robertoecf/findata-br">${PRIMARY_SOURCE}</a>. Subsets originais: ${sourceList(options)}.`;
+      nodes.sourceNote.innerHTML = `<strong>Fontes dos dados.</strong> Fonte primária/curadoria: <a href="https://github.com/robertoecf/openfindata">${PRIMARY_SOURCE}</a>. Subsets originais: ${sourceList(options)}.`;
     }
     const links = [];
     items.forEach((item, index) => {
@@ -569,7 +569,7 @@
     const usesPresetEndpoint = endpoint === presetEndpoint;
     const options = usesPresetEndpoint
       ? { ...preset, endpoint: presetEndpoint, field: field || preset.field || "" }
-      : { endpoint, field, title: endpoint, source: "Endpoint findata-br", frequency: "não inferida" };
+      : { endpoint, field, title: endpoint, source: "Endpoint openfindata", frequency: "não inferida" };
     if (options.series) {
       await loadComparison(options);
       return;
@@ -583,13 +583,13 @@
     const first = normalized.data[0]?.time;
     const last = normalized.data[normalized.data.length - 1]?.time;
     nodes.title.textContent = options.title || endpoint;
-    nodes.source.textContent = options.source || "Endpoint findata-br";
+    nodes.source.textContent = options.source || "Endpoint openfindata";
     if (nodes.extracted) {
       nodes.extracted.textContent = extractionTimestamp();
     }
     if (nodes.cutoff) nodes.cutoff.textContent = `${first} → ${last}`;
     if (nodes.sourceNote) {
-      nodes.sourceNote.innerHTML = `<strong>Fontes dos dados.</strong> Fonte primária/curadoria: <a href="https://github.com/robertoecf/findata-br">${PRIMARY_SOURCE}</a>. Subsets originais: ${options.source || "endpoint findata-br"}.`;
+      nodes.sourceNote.innerHTML = `<strong>Fontes dos dados.</strong> Fonte primária/curadoria: <a href="https://github.com/robertoecf/openfindata">${PRIMARY_SOURCE}</a>. Subsets originais: ${options.source || "endpoint openfindata"}.`;
     }
     const auditUrl = new URL(endpoint, window.location.origin);
     const auditPath = `${auditUrl.pathname}${auditUrl.search}`;

@@ -42,7 +42,7 @@ from findata.web.landing import (
 
 _STARTED_AT = time.time()
 _PROJECT_NAME = "Dados Financeiros Abertos"
-_PROJECT_SLUG = "findata-br"
+_PROJECT_SLUG = "openfindata"
 _PROJECT_STATEMENT = "Infraestrutura open source para dados financeiros públicos do Brasil."
 
 

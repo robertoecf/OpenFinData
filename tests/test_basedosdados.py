@@ -74,13 +74,13 @@ def test_sdk_endpoints_fail_clean_when_optional_package_absent(monkeypatch) -> N
         catalog,
         "_load_sdk",
         lambda: (_ for _ in ()).throw(
-            catalog.BaseDosDadosSDKNotInstalledError("Install findata-br[basedosdados]")
+            catalog.BaseDosDadosSDKNotInstalledError("Install openfindata[basedosdados]")
         ),
     )
     client = TestClient(app)
     r = client.get("/basedosdados/datasets")
     assert r.status_code == 503
-    assert "findata-br[basedosdados]" in r.json()["detail"]
+    assert "openfindata[basedosdados]" in r.json()["detail"]
 
 
 def test_resolve_billing_project_prefers_explicit(monkeypatch) -> None:

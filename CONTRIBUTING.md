@@ -6,8 +6,8 @@
 ## Setup em 30 segundos
 
 ```bash
-git clone https://github.com/robertoecf/findata-br.git
-cd findata-br
+git clone https://github.com/robertoecf/openfindata.git
+cd openfindata
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -e '.[dev]'

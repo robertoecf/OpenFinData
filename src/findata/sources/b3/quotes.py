@@ -4,7 +4,7 @@ yfinance uses Yahoo Finance's publicly available endpoints.
 No API key required. Brazilian tickers use .SA suffix.
 
 Note: yfinance is sync-only, so we run it in a thread executor.
-Import this only if yfinance is installed (pip install findata-br[b3]).
+Import this only if yfinance is installed (pip install openfindata[b3]).
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ def _import_yfinance() -> Any:
         import yfinance as yf
     except ImportError as exc:
         raise RuntimeError(
-            "B3 support requires yfinance. Install with: pip install 'findata-br[b3]'"
+            "B3 support requires yfinance. Install with: pip install 'openfindata[b3]'"
         ) from exc
     return yf
 

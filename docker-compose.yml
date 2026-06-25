@@ -1,8 +1,8 @@
 services:
   findata:
     build: .
-    image: findata-br:latest
-    container_name: findata-br
+    image: openfindata:latest
+    container_name: openfindata
     ports:
       - "8000:8000"
     restart: unless-stopped

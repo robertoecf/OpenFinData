@@ -80,7 +80,7 @@ def test_parse_robots_uses_robotparser_allow_rules_and_specific_agent() -> None:
         Disallow: /api/
         Allow: /api/docs
 
-        User-agent: findata-br-public-benchmark
+        User-agent: openfindata-public-benchmark
         Disallow: /private/
         Allow: /private/public
         """

@@ -8,7 +8,7 @@ This is the current short list for agent-facing source work.
 Base dos Dados is now a supported `free_logged_in` source through BigQuery and
 public catalog search. It does not replace canonical official-source adapters;
 it adds BigQuery-native joins, microdata-scale exploration, treated datasets and
-coverage not yet present in findata-br. The curated finance/economics map lives
+coverage not yet present in openfindata. The curated finance/economics map lives
 in `docs/source-notes/basedosdados.md`.
 
 Use it to prioritize datasets such as Selic, câmbio, IPCA/IPCA-15/INPC/IGP,

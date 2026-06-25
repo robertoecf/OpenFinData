@@ -9,7 +9,7 @@ reproducible data work.
 - Canonical working directory: the repository root, i.e. the directory that
   contains this `AGENTS.md`.
 - Project name: Dados Financeiros Abertos.
-- Distribution/package slug: `findata-br`.
+- Distribution/package slug: `openfindata`.
 - Import package and CLI remain `findata` for compatibility.
 - Scope: Python library + REST API + MCP server + CLI for Brazilian public
   financial data.
@@ -106,7 +106,7 @@ Minimum information contract for every chart:
 
 - clear title stating exactly what is compared;
 - frequency and period;
-- primary source/curation: `Dados Financeiros Abertos (findata-br)`;
+- primary source/curation: `Dados Financeiros Abertos (openfindata)`;
 - extraction timestamp in BRT;
 - effective data cutoff: first and last date actually plotted;
 - original source subsets/series identifiers, such as `BCB SGS 432` or

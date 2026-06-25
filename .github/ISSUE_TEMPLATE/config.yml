@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Ideias / discussão aberta
-    url: https://github.com/robertoecf/findata-br/discussions
+    url: https://github.com/robertoecf/openfindata/discussions
     about: Pergunte, sugira ou discuta rumos do projeto sem abrir bug/feature.
   - name: Deploy público / MCP server
-    url: https://github.com/robertoecf/findata-br/blob/main/docs/DEPLOY_PUBLIC.md
+    url: https://github.com/robertoecf/openfindata/blob/main/docs/DEPLOY_PUBLIC.md
     about: Guia passo-a-passo pra você subir seu próprio MCP server em WSL + Cloudflare Tunnel.
