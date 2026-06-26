@@ -148,15 +148,23 @@ app.include_router(yahoo.router)
 try:
     from fastapi_mcp import FastApiMCP
 
+    from findata.api.mcp_app import mcp_app
+
+    # The MCP tool catalog is built from the *curated* `mcp_app` (a separate
+    # FastAPI app, ~24 well-described tools), not from the public `app` — that
+    # would expose one near-duplicate tool per REST route (~94) and bloat every
+    # agent's context. `mount_http(router=app)` serves the /mcp transport on the
+    # public app, while the tools are generated from and executed against
+    # `mcp_app` (via its ASGI transport). The 94 REST routes stay untouched.
     _mcp = FastApiMCP(
-        app,
+        mcp_app,
         name=_PROJECT_SLUG,
         description=(
             f"{_PROJECT_STATEMENT} MCP para BCB, CVM, B3, IBGE, IPEA, "
             "Tesouro, Base dos Dados, Open Finance e gráficos experimentais."
         ),
     )
-    _mcp.mount_http()  # Serves MCP at /mcp (fastapi-mcp >=0.4)
+    _mcp.mount_http(router=app)  # Serves MCP at /mcp (fastapi-mcp >=0.4)
     _MCP_ENABLED = True
 except Exception:  # optional subsystem must never break core API
     _MCP_ENABLED = False

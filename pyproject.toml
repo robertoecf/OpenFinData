@@ -134,6 +134,9 @@ max-statements = 50
 ]
 # FastAPI idiom: Query() / Depends() calls in argument defaults.
 "src/findata/api/routers/**" = ["B008", "PLR0913"]
+# Curated MCP layer: FastAPI Query() defaults (B008), wide consolidated tools
+# (PLR0913), and intentional flat dataset-dispatch switches (C901/PLR0912/PLR0911).
+"src/findata/api/mcp_app.py" = ["B008", "PLR0913", "C901", "PLR0912", "PLR0911"]
 # CLI commands are naturally wide (many typer.Option flags).
 "src/findata/cli.py" = ["PLR0913"]
 # Banner uses rich + sys.stdout directly — not a print-statement debug.
