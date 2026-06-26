@@ -1,4 +1,4 @@
-# AGENTS.md — Dados Financeiros Abertos
+# AGENTS.md: Dados Financeiros Abertos
 
 This file is for coding agents working in this repository. Keep it practical:
 follow the project conventions, avoid speculative dependencies, and produce
