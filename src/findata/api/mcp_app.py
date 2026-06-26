@@ -52,6 +52,7 @@ from findata.sources.cvm import (
     holdings,
     ipe,
     lamina,
+    list_periods,
     profile,
 )
 from findata.sources.ibge import indicators
@@ -215,7 +216,7 @@ async def cvm_company(
     if dataset == "search":
         if not query:
             raise HTTPException(400, "dataset=search requires `query`")
-        return await companies.search_company(query, True)
+        return (await companies.search_company(query, True))[:limit]
     if dataset == "list":
         return (await companies.get_companies(True))[:limit]
     if dataset == "filings":
@@ -295,15 +296,13 @@ async def cvm_fund(
     if dataset == "catalog":
         return (await funds.get_fund_catalog(True, None))[:limit]
     if dataset == "periods":
-        from findata.sources.cvm import _directory
-
-        return await _directory.list_periods("FI", f"DOC/{product}")
+        return await list_periods("FI", f"DOC/{product}")
     if year is None:
         raise HTTPException(400, f"dataset={dataset} requires `year`")
     if dataset == "holdings":
         if not cnpj or month is None:
             raise HTTPException(400, "dataset=holdings requires `cnpj` and `month`")
-        block_list = [b.strip() for b in blocks.split(",")] if blocks else None
+        block_list = [b.strip() for b in blocks.split(",") if b.strip()] if blocks else None
         return await holdings.get_fund_holdings(cnpj, year, month, block_list)
     if month is None:
         raise HTTPException(400, f"dataset={dataset} requires `month`")
@@ -314,8 +313,8 @@ async def cvm_fund(
     if dataset == "profile":
         return (await profile.get_fund_profile(year, month, cnpj))[:limit]
     if horizon == "yearly":
-        return await lamina.get_fund_yearly_returns(year, month, cnpj)
-    return await lamina.get_fund_monthly_returns(year, month, cnpj)
+        return (await lamina.get_fund_yearly_returns(year, month, cnpj))[:limit]
+    return (await lamina.get_fund_monthly_returns(year, month, cnpj))[:limit]
 
 
 async def _structured_fii(
@@ -378,7 +377,7 @@ def _b3_quotes() -> Any:
         from findata.sources.b3 import quotes
     except ImportError as exc:  # pragma: no cover, only without the [b3] extra
         raise HTTPException(
-            503, "Live quotes need the optional extra: pip install 'findata-br[b3]'"
+            503, "Live quotes need the optional extra: pip install 'openfindata[b3]'"
         ) from exc
     return quotes
 
@@ -429,7 +428,7 @@ async def b3_cotahist(
     ``month`` → one month, otherwise the whole ``year``. Pass ``ticker`` for
     single-issuer queries.
     """
-    codes = [c.strip() for c in market_codes.split(",")] if market_codes else None
+    codes = [c.strip() for c in market_codes.split(",") if c.strip()] if market_codes else None
     if day is not None:
         if month is None:
             raise HTTPException(400, "`day` requires `month`")
@@ -648,7 +647,7 @@ async def anbima_tool(
             rows = [r for r in rows if needle in r.emissor.upper()]
         return rows[:limit]
     fam = anbima_src.IMAFamily(family) if family else None
-    return await anbima_src.get_ima(fam)
+    return (await anbima_src.get_ima(fam))[:limit]
 
 
 # ── Open Finance Brasil ────────────────────────────────────────────
