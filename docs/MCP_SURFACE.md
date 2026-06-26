@@ -1,4 +1,4 @@
-# MCP surface — curated tools over the REST API
+# MCP surface: curated tools over the REST API
 
 > Status: prototype / design proposal (alpha 0.3.x). Non-breaking: the REST API
 > is untouched. Implemented in [`src/findata/api/mcp_app.py`](../src/findata/api/mcp_app.py).
@@ -6,12 +6,12 @@
 ## Problem
 
 The MCP server used to be auto-generated **1:1 from the FastAPI app**:
-`FastApiMCP(app)` turns every route into a tool, so the catalog was **94 tools**
-— one per dataset/endpoint. From a client/agent's point of view that means:
+`FastApiMCP(app)` turns every route into a tool, so the catalog was **95 tools**,
+one per dataset/endpoint. From a client/agent's point of view that means:
 
 - **~21k tokens of `tools/list`** loaded at the start of every session, before a
   single call.
-- **Worse tool selection** — a model picks worse among 94 near-duplicate names
+- **Worse tool selection**, a model picks worse among 95 near-duplicate names
   (one tool per SGS series, per CVM fund facet…) than among ~two dozen
   well-described tools.
 
@@ -22,7 +22,7 @@ It exposes a small, hand-curated set of tools that dispatch to the same
 `findata.sources.*` functions the REST routers already use.
 
 ```python
-# app.py — tools come from mcp_app; transport is served on the public app
+# app.py: tools come from mcp_app; transport is served on the public app
 _mcp = FastApiMCP(mcp_app, name=..., description=...)
 _mcp.mount_http(router=app)   # /mcp on the public app; REST routes untouched
 ```
@@ -30,16 +30,16 @@ _mcp.mount_http(router=app)   # /mcp on the public app; REST routes untouched
 `FastApiMCP(mcp_app)` builds the catalog from `mcp_app`'s OpenAPI and executes
 each tool via `httpx.ASGITransport(app=mcp_app)`. Because the routers carry no
 app-state/rate-limiter coupling, reusing the source functions in a second app is
-safe. **The 94 REST routes that back the CLI and HTTP consumers never change.**
+safe. **The 95 REST routes that back the CLI and HTTP consumers never change.**
 
-- **A — curation.** Each tool has an explicit `operation_id`, an agent-oriented
+- **A, curation.** Each tool has an explicit `operation_id`, an agent-oriented
   one-line `summary`, and a docstring written *for an agent deciding whether to
-  call it* — not the raw route docstring. `response_model=None` + `-> Any` keeps
+  call it*, not the raw route docstring. `response_model=None` + `-> Any` keeps
   response schemas out of the catalog (they would re-inflate it).
-- **B — consolidation.** Sprawly clusters collapse behind a `dataset`/`kind`
+- **B, consolidation.** Sprawly clusters collapse behind a `dataset`/`kind`
   selector (see table). The work moves from "many thin tools" to "few tools with
   good docs".
-- **C — code mode.** One optional tool, `findata_run_code`, runs a Python
+- **C, code mode.** One optional tool, `findata_run_code`, runs a Python
   snippet against the `findata` library in an isolated child interpreter. It
   replaces dozens of fine-grained calls for filter/join/aggregate flows that
   would otherwise stream every intermediate result through the model's context.
@@ -49,9 +49,9 @@ safe. **The 94 REST routes that back the CLI and HTTP consumers never change.**
 
 | | 1:1 (old) | curated (new) |
 |---|---:|---:|
-| MCP tools | 94 | **24** (25 with code mode) |
+| MCP tools | 95 | **24** (25 with code mode) |
 | `tools/list` size | ~85k chars (~21k tok) | **~29k chars (~7k tok)** |
-| REST operations | 94 | **94 (unchanged)** |
+| REST operations | 95 | **95 (unchanged)** |
 
 ## The 24 curated tools
 
@@ -89,7 +89,7 @@ findata_run_code                                         (code mode, opt-in)
 ## Tradeoffs
 
 - **Fewer but "fatter" tools.** Each carries a `dataset` enum and more doc. The
-  whole bet is that good descriptions beat tool count — so the docstrings are the
+  whole bet is that good descriptions beat tool count, so the docstrings are the
   deliverable, not an afterthought.
 - **Consolidation can hide endpoint-specific params behind an enum.** Mitigated
   by documenting each `dataset`/`kind` value and validating bad combinations with
@@ -99,7 +99,7 @@ findata_run_code                                         (code mode, opt-in)
   individually surfaced as tools. They remain fully reachable over REST and via
   `findata_run_code`.
 
-## Code mode — security
+## Code mode: security
 
 `findata_run_code` is a **prototype, not a hardened sandbox**. The snippet runs
 in a child `python -I` (isolated mode, cwd in a tempdir) with a wall-clock

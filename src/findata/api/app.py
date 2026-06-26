@@ -151,11 +151,11 @@ try:
     from findata.api.mcp_app import mcp_app
 
     # The MCP tool catalog is built from the *curated* `mcp_app` (a separate
-    # FastAPI app, ~24 well-described tools), not from the public `app` — that
-    # would expose one near-duplicate tool per REST route (~94) and bloat every
+    # FastAPI app, ~24 well-described tools), not from the public `app`, which
+    # would expose one near-duplicate tool per REST route (~95) and bloat every
     # agent's context. `mount_http(router=app)` serves the /mcp transport on the
     # public app, while the tools are generated from and executed against
-    # `mcp_app` (via its ASGI transport). The 94 REST routes stay untouched.
+    # `mcp_app` (via its ASGI transport). The 95 REST routes stay untouched.
     _mcp = FastApiMCP(
         mcp_app,
         name=_PROJECT_SLUG,

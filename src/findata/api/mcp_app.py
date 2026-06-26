@@ -1,8 +1,8 @@
 """Curated MCP surface for the findata-br server.
 
-The public REST API (``findata.api.app``) exposes ~94 fine-grained routes — one
+The public REST API (``findata.api.app``) exposes ~95 fine-grained routes, one
 per upstream dataset/endpoint. Mapping those 1:1 to MCP tools floods an agent's
-context with ~94 near-duplicate tool schemas before it makes a single call, and
+context with ~95 near-duplicate tool schemas before it makes a single call, and
 hurts tool-selection accuracy.
 
 This module is a *separate* FastAPI app whose only purpose is to be the source
@@ -14,11 +14,11 @@ sprawly clusters (e.g. the 12 BCB and 14 CVM-fund endpoints) behind a few
 
 Wiring lives in ``app.py``: ``FastApiMCP(mcp_app).mount_http(router=app)`` builds
 the tool catalog from *this* app while serving ``/mcp`` on the public app. The
-94 REST routes are never touched.
+95 REST routes are never touched.
 
-  A — curation: only the headline tools are exposed, with real descriptions.
-  B — consolidation: ``bcb_*``/``cvm_*``/``tesouro_*``… fold many routes into one.
-  C — code mode: optional ``findata_run_code`` runs a Python snippet against the
+  A, curation: only the headline tools are exposed, with real descriptions.
+  B, consolidation: ``bcb_*``/``cvm_*``/``tesouro_*``… fold many routes into one.
+  C, code mode: optional ``findata_run_code`` runs a Python snippet against the
       library (gated by ``FINDATA_MCP_CODE_MODE=1``; off by default).
 """
 
@@ -67,7 +67,7 @@ _MAX_TICKERS = 20
 _MIN_YEAR_BCB_SGS = 1986
 
 
-# ── Registry — the entry point ─────────────────────────────────────
+# ── Registry: the entry point ─────────────────────────────────────
 
 
 @router.get(
@@ -93,7 +93,7 @@ async def registry_lookup(
     return await lookup(q, limit=limit)
 
 
-# ── BCB — Banco Central ────────────────────────────────────────────
+# ── BCB: Banco Central ────────────────────────────────────────────
 
 
 @router.get(
@@ -126,7 +126,7 @@ async def bcb_series(
     "/bcb/ptax",
     operation_id="bcb_ptax",
     response_model=None,
-    summary="PTAX official exchange rate for any currency — single date or a date range",
+    summary="PTAX official exchange rate for any currency, single date or a date range",
 )
 async def bcb_ptax(
     currency: str = Query("USD", description="ISO currency code, e.g. USD, EUR, GBP"),
@@ -151,7 +151,7 @@ async def bcb_ptax(
     "/bcb/focus",
     operation_id="bcb_focus",
     response_model=None,
-    summary="Boletim Focus expectations — annual/monthly, market or Top-5, or Selic per COPOM",
+    summary="Boletim Focus expectations, annual/monthly, market or Top-5, or Selic per COPOM",
 )
 async def bcb_focus(
     indicator: str = Query(
@@ -181,7 +181,7 @@ async def bcb_focus(
     return await focus.get_focus_annual(indicator, top)
 
 
-# ── CVM — companies & funds ────────────────────────────────────────
+# ── CVM: companies & funds ────────────────────────────────────────
 
 
 @router.get(
@@ -209,7 +209,7 @@ async def cvm_company(
 ) -> Any:
     """The company side of CVM. ``search`` needs ``query``; ``list`` is the full
     registry. ``fca_general|fca_securities|fca_dri`` are cadastral facets needing
-    ``year`` (+ optional ``cnpj``/``ticker``). ``filings`` (IPE — fatos relevantes,
+    ``year`` (+ optional ``cnpj``/``ticker``). ``filings`` (IPE, fatos relevantes,
     comunicados) needs ``year`` (+ optional ``cnpj``/``categoria``).
     """
     if dataset == "search":
@@ -235,7 +235,7 @@ async def cvm_company(
     "/cvm/financials",
     operation_id="cvm_financials",
     response_model=None,
-    summary="CVM financial statements — annual (DFP) or quarterly (ITR) for a company",
+    summary="CVM financial statements, annual (DFP) or quarterly (ITR) for a company",
 )
 async def cvm_financials(
     year: int = Query(..., ge=2010, description="Fiscal year"),
@@ -247,7 +247,7 @@ async def cvm_financials(
         description="Statement type: BPA/BPP/DRE/DFC_MI/DMPL/DVA, _con (consolidated) or _ind",
     ),
     cnpj: str | None = Query(
-        None, description="Company CNPJ — strongly recommended (avoids the full dataset)"
+        None, description="Company CNPJ, strongly recommended (avoids the full dataset)"
     ),
     limit: int = Query(500, ge=1, le=5000),
 ) -> Any:
@@ -346,7 +346,7 @@ async def _structured_fidc(
     "/cvm/structured-fund",
     operation_id="cvm_structured_fund",
     response_model=None,
-    summary="Structured CVM funds — FII (real estate), FIDC (receivables), FIP (private equity)",
+    summary="Structured CVM funds, FII (real estate), FIDC (receivables), FIP (private equity)",
 )
 async def cvm_structured_fund(
     kind: Literal["fii", "fidc", "fip"] = Query(...),
@@ -356,7 +356,7 @@ async def cvm_structured_fund(
     cnpj: str | None = Query(None, description="Fund CNPJ filter"),
     year: int = Query(..., description="Reference year"),
     month: int | None = Query(None, ge=1, le=12, description="Required for FIDC; optional for FII"),
-    quarter: int | None = Query(None, ge=1, le=4, description="FIP only — informe quarter"),
+    quarter: int | None = Query(None, ge=1, le=4, description="FIP only, informe quarter"),
     limit: int = Query(500, ge=1, le=5000),
 ) -> Any:
     """Structured funds by ``kind``. FII has ``geral`` (cadastral) and ``complemento``
@@ -370,13 +370,13 @@ async def cvm_structured_fund(
     return (await fip.get_fip(year, cnpj=cnpj, quarter=quarter))[:limit]
 
 
-# ── B3 — Bolsa ─────────────────────────────────────────────────────
+# ── B3: Bolsa ─────────────────────────────────────────────────────
 
 
 def _b3_quotes() -> Any:
     try:
         from findata.sources.b3 import quotes
-    except ImportError as exc:  # pragma: no cover — only without the [b3] extra
+    except ImportError as exc:  # pragma: no cover, only without the [b3] extra
         raise HTTPException(
             503, "Live quotes need the optional extra: pip install 'findata-br[b3]'"
         ) from exc
@@ -387,7 +387,7 @@ def _b3_quotes() -> Any:
     "/b3/quote",
     operation_id="b3_quote",
     response_model=None,
-    summary="Live B3 stock quote(s) (optional [b3] extra) — prefer b3_cotahist for official EOD",
+    summary="Live B3 stock quote(s) (optional [b3] extra), prefer b3_cotahist for official EOD",
 )
 async def b3_quote(
     tickers: str = Query(
@@ -412,14 +412,14 @@ async def b3_quote(
     "/b3/cotahist",
     operation_id="b3_cotahist",
     response_model=None,
-    summary="Official B3 COTAHIST daily quotes — by year, month, or single day",
+    summary="Official B3 COTAHIST daily quotes, by year, month, or single day",
 )
 async def b3_cotahist(
     year: int = Query(..., ge=_MIN_YEAR_BCB_SGS, description="Year (B3 publishes since 1986)"),
     month: int | None = Query(None, ge=1, le=12),
     day: int | None = Query(None, ge=1, le=31),
     ticker: str | None = Query(
-        None, description="CODNEG filter, e.g. PETR4 — recommended (annual files are ~85 MB)"
+        None, description="CODNEG filter, e.g. PETR4, recommended (annual files are ~85 MB)"
     ),
     market_codes: str | None = Query(
         None, description="CODBDI whitelist, comma-separated, e.g. 02,96"
@@ -476,7 +476,7 @@ async def b3_index(
     "/tesouro/bonds",
     operation_id="tesouro_bonds",
     response_model=None,
-    summary="Tesouro Direto bonds — list/filter, search names, or price+rate history",
+    summary="Tesouro Direto bonds, list/filter, search names, or price+rate history",
 )
 async def tesouro_bonds(
     dataset: Literal["list", "search", "history"] = Query("list"),
@@ -508,7 +508,7 @@ async def tesouro_bonds(
     "/tesouro/siconfi",
     operation_id="tesouro_siconfi",
     response_model=None,
-    summary="SICONFI public-finance reports — RREO, RGF, or the federation-entity list",
+    summary="SICONFI public-finance reports, RREO, RGF, or the federation-entity list",
 )
 async def tesouro_siconfi(
     report: Literal["rreo", "rgf", "entes"] = Query("entes"),
@@ -542,7 +542,7 @@ async def tesouro_siconfi(
     "/ibge/indicator",
     operation_id="ibge_indicator",
     response_model=None,
-    summary="IBGE economic indicators — list the catalog or fetch one by name (e.g. ipca_mensal)",
+    summary="IBGE economic indicators, list the catalog or fetch one by name (e.g. ipca_mensal)",
 )
 async def ibge_indicator(
     name: str | None = Query(None, description="Indicator name; omit to list all available"),
@@ -566,7 +566,7 @@ async def ibge_ipca_breakdown(
     periods: int = Query(6, ge=1, le=60, description="Recent months to return"),
 ) -> Any:
     """IPCA monthly variation for all major groups (food, housing, transport,
-    health, …) — granularity BCB SGS does not provide.
+    health, …), granularity BCB SGS does not provide.
     """
     return await indicators.get_ipca_breakdown(periods)
 
@@ -578,7 +578,7 @@ async def ibge_ipca_breakdown(
     "/ipea/series",
     operation_id="ipea_series",
     response_model=None,
-    summary="IPEA series — curated catalog, series values, or metadata by SERCODIGO",
+    summary="IPEA series, curated catalog, series values, or metadata by SERCODIGO",
 )
 async def ipea_series_tool(
     sercodigo: str | None = Query(
@@ -624,7 +624,7 @@ async def ipea_search(
     "/anbima",
     operation_id="anbima",
     response_model=None,
-    summary="ANBIMA public data — IMA index family, ETTJ yield curve, or debenture quotes",
+    summary="ANBIMA public data, IMA index family, ETTJ yield curve, or debenture quotes",
 )
 async def anbima_tool(
     dataset: Literal["ima", "ettj", "debentures"] = Query("ima"),
@@ -658,7 +658,7 @@ async def anbima_tool(
     "/openfinance/directory",
     operation_id="openfinance_directory",
     response_model=None,
-    summary="Open Finance Brasil Directory — participants, API endpoints, resources, or roles",
+    summary="Open Finance Brasil Directory, participants, API endpoints, resources, or roles",
 )
 async def openfinance_directory(
     dataset: Literal["participants", "endpoints", "resources", "roles"] = Query("participants"),
@@ -765,7 +765,7 @@ async def receita_arrecadacao(
     "/aneel/leiloes",
     operation_id="aneel_leiloes",
     response_model=None,
-    summary="ANEEL energy-auction results — generation or transmission",
+    summary="ANEEL energy-auction results, generation or transmission",
 )
 async def aneel_leiloes(
     kind: Literal["geracao", "transmissao"] = Query("geracao"),
@@ -791,7 +791,7 @@ async def aneel_leiloes(
     "/susep/empresas",
     operation_id="susep_empresas",
     response_model=None,
-    summary="SUSEP-supervised entities (insurance, previdência, capitalização) — list or search",
+    summary="SUSEP-supervised entities (insurance, previdência, capitalização), list or search",
 )
 async def susep_empresas(
     q: str | None = Query(None, min_length=2, description="Name substring; omit to list all"),
@@ -803,7 +803,7 @@ async def susep_empresas(
     return (await empresas.get_susep_empresas())[:limit]
 
 
-# ── C — Code mode (optional, gated) ────────────────────────────────
+# ── C: Code mode (optional, gated) ────────────────────────────────
 
 _CODE_MODE_ENABLED = os.getenv("FINDATA_MCP_CODE_MODE", "").strip().lower() in {
     "1",
@@ -821,7 +821,7 @@ class RunCodeRequest(BaseModel):
     code: str = Field(
         ...,
         description="Python source to execute. The `findata` library is importable. "
-        "Source functions are async — wrap calls in asyncio.run(). Print results to stdout.",
+        "Source functions are async, wrap calls in asyncio.run(). Print results to stdout.",
     )
     timeout_s: int = Field(
         30, ge=1, le=_CODE_TIMEOUT_MAX, description="Wall-clock timeout in seconds"
@@ -831,7 +831,7 @@ class RunCodeRequest(BaseModel):
 async def _execute_code(code: str, timeout_s: int) -> dict[str, Any]:
     """Run ``code`` in an isolated child interpreter, capturing combined output.
 
-    PROTOTYPE — this is NOT a security sandbox: the child runs arbitrary Python
+    PROTOTYPE, this is NOT a security sandbox: the child runs arbitrary Python
     with full library and network access. It is gated off by default and intended
     for trusted, local/agent use only.
     """

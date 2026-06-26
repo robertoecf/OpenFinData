@@ -1,12 +1,12 @@
 """Tests for the curated MCP surface (findata.api.mcp_app).
 
 Guards the three promises of the MCP curation:
-  1. the tool catalog is small and curated, not 1:1 with the 94 REST routes,
-  2. the public REST API still exposes all 94 routes (curation is MCP-only),
+  1. the tool catalog is small and curated, not 1:1 with the 95 REST routes,
+  2. the public REST API still exposes all 95 routes (curation is MCP-only),
   3. consolidated tools dispatch by their ``dataset``/``kind`` selector and
      validate bad combinations with a 400.
 
-All assertions are offline — no live gov-API calls.
+All assertions are offline, no live gov-API calls.
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ def test_curated_mcp_is_a_small_fraction_of_the_rest_surface() -> None:
 
 
 def test_rest_api_untouched_by_curation() -> None:
-    # the consolidated REST routes that MCP tools fold together must still exist —
+    # the consolidated REST routes that MCP tools fold together must still exist,
     # they back the CLI and HTTP consumers.
     paths = set(app.openapi()["paths"])
     for p in (
