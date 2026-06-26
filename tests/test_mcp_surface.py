@@ -123,3 +123,30 @@ def test_code_mode_registers_tool_when_enabled(monkeypatch: pytest.MonkeyPatch) 
         # restore the canonical (code-mode off) module for any later imports
         monkeypatch.delenv("FINDATA_MCP_CODE_MODE", raising=False)
         importlib.reload(fresh)
+
+
+# -- added validations (offline) ------------------------------------
+
+
+def test_siconfi_rgf_rejects_out_of_range_period() -> None:
+    # RGF is the quadrimestre 1-3; period 6 is valid only for RREO bimestre.
+    r = TestClient(mcp_app).get(
+        "/tesouro/siconfi",
+        params={"report": "rgf", "year": 2024, "period": 6, "cod_ibge": 1},
+    )
+    assert r.status_code == 400
+    assert "1-3" in r.json()["detail"]
+
+
+def test_focus_rejects_top5_monthly() -> None:
+    # Top-5 panel exists only for the annual horizon.
+    r = TestClient(mcp_app).get("/bcb/focus", params={"panel": "top5", "horizon": "monthly"})
+    assert r.status_code == 400
+
+
+def test_structured_fund_fip_rejects_dataset() -> None:
+    # FIP has no dataset facet; passing one is a client error, not silently ignored.
+    r = TestClient(mcp_app).get(
+        "/cvm/structured-fund", params={"kind": "fip", "year": 2024, "dataset": "geral"}
+    )
+    assert r.status_code == 400

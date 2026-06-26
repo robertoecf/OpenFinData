@@ -25,7 +25,9 @@ the tool catalog from *this* app while serving ``/mcp`` on the public app. The
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
+import signal
 import sys
 import tempfile
 from datetime import date
@@ -65,7 +67,8 @@ from findata.sources.tesouro import bonds, siconfi
 router = APIRouter()
 
 _MAX_TICKERS = 20
-_MIN_YEAR_BCB_SGS = 1986
+_MIN_YEAR_B3_COTAHIST = 1986  # B3 publishes COTAHIST since 1986
+_RGF_MAX_PERIOD = 3  # RGF quadrimestre runs 1..3
 
 
 # ── Registry: the entry point ─────────────────────────────────────
@@ -175,6 +178,8 @@ async def bcb_focus(
         return focus.FOCUS_INDICATORS
     if key == "selic":
         return await focus.get_focus_selic(top)
+    if panel == "top5" and horizon == "monthly":
+        raise HTTPException(400, "panel=top5 is annual-only; use horizon=annual")
     if panel == "top5":
         return await focus.get_focus_top5_annual(indicator, top)
     if horizon == "monthly":
@@ -282,10 +287,15 @@ async def cvm_fund(
         None,
         description="holdings: block whitelist, e.g. BLC_1,BLC_4 (of BLC_1..BLC_8,CONFID,PL,FIE)",
     ),
-    product: str = Query(
+    product: Literal[
         "INF_DIARIO",
-        description="periods: INF_DIARIO|CDA|LAMINA|PERFIL_MENSAL|BALANCETE|EVENTUAL|EXTRATO",
-    ),
+        "CDA",
+        "LAMINA",
+        "PERFIL_MENSAL",
+        "BALANCETE",
+        "EVENTUAL",
+        "EXTRATO",
+    ] = Query("INF_DIARIO", description="periods: which CVM document set to list stamps for"),
     limit: int = Query(500, ge=1, le=5000),
 ) -> Any:
     """Open funds in one tool. ``catalog`` lists registered funds; ``periods`` lists
@@ -366,6 +376,8 @@ async def cvm_structured_fund(
         return await _structured_fii(dataset, cnpj, year, month)
     if kind == "fidc":
         return await _structured_fidc(dataset, cnpj, year, month)
+    if dataset is not None:
+        raise HTTPException(400, "kind=fip takes no `dataset` (use `quarter`)")
     return (await fip.get_fip(year, cnpj=cnpj, quarter=quarter))[:limit]
 
 
@@ -414,7 +426,7 @@ async def b3_quote(
     summary="Official B3 COTAHIST daily quotes, by year, month, or single day",
 )
 async def b3_cotahist(
-    year: int = Query(..., ge=_MIN_YEAR_BCB_SGS, description="Year (B3 publishes since 1986)"),
+    year: int = Query(..., ge=_MIN_YEAR_B3_COTAHIST, description="Year (B3 publishes since 1986)"),
     month: int | None = Query(None, ge=1, le=12),
     day: int | None = Query(None, ge=1, le=31),
     ticker: str | None = Query(
@@ -530,6 +542,8 @@ async def tesouro_siconfi(
     if year is None or period is None or cod_ibge is None:
         raise HTTPException(400, f"report={report} requires year, period, and cod_ibge")
     if report == "rgf":
+        if not 1 <= period <= _RGF_MAX_PERIOD:
+            raise HTTPException(400, "RGF period is the quadrimestre 1-3")
         return await siconfi.get_rgf(year, period, cod_ibge, poder=poder)  # type: ignore[arg-type]
     return await siconfi.get_rreo(year, period, cod_ibge, anexo=anexo)
 
@@ -832,7 +846,10 @@ async def _execute_code(code: str, timeout_s: int) -> dict[str, Any]:
 
     PROTOTYPE, this is NOT a security sandbox: the child runs arbitrary Python
     with full library and network access. It is gated off by default and intended
-    for trusted, local/agent use only.
+    for trusted, local/agent use only. The child runs in its own process group so
+    a timeout kills the whole tree, not just the direct child. Output is read in
+    full before the cap is applied, so a deployment that enables this should add
+    OS-level memory/output limits for the child.
     """
     timeout = max(1, min(timeout_s, _CODE_TIMEOUT_MAX))
     proc = await asyncio.create_subprocess_exec(
@@ -843,11 +860,15 @@ async def _execute_code(code: str, timeout_s: int) -> dict[str, Any]:
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
         cwd=tempfile.gettempdir(),
+        start_new_session=True,  # own process group so a timeout can kill the tree
     )
     try:
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
     except TimeoutError:
-        proc.kill()
+        # Kill the whole process GROUP: a snippet that spawned its own subprocesses
+        # must not outlive the timeout as an orphan.
+        with contextlib.suppress(ProcessLookupError, PermissionError):
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
         await proc.wait()
         return {"timed_out": True, "exit_code": None, "output": f"(killed: exceeded {timeout}s)"}
     text = stdout.decode("utf-8", errors="replace")
