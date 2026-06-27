@@ -12,29 +12,18 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Path, Query
 
+from findata.api._b3_common import MAX_TICKERS, resolve_quotes
 from findata.sources.b3 import cotahist, indices
 
 router = APIRouter(prefix="/b3", tags=["B3 - Bolsa"])
 
-_MAX_TICKERS_PER_REQUEST = 20
 _CURRENT_YEAR = date.today().year
-
-
-def _quotes() -> Any:
-    try:
-        from findata.sources.b3 import quotes
-    except ImportError as exc:  # pragma: no cover — triggered only without yfinance
-        raise HTTPException(
-            status_code=503,
-            detail=("B3 support is disabled. Install with: pip install 'openfindata[b3]'"),
-        ) from exc
-    return quotes
 
 
 @router.get("/quote/{ticker}")
 async def get_quote(ticker: str) -> Any:
     """Get current stock quote for a B3 ticker (e.g., PETR4, VALE3, WEGE3)."""
-    quotes = _quotes()
+    quotes = resolve_quotes()
     try:
         return await quotes.get_quote(ticker)
     except HTTPException:
@@ -56,7 +45,7 @@ async def get_history(
     ),
 ) -> Any:
     """Get historical price data for a B3 stock."""
-    quotes = _quotes()
+    quotes = resolve_quotes()
     try:
         return await quotes.get_history(ticker, period, interval)
     except HTTPException:
@@ -70,14 +59,14 @@ async def get_multiple_quotes(
     tickers: str = Query(..., description="Comma-separated tickers (e.g., PETR4,VALE3,ITUB4)"),
 ) -> Any:
     """Get current quotes for multiple B3 tickers."""
-    quotes = _quotes()
+    quotes = resolve_quotes()
     ticker_list = [t.strip() for t in tickers.split(",") if t.strip()]
     if not ticker_list:
         raise HTTPException(status_code=400, detail="At least one ticker is required")
-    if len(ticker_list) > _MAX_TICKERS_PER_REQUEST:
+    if len(ticker_list) > MAX_TICKERS:
         raise HTTPException(
             status_code=400,
-            detail=f"Max {_MAX_TICKERS_PER_REQUEST} tickers per request",
+            detail=f"Max {MAX_TICKERS} tickers per request",
         )
     try:
         return await quotes.get_multiple_quotes(ticker_list)

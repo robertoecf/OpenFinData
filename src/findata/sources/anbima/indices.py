@@ -555,7 +555,9 @@ async def _fetch_anbima_txt(url: str, label: str, d: date) -> str | None:
 # ── Debêntures (daily TXT) ───────────────────────────────────────
 
 
-async def get_debentures(data_referencia: date | None = None) -> list[DebentureQuote]:
+async def get_debentures(
+    data_referencia: date | None = None, emissor: str | None = None
+) -> list[DebentureQuote]:
     """Daily secondary-market quotes for outstanding debentures."""
     d = data_referencia or date.today()
     ymd = d.strftime("%y%m%d")
@@ -597,6 +599,9 @@ async def get_debentures(data_referencia: date | None = None) -> list[DebentureQ
         )
     if not header_seen:
         logger.warning("debentures file for %s had no recognisable header row", d)
+    if emissor:
+        needle = emissor.upper()
+        rows = [r for r in rows if needle in r.emissor.upper()]
     return rows
 
 

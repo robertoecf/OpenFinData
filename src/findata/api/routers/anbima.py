@@ -41,10 +41,7 @@ async def debentures(
     limit: int = Query(default=500, ge=1, le=5000),
 ) -> list[anbima.DebentureQuote]:
     """Daily secondary-market quotes for outstanding debentures."""
-    rows = await anbima.get_debentures(data)
-    if emissor:
-        needle = emissor.upper()
-        rows = [r for r in rows if needle in r.emissor.upper()]
+    rows = await anbima.get_debentures(data, emissor=emissor)
     return rows[:limit]
 
 
