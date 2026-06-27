@@ -37,6 +37,7 @@ from fastapi import APIRouter, FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from findata.api._b3_common import MAX_TICKERS, resolve_quotes
 from findata.registry import lookup
 from findata.sources.anbima import indices as anbima_src
 from findata.sources.aneel import leiloes
@@ -66,7 +67,6 @@ from findata.sources.tesouro import bonds, siconfi
 
 router = APIRouter()
 
-_MAX_TICKERS = 20
 _MIN_YEAR_B3_COTAHIST = 1986  # B3 publishes COTAHIST since 1986
 _RGF_MAX_PERIOD = 3  # RGF quadrimestre runs 1..3
 
@@ -384,16 +384,6 @@ async def cvm_structured_fund(
 # ── B3: Bolsa ─────────────────────────────────────────────────────
 
 
-def _b3_quotes() -> Any:
-    try:
-        from findata.sources.b3 import quotes
-    except ImportError as exc:  # pragma: no cover, only without the [b3] extra
-        raise HTTPException(
-            503, "Live quotes need the optional extra: pip install 'openfindata[b3]'"
-        ) from exc
-    return quotes
-
-
 @router.get(
     "/b3/quote",
     operation_id="b3_quote",
@@ -408,12 +398,12 @@ async def b3_quote(
     """Current quote(s) from the optional yfinance-backed source. For canonical,
     official end-of-day history use ``b3_cotahist`` instead.
     """
-    quotes = _b3_quotes()
+    quotes = resolve_quotes()
     ticker_list = [t.strip() for t in tickers.split(",") if t.strip()]
     if not ticker_list:
         raise HTTPException(400, "at least one ticker is required")
-    if len(ticker_list) > _MAX_TICKERS:
-        raise HTTPException(400, f"max {_MAX_TICKERS} tickers per request")
+    if len(ticker_list) > MAX_TICKERS:
+        raise HTTPException(400, f"max {MAX_TICKERS} tickers per request")
     if len(ticker_list) == 1:
         return await quotes.get_quote(ticker_list[0])
     return await quotes.get_multiple_quotes(ticker_list)
@@ -655,11 +645,7 @@ async def anbima_tool(
     if dataset == "ettj":
         return await anbima_src.get_ettj(data)
     if dataset == "debentures":
-        rows = await anbima_src.get_debentures(data)
-        if emissor:
-            needle = emissor.upper()
-            rows = [r for r in rows if needle in r.emissor.upper()]
-        return rows[:limit]
+        return (await anbima_src.get_debentures(data, emissor=emissor))[:limit]
     fam = anbima_src.IMAFamily(family) if family else None
     return (await anbima_src.get_ima(fam))[:limit]
 
