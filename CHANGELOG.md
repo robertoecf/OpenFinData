@@ -18,6 +18,22 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Asset-classification resolver** — `findata.resolver.resolve_asset()`,
+  `GET /resolver/resolve`, and the `resolve_asset` MCP tool. Turns any
+  Brazilian asset identifier (ticker/CNPJ/ISIN/name) into a classification
+  mapped to the consolidation macro taxonomy (Renda Fixa, Renda Variável,
+  Multimercado, Alternativos, Estruturados) plus an orthogonal `exposure`
+  axis (Brasil/Internacional), `subclasse`, `underlying_nature`, debenture
+  Lei-12.431 facts, `source`, `confidence`, and the `cascade` walked.
+  Deterministic and offline at its core (a curated ETF/global-fund seed +
+  structural rules), with an injectable external-provider chain (Mais
+  Retorno / CVM-B3 / restricted web search) for low-confidence fallback.
+  Classifies ETFs/funds by underlying (IFRA11 debêntures → RF; IVVB11 ações
+  → RV + Internacional), defends the COE-never-ETF and "Crédito Estruturado"
+  name-traps, and keeps the Lei-12.431 isento flag below the cascade
+  short-circuit when only inferred by heuristic. Hardened after adversarial
+  review: bare-token collisions (`IE`/`LC`/`LF`/substring `LCI`) removed,
+  API length caps, `as_of` stamped in America/Sao_Paulo.
 - **ANBIMA Títulos Públicos (TPF) secondary market** — `get_tpf()`,
   `GET /anbima/tpf`, and `findata anbima tpf`. Daily reference rates for
   outstanding federal government bonds (LTN, LFT, NTN-B, NTN-C, NTN-F) from
