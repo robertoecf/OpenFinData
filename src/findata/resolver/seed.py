@@ -120,10 +120,8 @@ def _build_etf_seed() -> list[SeedEntry]:
                 "indexador": "IPCA+",
             }
             payload["tax"] = {"isento": True, "isento_status": "confirmed_exempt"}
-        else:
-            # Tesouro-backed RF ETFs: not infra debentures, no statutory
-            # exemption. isento_status stays the default "unknown".
-            payload["debenture"] = {"lei_12431_status": "not_applicable"}
+        # Tesouro-backed RF ETFs hold no debenture, so `debenture` stays None
+        # (the honest "no debenture facts" shape) rather than a stub object.
         entries.append(SeedEntry(ticker=ticker, payload=payload))
     return entries
 
