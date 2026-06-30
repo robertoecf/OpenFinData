@@ -39,6 +39,7 @@ from findata.resolver.models import (
     DebentureInfo,
     Exposure,
     IdentifierResolved,
+    Signal,
     TaxInfo,
 )
 from findata.resolver.normalize import NormalizedInput, normalize
@@ -191,6 +192,170 @@ def _apply_fiscal_certainty(basis: str | None, deb: dict[str, Any], tax: dict[st
         deb["lei_12431_status"] = "not_applicable"
 
 
+# ── Signal helpers ─────────────────────────────────────────────────
+
+
+def _first_matching_token(n: NormalizedInput, candidates: tuple[str, ...]) -> str | None:
+    """Return the first candidate that appears as a whole token, or ``None``."""
+    tset = set(n.tokens)
+    for c in candidates:
+        if c in tset:
+            return c
+    return None
+
+
+def _first_matching_phrase(n: NormalizedInput, candidates: tuple[str, ...]) -> str | None:
+    """Return the first candidate that is a substring of the folded name, or ``None``."""
+    for c in candidates:
+        if c in n.name_folded:
+            return c
+    return None
+
+
+def _signal(rule: str, evidence: str, detail: str | None = None) -> list[dict[str, Any]]:
+    """Build the single-entry ``signals`` list a rule branch records."""
+    entry: dict[str, Any] = {"rule": rule, "evidence": evidence}
+    if detail is not None:
+        entry["detail"] = detail
+    return [entry]
+
+
+def _debenture_payload(n: NormalizedInput, deb_evidence: str) -> dict[str, Any]:
+    """Classify a debenture → RF; parse indexador + Lei-12.431 incentivada."""
+    indexador = parse_indexador(n.name_folded)
+    incentivada, note, basis = _infer_incentivada(n, indexador)
+    deb: dict[str, Any] = {"indexador": indexador}
+    tax: dict[str, Any] = {}
+    if incentivada:
+        deb["incentivada_1243"] = True
+        tax["isento"] = True
+    _apply_fiscal_certainty(basis, deb, tax)
+    # An *explicit* infra signal is high-confidence. The issuer+IPCA heuristic is
+    # deliberately kept below the cascade short-circuit threshold
+    # (_CONFIDENT_ENOUGH) so a wired provider re-checks the isento claim by ISIN
+    # instead of it being taken as fact.
+    if basis == "explicit":
+        confidence = 0.92
+    elif basis == "heuristic":
+        confidence = 0.7
+    else:
+        confidence = 0.88
+    return {
+        "kind": "debenture",
+        "macro_class": "Renda Fixa",
+        "subclasse": _subclasse_from_indexador(indexador),
+        "exposure": "Brasil",
+        "underlying_nature": "credito",
+        "estrutura": "debenture",
+        "debenture": deb,
+        "tax": tax,
+        "confidence": confidence,
+        "notes": note or "Debênture → Renda Fixa.",
+        "signals": _signal(
+            "debenture", deb_evidence, detail=f"basis={basis};indexador={indexador}"
+        ),
+    }
+
+
+def _internacional_payload(n: NormalizedInput, intl_evidence: str) -> dict[str, Any]:
+    """Classify an internacional-mandate fund (IE / global keyword in a fund name)."""
+    equities = n.has_token("FIA") or n.name_contains("ACOES", "EQUITY")
+    rf = n.name_contains("DIVIDA EXTERNA", "RENDA FIXA", "BOND", "CREDITO", "DEBT")
+    if equities:
+        macro, subclasse, underlying = "Renda Variável", "Ações Global", "acoes"
+    elif rf:
+        macro, subclasse, underlying = "Renda Fixa", "Dívida Externa", "credito"
+    else:
+        macro, subclasse, underlying = "Multimercado", "Multimercado Global", "multiativos"
+    return {
+        "kind": "fundo",
+        "macro_class": macro,
+        "subclasse": subclasse,
+        "exposure": "Internacional",
+        "underlying_nature": underlying,
+        "estrutura": "IE" if n.has_token("IE") else "FIC",
+        "confidence": 0.9,
+        "notes": f"Mandato internacional (IE / global): {macro}, exposição Internacional.",
+        "signals": _signal("internacional", intl_evidence, detail=f"macro={macro}"),
+    }
+
+
+def _etf_payload(n: NormalizedInput, etf_evidence: str) -> dict[str, Any]:
+    """Classify an ETF matched by name → infer underlying from name keywords."""
+    rf = n.name_contains("RENDA FIXA", "DEBENTURE", "BOND", "IMA-", "IRF-", "TESOURO", "INFRA")
+    if rf:
+        sovereign = n.name_contains("TESOURO", "IMA-", "IRF-", "LFT", "NTN", "LTN")
+        credit = n.name_contains("DEBENTURE", "INFRA")
+        return {
+            "kind": "etf",
+            "macro_class": "Renda Fixa",
+            "subclasse": "ETF de renda fixa",
+            "exposure": "Brasil",
+            "underlying_nature": "debentures"
+            if credit
+            else ("tesouro" if sovereign else "credito"),
+            "estrutura": "ETF",
+            "confidence": 0.78,
+            "notes": "ETF com underlying de renda fixa (inferido do nome).",
+            "signals": _signal("etf_name", etf_evidence, detail="underlying=rf"),
+        }
+    intl = n.name_contains(*_GLOBAL_KEYWORDS, "S&P", "SP500", "NASDAQ", "MSCI", "EUA", "US ")
+    return {
+        "kind": "etf",
+        "macro_class": "Renda Variável",
+        "subclasse": "ETF de ações internacional" if intl else "ETF de ações",
+        "exposure": "Internacional" if intl else "Brasil",
+        "underlying_nature": "acoes",
+        "estrutura": "ETF",
+        "confidence": 0.72,
+        "notes": "ETF sem ticker no seed; underlying assumido = ações. Confirmar.",
+        "signals": _signal("etf_name", etf_evidence, detail="underlying=acoes"),
+    }
+
+
+def _ticker_payload(n: NormalizedInput) -> dict[str, Any]:
+    """Classify a bare ticker by its digit suffix (no name signal won)."""
+    suffix = n.ticker_digits_suffix
+    # 11 not in any curated ETF/RF list → overwhelmingly a FII.
+    if suffix == "11":
+        return {
+            "kind": "fii",
+            "macro_class": "Renda Variável",
+            "subclasse": "FII",
+            "exposure": "Brasil",
+            "underlying_nature": "imoveis",
+            "estrutura": "FII",
+            "confidence": 0.72,
+            "notes": "Ticker terminado em 11 fora do seed de ETFs → FII (heurística).",
+            "signals": _signal("ticker_suffix_11", f"ticker={n.ticker}"),
+        }
+    # BDR (34/35): recibo de ação estrangeira. RV por classe, mas o holder
+    # carrega risco cambial/exterior → Internacional por exposição (default;
+    # BDRs de empresa brasileira no exterior são exceção, não a regra).
+    if suffix in {"34", "35"}:
+        return {
+            "kind": "bdr",
+            "macro_class": "Renda Variável",
+            "subclasse": "BDR",
+            "exposure": "Internacional",
+            "underlying_nature": "acoes",
+            "confidence": 0.8,
+            "notes": "BDR (recibo de ação estrangeira) → RV, exposição Internacional.",
+            "signals": _signal("bdr", f"ticker={n.ticker}"),
+        }
+    # 3-8: ordinary/preferred share — ação brasileira.
+    return {
+        "kind": "acao",
+        "macro_class": "Renda Variável",
+        "subclasse": "Ações",
+        "exposure": "Brasil",
+        "underlying_nature": "acoes",
+        "confidence": 0.85,
+        "notes": "Ação listada na B3 → Renda Variável.",
+        "signals": _signal("acao", f"ticker={n.ticker}"),
+    }
+
+
 # ── The rule cascade ───────────────────────────────────────────────
 
 
@@ -213,17 +378,20 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "underlying_nature": "credito",
             "confidence": 0.9,
             "notes": "Name-trap: 'Crédito Estruturado' é crédito (RF), não COE/Estruturados.",
+            "signals": _signal("credito_estruturado_trap", "CREDITO ESTRUTURADO"),
         }
 
     # 1) COE / operações estruturadas → Estruturados, never an ETF.
-    if n.has_token("COE") or n.name_contains(
+    _coe_phrases = (
         "OPERACOES ESTRUTURADAS",
         "OPERACAO ESTRUTURADA",
         "CERTIFICADO DE OPERACOES",
         "CERT DE OPERACOES",
         "NOTA ESTRUTURADA",
         "NOTAS ESTRUTURADAS",
-    ):
+    )
+    if n.has_token("COE") or n.name_contains(*_coe_phrases):
+        coe_evidence = _first_matching_token(n, ("COE",)) or _first_matching_phrase(n, _coe_phrases)
         return {
             "kind": "coe",
             "macro_class": "Estruturados",
@@ -232,45 +400,20 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "estrutura": "COE",
             "confidence": 0.95,
             "notes": "COE (Certificado de Operações Estruturadas, CETIP) → Estruturados.",
+            "signals": _signal("coe", coe_evidence or "COE"),
         }
 
     # 2) Debenture → RF; parse indexador + incentivada.
-    if n.has_token("DEB", "DEBENTURE", "DEBENTURES", "DEBENT"):
-        indexador = parse_indexador(n.name_folded)
-        incentivada, note, basis = _infer_incentivada(n, indexador)
-        deb: dict[str, Any] = {"indexador": indexador}
-        tax: dict[str, Any] = {}
-        if incentivada:
-            deb["incentivada_1243"] = True
-            tax["isento"] = True
-        _apply_fiscal_certainty(basis, deb, tax)
-        # An *explicit* infra signal is high-confidence. The issuer+IPCA
-        # heuristic is deliberately kept below the cascade short-circuit
-        # threshold (_CONFIDENT_ENOUGH) so a wired provider re-checks the
-        # isento claim by ISIN instead of it being taken as fact.
-        if basis == "explicit":
-            confidence = 0.92
-        elif basis == "heuristic":
-            confidence = 0.7
-        else:
-            confidence = 0.88
-        return {
-            "kind": "debenture",
-            "macro_class": "Renda Fixa",
-            "subclasse": _subclasse_from_indexador(indexador),
-            "exposure": "Brasil",
-            "underlying_nature": "credito",
-            "estrutura": "debenture",
-            "debenture": deb,
-            "tax": tax,
-            "confidence": confidence,
-            "notes": note or "Debênture → Renda Fixa.",
-        }
+    _deb_tokens = ("DEB", "DEBENTURE", "DEBENTURES", "DEBENT")
+    if n.has_token(*_deb_tokens):
+        return _debenture_payload(n, _first_matching_token(n, _deb_tokens) or "DEB")
 
     # 3) Securitização (CRA/CRI) → RF.
-    if n.has_token("CRA", "CRI") or n.name_contains(
-        "CERT. RECEBIVEIS", "CERTIFICADO DE RECEBIVEIS"
-    ):
+    _cra_phrases = ("CERT. RECEBIVEIS", "CERTIFICADO DE RECEBIVEIS")
+    if n.has_token("CRA", "CRI") or n.name_contains(*_cra_phrases):
+        cra_evidence = _first_matching_token(n, ("CRA", "CRI")) or _first_matching_phrase(
+            n, _cra_phrases
+        )
         agro = n.has_token("CRA") or n.name_contains("AGRONEGOCIO")
         return {
             "kind": "cra" if agro else "cri",
@@ -284,13 +427,18 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             },  # CRA/CRI: IR-exempt for PF
             "confidence": 0.9,
             "notes": "Securitização (recebíveis) → Renda Fixa, isento p/ PF.",
+            "signals": _signal("cra_cri", cra_evidence or "CRA/CRI"),
         }
 
     # 4) Bank paper (CDB/RDB/LIG/Letra Financeira/Letra de Câmbio) → RF.
     #    NB: the bare 2-char tokens "LC"/"LF" are too collision-prone (they hit
     #    issuer names, share classes, internal codes), so they are matched only
     #    via their unambiguous phrases, never as bare tokens.
-    if n.has_token("CDB", "RDB", "LIG") or n.name_contains("LETRA FINANCEIRA", "LETRA DE CAMBIO"):
+    _bank_phrases = ("LETRA FINANCEIRA", "LETRA DE CAMBIO")
+    if n.has_token("CDB", "RDB", "LIG") or n.name_contains(*_bank_phrases):
+        bank_evidence = _first_matching_token(n, ("CDB", "RDB", "LIG")) or _first_matching_phrase(
+            n, _bank_phrases
+        )
         return {
             "kind": "cdb",
             "macro_class": "Renda Fixa",
@@ -299,10 +447,13 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "underlying_nature": "credito",
             "confidence": 0.88,
             "notes": "Emissão bancária → Renda Fixa.",
+            "signals": _signal("bank_paper", bank_evidence or "CDB"),
         }
-    if n.has_token("LCI", "LCA") or n.name_contains(
-        "LETRA DE CREDITO IMOBILIARIO", "LETRA DE CREDITO DO AGRONEGOCIO"
-    ):
+    _lci_phrases = ("LETRA DE CREDITO IMOBILIARIO", "LETRA DE CREDITO DO AGRONEGOCIO")
+    if n.has_token("LCI", "LCA") or n.name_contains(*_lci_phrases):
+        lci_evidence = _first_matching_token(n, ("LCI", "LCA")) or _first_matching_phrase(
+            n, _lci_phrases
+        )
         return {
             "kind": "lci_lca",
             "macro_class": "Renda Fixa",
@@ -312,12 +463,16 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "tax": {"isento": True, "isento_status": "confirmed_exempt"},
             "confidence": 0.9,
             "notes": "LCI/LCA → Renda Fixa, isento p/ PF.",
+            "signals": _signal("lci_lca", lci_evidence or "LCI/LCA"),
         }
 
     # 5) Tesouro / public bonds → RF.
-    if n.has_token("TESOURO", "NTN", "LTN", "LFT", "NTNB", "NTNF") or n.name_contains(
-        "TESOURO DIRETO", "TESOURO SELIC", "TESOURO IPCA", "TESOURO PREFIXADO"
-    ):
+    _tesouro_tokens = ("TESOURO", "NTN", "LTN", "LFT", "NTNB", "NTNF")
+    _tesouro_phrases = ("TESOURO DIRETO", "TESOURO SELIC", "TESOURO IPCA", "TESOURO PREFIXADO")
+    if n.has_token(*_tesouro_tokens) or n.name_contains(*_tesouro_phrases):
+        tesouro_evidence = _first_matching_token(n, _tesouro_tokens) or _first_matching_phrase(
+            n, _tesouro_phrases
+        )
         return {
             "kind": "tesouro",
             "macro_class": "Renda Fixa",
@@ -326,6 +481,7 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "underlying_nature": "tesouro",
             "confidence": 0.95,
             "notes": "Título público federal → Renda Fixa.",
+            "signals": _signal("tesouro", tesouro_evidence or "TESOURO"),
         }
 
     # 6) Internacional EXPOSURE — IE structure, or global keyword. Geography is
@@ -335,36 +491,22 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
     #    fund name is too collision-prone (e.g. "COMPANHIA IE ENERGIA SA").
     #    Runs before FIA/Ações so "FIC FIA IE" / "GLOBAL FIM" land here.
     fund_context = n.has_token(*_FUND_CONTEXT_TOKENS)
-    if fund_context and (
-        n.has_token("IE")
-        or n.name_contains(*_GLOBAL_KEYWORDS, "INVESTIMENTO NO EXTERIOR", "INV EXTERIOR")
-    ):
-        equities = n.has_token("FIA") or n.name_contains("ACOES", "EQUITY")
-        rf = n.name_contains("DIVIDA EXTERNA", "RENDA FIXA", "BOND", "CREDITO", "DEBT")
-        if equities:
-            macro, subclasse, underlying = "Renda Variável", "Ações Global", "acoes"
-        elif rf:
-            macro, subclasse, underlying = "Renda Fixa", "Dívida Externa", "credito"
-        else:
-            macro, subclasse, underlying = "Multimercado", "Multimercado Global", "multiativos"
-        return {
-            "kind": "fundo",
-            "macro_class": macro,
-            "subclasse": subclasse,
-            "exposure": "Internacional",
-            "underlying_nature": underlying,
-            "estrutura": "IE" if n.has_token("IE") else "FIC",
-            "confidence": 0.9,
-            "notes": f"Mandato internacional (IE / global): {macro}, exposição Internacional.",
-        }
+    _intl_phrases = (*_GLOBAL_KEYWORDS, "INVESTIMENTO NO EXTERIOR", "INV EXTERIOR")
+    if fund_context and (n.has_token("IE") or n.name_contains(*_intl_phrases)):
+        intl_evidence = _first_matching_token(n, ("IE",)) or _first_matching_phrase(
+            n, _intl_phrases
+        )
+        return _internacional_payload(n, intl_evidence or "IE")
 
     # 7) FII (by name; ticker-only 11s are caught at step 12).
-    if n.has_token("FII") or n.name_contains(
+    _fii_phrases = (
         "FUNDO IMOBILIARIO",
         "FDO INV IMOB",
         "FUNDO DE INVESTIMENTO IMOBILIARIO",
         "INVESTIMENTO IMOBILIARIO",
-    ):
+    )
+    if n.has_token("FII") or n.name_contains(*_fii_phrases):
+        fii_evidence = _first_matching_token(n, ("FII",)) or _first_matching_phrase(n, _fii_phrases)
         return {
             "kind": "fii",
             "macro_class": "Renda Variável",
@@ -374,40 +516,18 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "estrutura": "FII",
             "confidence": 0.92,
             "notes": "Fundo Imobiliário → Renda Variável (subclasse FII).",
+            "signals": _signal("fii_name", fii_evidence or "FII"),
         }
 
     # 8) ETF by name, no curated hit → infer underlying from name keywords.
-    if n.has_token("ETF") or n.name_contains("ISHARES", "INDEX FUND"):
-        rf = n.name_contains("RENDA FIXA", "DEBENTURE", "BOND", "IMA-", "IRF-", "TESOURO", "INFRA")
-        if rf:
-            sovereign = n.name_contains("TESOURO", "IMA-", "IRF-", "LFT", "NTN", "LTN")
-            credit = n.name_contains("DEBENTURE", "INFRA")
-            return {
-                "kind": "etf",
-                "macro_class": "Renda Fixa",
-                "subclasse": "ETF de renda fixa",
-                "exposure": "Brasil",
-                "underlying_nature": "debentures"
-                if credit
-                else ("tesouro" if sovereign else "credito"),
-                "estrutura": "ETF",
-                "confidence": 0.78,
-                "notes": "ETF com underlying de renda fixa (inferido do nome).",
-            }
-        intl = n.name_contains(*_GLOBAL_KEYWORDS, "S&P", "SP500", "NASDAQ", "MSCI", "EUA", "US ")
-        return {
-            "kind": "etf",
-            "macro_class": "Renda Variável",
-            "subclasse": "ETF de ações internacional" if intl else "ETF de ações",
-            "exposure": "Internacional" if intl else "Brasil",
-            "underlying_nature": "acoes",
-            "estrutura": "ETF",
-            "confidence": 0.72,
-            "notes": "ETF sem ticker no seed; underlying assumido = ações. Confirmar.",
-        }
+    _etf_phrases = ("ISHARES", "INDEX FUND")
+    if n.has_token("ETF") or n.name_contains(*_etf_phrases):
+        etf_evidence = _first_matching_token(n, ("ETF",)) or _first_matching_phrase(n, _etf_phrases)
+        return _etf_payload(n, etf_evidence or "ETF")
 
     # 9) FIDC → RF (direitos creditórios, natureza de crédito).
     if n.has_token("FIDC") or n.name_contains("DIREITOS CREDITORIOS"):
+        fidc_evidence = _first_matching_token(n, ("FIDC",)) or "DIREITOS CREDITORIOS"
         return {
             "kind": "fundo",
             "macro_class": "Renda Fixa",
@@ -417,10 +537,13 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "estrutura": "FIDC",
             "confidence": 0.85,
             "notes": "FIDC (direitos creditórios) → Renda Fixa (crédito).",
+            "signals": _signal("fidc", fidc_evidence),
         }
 
     # 10) FIP → Alternativos (private equity).
-    if n.has_token("FIP") or n.name_contains("PARTICIPACOES", "PRIVATE EQUITY"):
+    _fip_phrases = ("PARTICIPACOES", "PRIVATE EQUITY")
+    if n.has_token("FIP") or n.name_contains(*_fip_phrases):
+        fip_evidence = _first_matching_token(n, ("FIP",)) or _first_matching_phrase(n, _fip_phrases)
         return {
             "kind": "fundo",
             "macro_class": "Alternativos",
@@ -429,10 +552,13 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "estrutura": "FIP",
             "confidence": 0.88,
             "notes": "FIP (participações) → Alternativos.",
+            "signals": _signal("fip", fip_evidence or "FIP"),
         }
 
     # 11) Multimercado.
-    if n.has_token("FIM") or n.name_contains("MULTIMERCADO", "MULTIESTRATEGIA", "MACRO"):
+    _mm_phrases = ("MULTIMERCADO", "MULTIESTRATEGIA", "MACRO")
+    if n.has_token("FIM") or n.name_contains(*_mm_phrases):
+        mm_evidence = _first_matching_token(n, ("FIM",)) or _first_matching_phrase(n, _mm_phrases)
         return {
             "kind": "fundo",
             "macro_class": "Multimercado",
@@ -441,10 +567,13 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "estrutura": "FIM",
             "confidence": 0.85,
             "notes": "Multimercado.",
+            "signals": _signal("multimercado", mm_evidence or "FIM"),
         }
 
     # 12) Ações / FIA (domestic equities).
-    if n.has_token("FIA") or n.name_contains("FUNDO DE ACOES", "ACOES", "EQUITY"):
+    _fia_phrases = ("FUNDO DE ACOES", "ACOES", "EQUITY")
+    if n.has_token("FIA") or n.name_contains(*_fia_phrases):
+        fia_evidence = _first_matching_token(n, ("FIA",)) or _first_matching_phrase(n, _fia_phrases)
         return {
             "kind": "fundo",
             "macro_class": "Renda Variável",
@@ -454,46 +583,12 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "estrutura": "FIA",
             "confidence": 0.85,
             "notes": "Fundo de Ações → Renda Variável.",
+            "signals": _signal("fia", fia_evidence or "FIA"),
         }
 
     # 13) Ticker shapes (no name signal won above).
-    suffix = n.ticker_digits_suffix
     if n.ticker:
-        # 11 not in any curated ETF/RF list → overwhelmingly a FII.
-        if suffix == "11":
-            return {
-                "kind": "fii",
-                "macro_class": "Renda Variável",
-                "subclasse": "FII",
-                "exposure": "Brasil",
-                "underlying_nature": "imoveis",
-                "estrutura": "FII",
-                "confidence": 0.72,
-                "notes": "Ticker terminado em 11 fora do seed de ETFs → FII (heurística).",
-            }
-        # BDR (34/35): recibo de ação estrangeira. RV por classe, mas o holder
-        # carrega risco cambial/exterior → Internacional por exposição (default;
-        # BDRs de empresa brasileira no exterior são exceção, não a regra).
-        if suffix in {"34", "35"}:
-            return {
-                "kind": "bdr",
-                "macro_class": "Renda Variável",
-                "subclasse": "BDR",
-                "exposure": "Internacional",
-                "underlying_nature": "acoes",
-                "confidence": 0.8,
-                "notes": "BDR (recibo de ação estrangeira) → RV, exposição Internacional.",
-            }
-        # 3-8: ordinary/preferred share — ação brasileira.
-        return {
-            "kind": "acao",
-            "macro_class": "Renda Variável",
-            "subclasse": "Ações",
-            "exposure": "Brasil",
-            "underlying_nature": "acoes",
-            "confidence": 0.85,
-            "notes": "Ação listada na B3 → Renda Variável.",
-        }
+        return _ticker_payload(n)
 
     # 14) Nothing matched — honest "I don't know" for HITL review.
     return {
@@ -501,6 +596,7 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
         "macro_class": "Indefinido",
         "confidence": 0.2,
         "notes": "Sem sinal estrutural suficiente; requer revisão (human-in-the-loop).",
+        "signals": _signal("fallback", "no_structural_signal"),
     }
 
 
@@ -538,6 +634,7 @@ def _assemble(norm: NormalizedInput, payload: dict[str, Any], step: str) -> Asse
         confidence=payload.get("confidence", 0.5),
         as_of=datetime.now(_BR_TZ).date().isoformat(),
         cascade=[step],
+        signals=[Signal(**s) for s in payload.get("signals", [])],
         notes=payload.get("notes"),
     )
 
@@ -550,7 +647,18 @@ def classify(norm: NormalizedInput) -> AssetClassification:
     """
     seed = lookup_seed(ticker=norm.ticker, cnpj=norm.cnpj, name_folded=norm.name_folded)
     if seed is not None:
-        return _assemble(norm, seed.payload, step="openfindata:curated")
+        # Synthesize the curated_seed signal here (the frozen seed entry must not
+        # be mutated): describe HOW the entry matched — by ticker, then CNPJ, then
+        # name substrings. A copy keeps the seed payload immutable.
+        if seed.ticker and norm.ticker == seed.ticker:
+            evidence = f"ticker={norm.ticker}"
+        elif seed.cnpj and norm.cnpj == seed.cnpj:
+            evidence = f"cnpj={norm.cnpj}"
+        else:
+            evidence = f"name:{'+'.join(seed.name_substrings)}"
+        payload = {**seed.payload}
+        payload.setdefault("signals", [{"rule": "curated_seed", "evidence": evidence}])
+        return _assemble(norm, payload, step="openfindata:curated")
     return _assemble(norm, _rule_payload(norm), step="openfindata:rules")
 
 

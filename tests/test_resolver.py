@@ -264,3 +264,44 @@ def test_provider_chain_enriches_only_when_weak():
     # Weak result → provider is consulted.
     asyncio.run(resolve_asset(name="????", providers=[fake_provider]))
     assert calls["n"] == 1
+
+
+# ── Structured signals trail ───────────────────────────────────────
+
+
+def test_curated_seed_emits_curated_signal():
+    r = _resolve(ticker="IFRA11")
+    assert r.signals
+    assert r.signals[0].rule == "curated_seed"
+    assert "IFRA11" in r.signals[0].evidence
+
+
+def test_debenture_signal_records_evidence_and_detail():
+    r = _resolve(name="DEB PETROBRAS IPCA+")
+    deb = [s for s in r.signals if s.rule == "debenture"]
+    assert deb
+    assert deb[0].evidence == "DEB"
+    assert deb[0].detail is not None
+    assert "basis=" in deb[0].detail
+    assert "IPCA+" in deb[0].detail
+
+
+def test_coe_signal_fires():
+    r = _resolve(name="INVEST. ESTRUTURADOS COE BTG")
+    assert any(s.rule == "coe" for s in r.signals)
+
+
+def test_credito_estruturado_trap_signal_carries_phrase():
+    r = _resolve(name="AMW CREDITO ESTRUTURADO FIC FIM CP")
+    trap = [s for s in r.signals if s.rule == "credito_estruturado_trap"]
+    assert trap
+    assert "CREDITO ESTRUTURADO" in trap[0].evidence
+
+
+@pytest.mark.parametrize(
+    "ident",
+    ["PETR4", "HGLG11", "Tesouro IPCA+ 2035", "KAPITALO ZETA FIC FIM"],
+)
+def test_every_result_carries_at_least_one_signal(ident):
+    r = classify(normalize(name=ident))
+    assert len(r.signals) >= 1

@@ -86,6 +86,19 @@ Lei12431Status = Literal["confirmed", "candidate", "not_applicable", "unknown"]
 IsentoStatus = Literal["confirmed_exempt", "candidate_exempt", "confirmed_taxable", "unknown"]
 
 
+class Signal(BaseModel):
+    """One structured audit entry: which rule fired and what evidence matched.
+
+    Unlike the free-text ``notes``, a ``Signal`` is machine-readable so an
+    auditor can see WHICH rule decided and WHAT concrete token/phrase/ticker
+    triggered it (e.g. rule="debenture", evidence="DEB").
+    """
+
+    rule: str  # the rule id that fired (e.g. "debenture", "curated_seed")
+    evidence: str  # the concrete token/phrase/ticker that matched (e.g. "DEB")
+    detail: str | None = None  # optional extra (e.g. "basis=heuristic", "indexador=IPCA+")
+
+
 class IdentifierResolved(BaseModel):
     """The identifiers the resolver could normalize/confirm from the input."""
 
@@ -141,5 +154,7 @@ class AssetClassification(BaseModel):
     as_of: str  # YYYY-MM-DD
     # Audit trail: ordered list of resolution steps actually attempted.
     cascade: list[str] = Field(default_factory=list)
+    # Structured audit trail: which rule fired and what evidence matched.
+    signals: list[Signal] = Field(default_factory=list)
     # Free-text rationale, e.g. which trap was avoided or which signal decided.
     notes: str | None = None
