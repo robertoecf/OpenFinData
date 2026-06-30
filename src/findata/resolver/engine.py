@@ -174,6 +174,23 @@ def _infer_incentivada(
     return None, "", None
 
 
+def _apply_fiscal_certainty(basis: str | None, deb: dict[str, Any], tax: dict[str, Any]) -> None:
+    """Stamp the fiscal certainty axis on the debenture/tax sub-dicts.
+
+    An explicit infra signal is structurally certain (confirmed exempt); the
+    issuer+IPCA heuristic is only a candidate; with no incentivada signal it is a
+    plain debenture (12.431 not applicable, tax treatment still unknown).
+    """
+    if basis == "explicit":
+        deb["lei_12431_status"] = "confirmed"
+        tax["isento_status"] = "confirmed_exempt"
+    elif basis == "heuristic":
+        deb["lei_12431_status"] = "candidate"
+        tax["isento_status"] = "candidate_exempt"
+    else:
+        deb["lei_12431_status"] = "not_applicable"
+
+
 # ── The rule cascade ───────────────────────────────────────────────
 
 
@@ -226,6 +243,7 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
         if incentivada:
             deb["incentivada_1243"] = True
             tax["isento"] = True
+        _apply_fiscal_certainty(basis, deb, tax)
         # An *explicit* infra signal is high-confidence. The issuer+IPCA
         # heuristic is deliberately kept below the cascade short-circuit
         # threshold (_CONFIDENT_ENOUGH) so a wired provider re-checks the
@@ -260,7 +278,10 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "subclasse": "Crédito Privado",
             "exposure": "Brasil",
             "underlying_nature": "recebiveis",
-            "tax": {"isento": True},  # CRA/CRI: IR-exempt for PF
+            "tax": {
+                "isento": True,
+                "isento_status": "confirmed_exempt",
+            },  # CRA/CRI: IR-exempt for PF
             "confidence": 0.9,
             "notes": "Securitização (recebíveis) → Renda Fixa, isento p/ PF.",
         }
@@ -288,7 +309,7 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "subclasse": _subclasse_from_indexador(parse_indexador(n.name_folded)),
             "exposure": "Brasil",
             "underlying_nature": "credito",
-            "tax": {"isento": True},
+            "tax": {"isento": True, "isento_status": "confirmed_exempt"},
             "confidence": 0.9,
             "notes": "LCI/LCA → Renda Fixa, isento p/ PF.",
         }

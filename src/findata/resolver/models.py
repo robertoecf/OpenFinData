@@ -70,6 +70,21 @@ UnderlyingNature = Literal[
     "outro",
 ]
 
+# Lei-12.431 certainty axis for a debenture (or FI-Infra ETF underlying). The
+# legacy ``incentivada_1243`` bool cannot tell a *structurally certain* infra
+# signal apart from a *weak* issuer+IPCA heuristic — this status carries that
+# certainty: "confirmed" (explicit infra signal), "candidate" (heuristic, needs
+# ISIN confirmation), "not_applicable" (it is a debenture but not infra),
+# "unknown" (no debenture context decided it).
+Lei12431Status = Literal["confirmed", "candidate", "not_applicable", "unknown"]
+
+# Tax-exemption certainty axis for the PF holder. The legacy ``isento`` bool
+# cannot distinguish a statutory exemption (CRA/CRI/LCI-LCA/explicit 12.431) from
+# a merely *candidate* exemption resting on a heuristic — this status carries
+# that certainty: "confirmed_exempt", "candidate_exempt", "confirmed_taxable",
+# "unknown".
+IsentoStatus = Literal["confirmed_exempt", "candidate_exempt", "confirmed_taxable", "unknown"]
+
 
 class IdentifierResolved(BaseModel):
     """The identifiers the resolver could normalize/confirm from the input."""
@@ -93,6 +108,9 @@ class DebentureInfo(BaseModel):
     (or an FI-Infra ETF whose underlying *is* incentivada debentures)."""
 
     incentivada_1243: bool | None = None  # Lei 12.431 (infra) — IR-exempt for PF
+    # Certainty axis the bool can't carry: "confirmed" vs heuristic "candidate"
+    # vs "not_applicable" (a debenture, just not infra) vs "unknown".
+    lei_12431_status: Lei12431Status = "unknown"
     indexador: str | None = None  # IPCA+ | CDI+ | %CDI | PREFIXADO | SELIC
     vencimento: str | None = None  # YYYY-MM when known
 
@@ -101,6 +119,9 @@ class TaxInfo(BaseModel):
     """Tax treatment for the typical PF holder."""
 
     isento: bool | None = None  # True for Lei 12.431 / LCI-LCA / FII dividends etc.
+    # Certainty axis the bool can't carry: statutory "confirmed_exempt" vs
+    # heuristic "candidate_exempt" vs "confirmed_taxable" vs "unknown".
+    isento_status: IsentoStatus = "unknown"
 
 
 class AssetClassification(BaseModel):

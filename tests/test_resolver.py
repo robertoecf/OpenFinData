@@ -192,6 +192,40 @@ def test_unknown_is_indefinido_low_confidence():
     assert r.confidence < 0.5
 
 
+# ── Fiscal-certainty axis (lei_12431_status / isento_status) ───────
+
+
+def test_deb_petrobras_heuristic_carries_candidate_certainty():
+    r = _resolve(name="DEB PETROBRAS IPCA+")
+    assert r.debenture and r.debenture.incentivada_1243 is True
+    assert r.debenture.lei_12431_status == "candidate"
+    assert r.tax.isento is True
+    assert r.tax.isento_status == "candidate_exempt"
+
+
+def test_ifra11_carries_confirmed_certainty():
+    r = _resolve(ticker="IFRA11", name="FI ITAUINFRA CI")
+    assert r.debenture and r.debenture.lei_12431_status == "confirmed"
+    assert r.tax.isento_status == "confirmed_exempt"
+
+
+def test_explicit_infra_debenture_is_confirmed():
+    r = _resolve(name="DEB INFRA ENERGIA INCENTIVADA IPCA+")
+    assert r.debenture and r.debenture.lei_12431_status == "confirmed"
+
+
+def test_cra_isento_status_is_confirmed_exempt():
+    r = _resolve(name="CRA AGRONEGOCIO RAIZEN IPCA")
+    assert r.tax.isento_status == "confirmed_exempt"
+
+
+def test_plain_non_infra_debenture_is_not_applicable():
+    r = _resolve(name="DEB LOJAS RENNER CDI+")
+    assert r.debenture and r.debenture.incentivada_1243 is None
+    assert r.debenture.lei_12431_status == "not_applicable"
+    assert r.tax.isento_status == "unknown"
+
+
 # ── Contract / determinism ─────────────────────────────────────────
 
 

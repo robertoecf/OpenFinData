@@ -114,8 +114,16 @@ def _build_etf_seed() -> list[SeedEntry]:
             "confidence": 0.97,
         }
         if incentivada:
-            payload["debenture"] = {"incentivada_1243": True, "indexador": "IPCA+"}
-            payload["tax"] = {"isento": True}
+            payload["debenture"] = {
+                "incentivada_1243": True,
+                "lei_12431_status": "confirmed",
+                "indexador": "IPCA+",
+            }
+            payload["tax"] = {"isento": True, "isento_status": "confirmed_exempt"}
+        else:
+            # Tesouro-backed RF ETFs: not infra debentures, no statutory
+            # exemption. isento_status stays the default "unknown".
+            payload["debenture"] = {"lei_12431_status": "not_applicable"}
         entries.append(SeedEntry(ticker=ticker, payload=payload))
     return entries
 
