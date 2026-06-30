@@ -14,7 +14,20 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class _StrictModel(BaseModel):
+    """Base for the resolver contract models.
+
+    ``extra="forbid"`` so a typo in an internally-built payload (the engine
+    constructs ``DebentureInfo(**deb)`` / ``TaxInfo(**tax)`` from dicts) raises a
+    validation error instead of silently dropping the field and emitting a
+    partially empty classification.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
 
 # ── Controlled vocabularies ────────────────────────────────────────
 
@@ -86,7 +99,7 @@ Lei12431Status = Literal["confirmed", "candidate", "not_applicable", "unknown"]
 IsentoStatus = Literal["confirmed_exempt", "candidate_exempt", "confirmed_taxable", "unknown"]
 
 
-class Signal(BaseModel):
+class Signal(_StrictModel):
     """One structured audit entry: which rule fired and what evidence matched.
 
     Unlike the free-text ``notes``, a ``Signal`` is machine-readable so an
@@ -99,7 +112,7 @@ class Signal(BaseModel):
     detail: str | None = None  # optional extra (e.g. "basis=heuristic", "indexador=IPCA+")
 
 
-class IdentifierResolved(BaseModel):
+class IdentifierResolved(_StrictModel):
     """The identifiers the resolver could normalize/confirm from the input."""
 
     cnpj: str | None = None
@@ -108,7 +121,7 @@ class IdentifierResolved(BaseModel):
     name: str | None = None
 
 
-class CvmInfo(BaseModel):
+class CvmInfo(_StrictModel):
     """Raw upstream classification, kept for audit alongside the mapped macro."""
 
     classe: str | None = None
@@ -116,7 +129,7 @@ class CvmInfo(BaseModel):
     estrutura: str | None = None  # FIA | FIM | FIC | FIDC | FIP | FII | IE | ETF | ...
 
 
-class DebentureInfo(BaseModel):
+class DebentureInfo(_StrictModel):
     """Debenture-specific facts. Only populated when ``kind == 'debenture'``
     (or an FI-Infra ETF whose underlying *is* incentivada debentures)."""
 
@@ -128,7 +141,7 @@ class DebentureInfo(BaseModel):
     vencimento: str | None = None  # YYYY-MM when known
 
 
-class TaxInfo(BaseModel):
+class TaxInfo(_StrictModel):
     """Tax treatment for the typical PF holder."""
 
     isento: bool | None = None  # True for Lei 12.431 / LCI-LCA / FII dividends etc.
@@ -137,7 +150,7 @@ class TaxInfo(BaseModel):
     isento_status: IsentoStatus = "unknown"
 
 
-class AssetClassification(BaseModel):
+class AssetClassification(_StrictModel):
     """The full resolver output. One asset in → one auditable record out."""
 
     identifier_resolved: IdentifierResolved

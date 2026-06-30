@@ -28,6 +28,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from findata.resolver.normalize import tokenize
+
 
 @dataclass(frozen=True)
 class SeedEntry:
@@ -167,8 +169,15 @@ def lookup_seed(*, ticker: str | None, cnpj: str | None, name_folded: str) -> Se
         return _BY_CNPJ[cnpj]
     if name_folded:
         # ``name_folded`` is already ASCII-folded/uppercased by the caller
-        # (normalize()), so match directly — no second fold.
+        # (normalize()), so no second fold. Single-word markers must match a
+        # whole token — so ("ARBOR", "FIA") matches "ARBOR FIC FIA" but NOT
+        # "ARBOR FIAGRO" (FIA ⊄ FIAGRO as a token). Multi-word / non-alnum
+        # markers fall back to substring.
+        tokens = set(tokenize(name_folded))
         for entry in _NAME_ENTRIES:
-            if all(sub in name_folded for sub in entry.name_substrings):
+            if all(
+                (sub in tokens) if sub.isalnum() else (sub in name_folded)
+                for sub in entry.name_substrings
+            ):
                 return entry
     return None

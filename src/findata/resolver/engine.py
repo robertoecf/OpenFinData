@@ -360,15 +360,25 @@ def _ticker_payload(n: NormalizedInput) -> dict[str, Any]:
             "signals": _signal("bdr", f"ticker={n.ticker}"),
         }
     # 3-8: ordinary/preferred share — ação brasileira.
+    if suffix in {"3", "4", "5", "6", "7", "8"}:
+        return {
+            "kind": "acao",
+            "macro_class": "Renda Variável",
+            "subclasse": "Ações",
+            "exposure": "Brasil",
+            "underlying_nature": "acoes",
+            "confidence": 0.85,
+            "notes": "Ação listada na B3 → Renda Variável.",
+            "signals": _signal("acao", f"ticker={n.ticker}"),
+        }
+    # Other suffixes (1/2/9/10/12/13… subscription rights, receipts, odd codes)
+    # carry no reliable structural signal → defer to HITL/provider cascade.
     return {
-        "kind": "acao",
-        "macro_class": "Renda Variável",
-        "subclasse": "Ações",
-        "exposure": "Brasil",
-        "underlying_nature": "acoes",
-        "confidence": 0.85,
-        "notes": "Ação listada na B3 → Renda Variável.",
-        "signals": _signal("acao", f"ticker={n.ticker}"),
+        "kind": "outro",
+        "macro_class": "Indefinido",
+        "confidence": 0.2,
+        "notes": "Ticker com sufixo sem sinal estrutural suficiente; requer revisão (HITL).",
+        "signals": _signal("ticker_suffix_unknown", f"ticker={n.ticker}"),
     }
 
 
@@ -709,7 +719,14 @@ async def resolve_asset(
         # Stop early once we are confident — saves the network round-trips.
         if result.macro_class != "Indefinido" and result.confidence >= _CONFIDENT_ENOUGH:
             break
-        enriched = await provider(norm, result)
+        # Providers are best-effort enrichment: a flaky network/provider must not
+        # nuke the deterministic core result. Isolate the failure, log it on the
+        # cascade, and keep the last good classification.
+        try:
+            enriched = await provider(norm, result)
+        except Exception as exc:  # any provider failure is non-fatal
+            result.cascade.append(f"provider_error:{type(exc).__name__}")
+            continue
         if enriched is not None:
             enriched.cascade = [*result.cascade, *enriched.cascade]
             result = enriched

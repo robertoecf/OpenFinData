@@ -343,3 +343,41 @@ def test_credito_estruturado_trap_signal_carries_phrase():
 def test_every_result_carries_at_least_one_signal(ident):
     r = classify(normalize(name=ident))
     assert len(r.signals) >= 1
+
+
+# ── Review-bot regressions (PR #33 threads) ────────────────────────
+
+
+def test_unknown_ticker_suffix_is_indefinido_not_acao():
+    # CodeRabbit: bare ...13 (subscription receipt / odd code) must not be forced
+    # into RV/Ações; it has no structural signal → defer to HITL.
+    r = classify(normalize(ticker="XPTO13"))
+    assert r.macro_class == "Indefinido"
+    assert r.kind == "outro"
+
+
+def test_arbor_fiagro_does_not_match_global_equity_seed():
+    # CodeRabbit: the ("ARBOR","FIA") seed must match by token, so "ARBOR FIAGRO"
+    # (a real-estate/agro vehicle, FIA ⊄ FIAGRO) is NOT swept into RV/Internacional.
+    r = classify(normalize(name="ARBOR FIAGRO FII"))
+    assert not (r.macro_class == "Renda Variável" and r.exposure == "Internacional")
+
+
+def test_provider_failure_does_not_abort_resolution():
+    # CodeRabbit: a raising provider must not nuke the deterministic core result.
+    async def boom(norm, current):
+        raise RuntimeError("network down")
+
+    r = asyncio.run(resolve_asset(name="????", providers=[boom]))
+    assert r is not None
+    assert any(c.startswith("provider_error:") for c in r.cascade)
+
+
+def test_contract_models_forbid_unknown_keys():
+    # CodeRabbit: a typo in an internally-built payload must fail loudly.
+    from pydantic import ValidationError
+
+    from findata.resolver.models import DebentureInfo
+
+    with pytest.raises(ValidationError):
+        DebentureInfo(incentivado_1243=True)  # typo: incentivADO

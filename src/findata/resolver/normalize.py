@@ -59,13 +59,20 @@ class NormalizedInput:
     isin: str | None = None
 
     def has_token(self, *candidates: str) -> bool:
-        """True if any candidate appears as a whole token."""
+        """True if any candidate appears as a whole token.
+
+        Candidates are folded internally, so callers may pass natural strings
+        ("Ações") or pre-folded markers ("ACOES") interchangeably.
+        """
         tset = set(self.tokens)
-        return any(c in tset for c in candidates)
+        return any(fold(c) in tset for c in candidates)
 
     def name_contains(self, *needles: str) -> bool:
-        """True if any needle is a substring of the folded name (phrase match)."""
-        return any(n in self.name_folded for n in needles)
+        """True if any needle is a substring of the folded name (phrase match).
+
+        Needles are folded internally (see :meth:`has_token`).
+        """
+        return any(fold(n) in self.name_folded for n in needles)
 
     @property
     def ticker_digits_suffix(self) -> str | None:
