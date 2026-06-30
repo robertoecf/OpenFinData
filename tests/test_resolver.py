@@ -192,6 +192,44 @@ def test_unknown_is_indefinido_low_confidence():
     assert r.confidence < 0.5
 
 
+# ── Review-bot regressions (token collisions + Tesouro subclasse) ──
+
+
+def test_ntnb_bond_code_maps_to_inflation_subclasse():
+    # "NTN-B" carries no "IPCA" word, but it is an inflation-linked public bond.
+    r = _resolve(name="NTN-B 2035")
+    assert r.kind == "tesouro"
+    assert r.subclasse == "Indexada à Inflação"
+
+
+def test_lft_and_ltn_bond_codes_map_to_right_subclasse():
+    assert _resolve(name="LFT 2029").subclasse == "Pós-fixada"
+    assert _resolve(name="LTN 2028").subclasse == "Prefixada"
+
+
+def test_tesouro_without_indexador_is_titulo_publico_not_credito_privado():
+    # NTN-C (IGP-M) isn't mapped → generic public-bond subclasse, never credit.
+    r = _resolve(name="NTN-C 2031")
+    assert r.kind == "tesouro"
+    assert r.subclasse == "Título Público"
+
+
+def test_holding_company_participacoes_is_not_fip():
+    # "Participações" in a company name (no fund context) must not be a FIP.
+    r = _resolve(name="RANDON PARTICIPACOES SA")
+    assert r.macro_class != "Alternativos"
+
+
+def test_macro_trade_name_is_not_multimercado():
+    r = _resolve(name="MACRO ATACADISTA DISTRIBUIDORA SA")
+    assert r.macro_class != "Multimercado"
+
+
+def test_bare_acoes_keyword_without_fund_context_is_not_fia():
+    r = _resolve(name="EMPRESA BRASILEIRA ACOES ON SA")
+    assert not (r.kind == "fundo" and r.subclasse == "Ações")
+
+
 # ── Fiscal-certainty axis (lei_12431_status / isento_status) ───────
 
 

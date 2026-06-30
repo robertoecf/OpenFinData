@@ -28,8 +28,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from findata.resolver.normalize import fold
-
 
 @dataclass(frozen=True)
 class SeedEntry:
@@ -168,8 +166,9 @@ def lookup_seed(*, ticker: str | None, cnpj: str | None, name_folded: str) -> Se
     if cnpj and cnpj in _BY_CNPJ:
         return _BY_CNPJ[cnpj]
     if name_folded:
-        folded = fold(name_folded)
+        # ``name_folded`` is already ASCII-folded/uppercased by the caller
+        # (normalize()), so match directly — no second fold.
         for entry in _NAME_ENTRIES:
-            if all(sub in folded for sub in entry.name_substrings):
+            if all(sub in name_folded for sub in entry.name_substrings):
                 return entry
     return None

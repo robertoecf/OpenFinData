@@ -55,9 +55,9 @@ safe. **The 95 REST routes that back the CLI and HTTP consumers never change.**
 
 ## The 25 curated tools
 
-```
+```text
 registry_lookup          ← start here: CNPJ / ticker / code / name → entities
-resolve_asset            ← classify an asset into the macro taxonomy + exposure
+resolve_asset            ← classify an asset: macro asset class + exposure
 
 bcb_series   bcb_ptax   bcb_focus                       (BCB: 12 → 3)
 cvm_company  cvm_financials  cvm_fund  cvm_structured_fund   (CVM: 22 → 4)

@@ -132,14 +132,30 @@ def parse_indexador(name_folded: str) -> str | None:
     return None
 
 
-def _subclasse_from_indexador(indexador: str | None) -> str:
+def _subclasse_from_indexador(indexador: str | None, default: str = "Crédito Privado") -> str:
     if indexador == "IPCA+":
         return "Indexada à Inflação"
     if indexador in {"%CDI", "CDI+", "SELIC"}:
         return "Pós-fixada"
     if indexador == "PREFIXADO":
         return "Prefixada"
-    return "Crédito Privado"
+    return default
+
+
+# Public-bond type → indexador, for names that carry the bond code but not the
+# index word (e.g. "NTN-B 2035" has no "IPCA"). Folded substrings, so "NTN-B"
+# and "NTNB" both hit. NTN-C (IGP-M) is left to the generic path.
+def _tesouro_indexador(n: NormalizedInput) -> str | None:
+    explicit = parse_indexador(n.name_folded)
+    if explicit is not None:
+        return explicit
+    if n.name_contains("NTN-B", "NTNB"):
+        return "IPCA+"
+    if n.name_contains("LFT"):
+        return "SELIC"
+    if n.name_contains("NTN-F", "NTNF", "LTN"):
+        return "PREFIXADO"
+    return None
 
 
 def _infer_incentivada(
@@ -476,7 +492,9 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
         return {
             "kind": "tesouro",
             "macro_class": "Renda Fixa",
-            "subclasse": _subclasse_from_indexador(parse_indexador(n.name_folded)),
+            # Public bonds carry the index in their type code, not always a word;
+            # default to "Título Público", never the credit-private subclasse.
+            "subclasse": _subclasse_from_indexador(_tesouro_indexador(n), default="Título Público"),
             "exposure": "Brasil",
             "underlying_nature": "tesouro",
             "confidence": 0.95,
@@ -540,9 +558,11 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "signals": _signal("fidc", fidc_evidence),
         }
 
-    # 10) FIP → Alternativos (private equity).
+    # 10) FIP → Alternativos (private equity). The FIP token is unambiguous; the
+    #     "PARTICIPACOES"/"PRIVATE EQUITY" phrases need a fund context so a holding
+    #     company ("XYZ Participações SA") is not classified as a fund.
     _fip_phrases = ("PARTICIPACOES", "PRIVATE EQUITY")
-    if n.has_token("FIP") or n.name_contains(*_fip_phrases):
+    if n.has_token("FIP") or (fund_context and n.name_contains(*_fip_phrases)):
         fip_evidence = _first_matching_token(n, ("FIP",)) or _first_matching_phrase(n, _fip_phrases)
         return {
             "kind": "fundo",
@@ -555,9 +575,10 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "signals": _signal("fip", fip_evidence or "FIP"),
         }
 
-    # 11) Multimercado.
+    # 11) Multimercado. FIM token is unambiguous; the phrases (esp. "MACRO",
+    #     common in trade names like "Macro Atacadista") need a fund context.
     _mm_phrases = ("MULTIMERCADO", "MULTIESTRATEGIA", "MACRO")
-    if n.has_token("FIM") or n.name_contains(*_mm_phrases):
+    if n.has_token("FIM") or (fund_context and n.name_contains(*_mm_phrases)):
         mm_evidence = _first_matching_token(n, ("FIM",)) or _first_matching_phrase(n, _mm_phrases)
         return {
             "kind": "fundo",
@@ -570,9 +591,10 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
             "signals": _signal("multimercado", mm_evidence or "FIM"),
         }
 
-    # 12) Ações / FIA (domestic equities).
+    # 12) Ações / FIA (domestic equities). FIA token is unambiguous; the bare
+    #     "ACOES"/"EQUITY" keywords need a fund context (avoid company names).
     _fia_phrases = ("FUNDO DE ACOES", "ACOES", "EQUITY")
-    if n.has_token("FIA") or n.name_contains(*_fia_phrases):
+    if n.has_token("FIA") or (fund_context and n.name_contains(*_fia_phrases)):
         fia_evidence = _first_matching_token(n, ("FIA",)) or _first_matching_phrase(n, _fia_phrases)
         return {
             "kind": "fundo",

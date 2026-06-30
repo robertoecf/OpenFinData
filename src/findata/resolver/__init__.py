@@ -1,10 +1,12 @@
 """Wealthuman asset-classification resolver.
 
 ``resolve_asset(identifier)`` turns any Brazilian asset identifier (ticker,
-CNPJ, ISIN, or bare name) into a classification already mapped to the Wealthuman
-macro taxonomy (Renda Fixa, Renda Variável, Multimercado, Internacional,
-Alternativos, Estruturados) plus subclasse, underlying nature, debenture /
-Lei-12.431 facts, source, confidence, and an audit cascade.
+CNPJ, ISIN, or bare name) into a classification mapped to the Wealthuman
+taxonomy: ``macro_class`` is the asset class (Renda Fixa, Renda Variável,
+Multimercado, Alternativos, Estruturados); geography is the orthogonal
+``exposure`` axis (Brasil/Internacional). Plus subclasse, underlying nature,
+debenture / Lei-12.431 facts (with a certainty status), source, confidence, an
+audit cascade, and structured signals.
 
 Deterministic, cacheable, auditable, no PII. See ``openfindata-mcp-spec.md``.
 """

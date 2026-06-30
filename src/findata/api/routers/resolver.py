@@ -27,9 +27,10 @@ async def resolve(
     """Classifica um ativo na taxonomia macro Wealthuman.
 
     Aceita qualquer identificador (``name``/``ticker``/``cnpj``/``isin``) e
-    devolve ``macro_class`` já mapeada (Renda Fixa, Renda Variável, Multimercado,
-    Internacional, Alternativos, Estruturados) + subclasse, underlying,
-    debênture/Lei 12.431, ``source``, ``confidence`` e a cascata percorrida.
+    devolve ``macro_class`` (classe de ativo: Renda Fixa, Renda Variável,
+    Multimercado, Alternativos, Estruturados) + ``exposure`` (eixo ortogonal de
+    geografia: Brasil/Internacional) + subclasse, underlying, debênture/Lei
+    12.431, ``source``, ``confidence``, ``signals`` e a cascata percorrida.
     Determinístico e cacheável.
     """
     return await resolve_asset(name=name, ticker=ticker, cnpj=cnpj, isin=isin)
