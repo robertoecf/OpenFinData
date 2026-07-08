@@ -1,17 +1,17 @@
-# `resolve_asset` — classificador de ativos (taxonomia Wealthuman)
+# `resolve_asset` — classificador de ativos (taxonomia de alocação)
 
-> Entrega para o demandante (Wealthuman / consolidação de extratos). Define o
-> contrato que o consolidador chama por ativo (dezenas por extrato). Implementado
-> em [`src/findata/resolver/`](../src/findata/resolver/), exposto por REST, MCP e
+> Contrato que a consolidação de extratos chama por ativo (dezenas por extrato).
+> Devolve a classe de ativo já na taxonomia macro de alocação. Implementado em
+> [`src/findata/resolver/`](../src/findata/resolver/), exposto por REST, MCP e
 > biblioteca Python.
 
 ## Problema
 
-A consolidação classifica cada ativo na taxonomia macro do banker. O agente
-antigo buscava ANBIMA/debentures.com.br no brave: lento e errava (chutava RV pelo
-"11" de um ETF de debênture, perdia mandato global sem "IE", confundia "Crédito
-Estruturado" com COE). `resolve_asset` devolve a classificação **determinística,
-cacheável e auditável**, já na taxonomia do cliente.
+A consolidação de extratos precisa classificar cada ativo numa taxonomia macro de
+alocação. Um agente que busca ANBIMA/debentures.com.br na web é lento e erra
+(chuta RV pelo "11" de um ETF de debênture, perde mandato global sem "IE",
+confunde "Crédito Estruturado" com COE). `resolve_asset` devolve a classificação
+**determinística, cacheável e auditável**, já na taxonomia de alocação.
 
 ## Como chamar
 

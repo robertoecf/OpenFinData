@@ -1,7 +1,7 @@
-"""Output contract for ``resolve_asset`` — the Wealthuman classification.
+"""Output contract for ``resolve_asset`` — the allocation classification.
 
 The resolver's job is to turn *any* asset identifier (ticker, CNPJ, ISIN, or
-bare name) into a classification **already mapped to the Wealthuman macro
+bare name) into a classification **already mapped to the allocation macro
 taxonomy**, not the raw CVM/ANBIMA category. Every field that can drive a
 human-in-the-loop decision (``source``, ``confidence``, ``as_of``, ``cascade``)
 is explicit, so a consolidated statement can be audited line by line.
@@ -48,7 +48,7 @@ Kind = Literal[
     "outro",
 ]
 
-# Wealthuman macro taxonomy — PURE asset class. Geography is NOT a macro value:
+# Allocation macro taxonomy — PURE asset class. Geography is NOT a macro value:
 # "Internacional" lives only on the orthogonal ``Exposure`` axis. So an offshore
 # equity fund is RV + exposure=Internacional, offshore debt is RF + Internacional.
 # ``Indefinido`` is the honest answer when no layer can decide (drives HITL review).

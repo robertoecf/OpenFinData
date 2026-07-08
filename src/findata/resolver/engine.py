@@ -702,7 +702,7 @@ async def resolve_asset(
     isin: str | None = None,
     providers: list[AssetProvider] | None = None,
 ) -> AssetClassification:
-    """Resolve an asset to its Wealthuman classification.
+    """Resolve an asset to its allocation classification.
 
     Runs the deterministic core (curated seed → structural rules), then walks the
     optional external provider chain (Mais Retorno → CVM/B3 → restricted web

@@ -1,7 +1,7 @@
-"""CVM/ANBIMA → Wealthuman macro mapping.
+"""CVM/ANBIMA → allocation macro mapping.
 
 The spec is explicit (§Regras-chave #1): *the* mapping from the raw CVM class /
-ANBIMA category to the Wealthuman macro taxonomy lives **in the resolver**, not
+ANBIMA category to the allocation macro taxonomy lives **in the resolver**, not
 in the caller. This module is that mapping, kept as plain data so it is
 auditable and easy to extend when ANBIMA renames a category.
 
@@ -60,14 +60,14 @@ _INTERNACIONAL_MARKERS: tuple[str, ...] = (
 
 
 def map_cvm_classe(classe: str | None) -> str | None:
-    """Map a raw CVM legal ``CLASSE`` to a Wealthuman macro (asset class), or ``None``."""
+    """Map a raw CVM legal ``CLASSE`` to an allocation macro (asset class), or ``None``."""
     if not classe:
         return None
     return CVM_CLASSE_TO_MACRO.get(fold(classe))
 
 
 def map_anbima_categoria(categoria: str | None) -> str | None:
-    """Map a raw ANBIMA category to a Wealthuman macro by first-match substring."""
+    """Map a raw ANBIMA category to an allocation macro by first-match substring."""
     if not categoria:
         return None
     folded = fold(categoria)

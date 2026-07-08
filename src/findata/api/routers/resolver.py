@@ -24,7 +24,7 @@ async def resolve(
     cnpj: str | None = Query(None, max_length=32, description="CNPJ do fundo (com ou sem máscara)"),
     isin: str | None = Query(None, max_length=16, description="ISIN (ex.: BR...)"),
 ) -> AssetClassification:
-    """Classifica um ativo na taxonomia macro Wealthuman.
+    """Classifica um ativo na taxonomia macro de alocação.
 
     Aceita qualquer identificador (``name``/``ticker``/``cnpj``/``isin``) e
     devolve ``macro_class`` (classe de ativo: Renda Fixa, Renda Variável,
