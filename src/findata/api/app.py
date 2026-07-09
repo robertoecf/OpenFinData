@@ -26,6 +26,7 @@ from findata.api.routers import (
     openfinance,
     receita,
     registry,
+    resolver,
     susep,
     tesouro,
     yahoo,
@@ -139,6 +140,7 @@ app.include_router(receita.router)
 app.include_router(aneel.router)
 app.include_router(susep.router)
 app.include_router(registry.router)
+app.include_router(resolver.router)
 app.include_router(yahoo.router)
 
 

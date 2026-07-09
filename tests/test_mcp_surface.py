@@ -19,8 +19,8 @@ from fastapi.testclient import TestClient
 from findata.api.app import app
 from findata.api.mcp_app import mcp_app
 
-EXPECTED_TOOLS = 24  # curated tools with code mode OFF (the default)
-EXPECTED_REST_OPERATIONS = 95  # all REST routes (unconditional); bump when the surface changes
+EXPECTED_TOOLS = 25  # curated tools with code mode OFF (the default)
+EXPECTED_REST_OPERATIONS = 96  # all REST routes (unconditional); bump when the surface changes
 
 _HTTP_METHODS = {"get", "post", "put", "delete", "patch"}
 

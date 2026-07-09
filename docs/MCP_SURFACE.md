@@ -49,14 +49,15 @@ safe. **The 95 REST routes that back the CLI and HTTP consumers never change.**
 
 | | 1:1 (old) | curated (new) |
 |---|---:|---:|
-| MCP tools | 95 | **24** (25 with code mode) |
-| `tools/list` size | ~85k chars (~21k tok) | **~29k chars (~7k tok)** |
-| REST operations | 95 | **95 (unchanged)** |
+| MCP tools | 95 | **25** (26 with code mode) |
+| `tools/list` size | ~85k chars (~21k tok) | **~30k chars (~7k tok)** |
+| REST operations | 95 | **96** |
 
-## The 24 curated tools
+## The 25 curated tools
 
-```
+```text
 registry_lookup          ← start here: CNPJ / ticker / code / name → entities
+resolve_asset            ← classify an asset: macro asset class + exposure
 
 bcb_series   bcb_ptax   bcb_focus                       (BCB: 12 → 3)
 cvm_company  cvm_financials  cvm_fund  cvm_structured_fund   (CVM: 22 → 4)

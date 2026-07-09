@@ -39,6 +39,7 @@ from pydantic import BaseModel, Field
 
 from findata.api._b3_common import MAX_TICKERS, resolve_quotes
 from findata.registry import lookup
+from findata.resolver import resolve_asset
 from findata.sources.anbima import indices as anbima_src
 from findata.sources.aneel import leiloes
 from findata.sources.b3 import cotahist, indices
@@ -95,6 +96,37 @@ async def registry_lookup(
     strength (very negative = strong exact hit; near zero = fuzzy name match).
     """
     return await lookup(q, limit=limit)
+
+
+@router.get(
+    "/resolver/resolve",
+    operation_id="resolve_asset",
+    response_model=None,
+    summary="Classify a Brazilian asset: asset class + Brasil/Internacional exposure",
+)
+async def resolve_asset_tool(
+    name: str | None = Query(
+        None, max_length=256, description="Asset name/label, e.g. 'FI ITAUINFRA CI'"
+    ),
+    ticker: str | None = Query(None, max_length=16, description="B3 ticker, e.g. IFRA11, PETR4"),
+    cnpj: str | None = Query(None, max_length=32, description="Fund CNPJ (masked or not)"),
+    isin: str | None = Query(None, max_length=16, description="ISIN, e.g. BR..."),
+) -> Any:
+    """Turn any asset identifier into a classification mapped to the
+    consolidation taxonomy. ``macro_class`` is the asset class only — Renda Fixa,
+    Renda Variável, Multimercado, Alternativos, Estruturados; geography is the
+    separate ``exposure`` axis (Brasil/Internacional), so e.g. IVVB11 is RV +
+    Internacional.
+
+    Returns ``macro_class`` + ``exposure`` + ``subclasse`` + ``underlying_nature``
+    (splits ETF-de-ações from ETF-de-debêntures), debenture/Lei-12.431 facts (with
+    a confirmed/candidate certainty status), ``source``, ``confidence``, the
+    ``cascade`` walked, and structured ``signals`` (which rule fired on what
+    evidence) — deterministic and cacheable. Pass any subset of identifiers; a
+    bare ticker/CNPJ given as ``name`` is auto-detected. Use this (not
+    ``registry_lookup``) when you need the asset's class, not its registry entity.
+    """
+    return await resolve_asset(name=name, ticker=ticker, cnpj=cnpj, isin=isin)
 
 
 # ── BCB: Banco Central ────────────────────────────────────────────
