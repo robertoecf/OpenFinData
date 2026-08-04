@@ -152,6 +152,16 @@ python_version = "3.11"
 strict = true
 ignore_missing_imports = true
 
+[tool.coverage.run]
+source = ["findata"]
+branch = true
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
+
 [[tool.mypy.overrides]]
 module = ["yfinance", "yfinance.*", "fastapi_mcp", "fastapi_mcp.*"]
 ignore_missing_imports = true

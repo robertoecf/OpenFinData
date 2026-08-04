@@ -18,6 +18,14 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Test hardening and nightly integration checks.** Added offline unit/API
+  coverage for HTTP 429 retries, rate-limit helpers, previously thin sources
+  (BCB PTAX/Focus, IBGE, CVM companies/financials, Tesouro bonds, B3 quotes via
+  mocked yfinance), thin REST smoke for those routes, and CLI smoke
+  (`--help`/`--version`/`bcb series`/`bcb get`). Coverage gate
+  (`--cov-fail-under=60`) runs on the Python 3.12 CI leg. Live
+  `@pytest.mark.integration` tests run on a scheduled nightly workflow
+  (and `workflow_dispatch`), not on the default PR CI.
 - **Asset-classification resolver** — `findata.resolver.resolve_asset()`,
   `GET /resolver/resolve`, and the `resolve_asset` MCP tool. Turns any
   Brazilian asset identifier (ticker/CNPJ/ISIN/name) into a classification

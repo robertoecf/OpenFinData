@@ -72,6 +72,14 @@ def test_should_retry_classifies_errors() -> None:
     exc = httpx.HTTPStatusError("x", request=httpx.Request("GET", "http://x"), response=resp)
     assert http_client._should_retry(exc) is True
 
+    resp_429 = httpx.Response(status_code=429)
+    exc_429 = httpx.HTTPStatusError(
+        "x",
+        request=httpx.Request("GET", "http://x"),
+        response=resp_429,
+    )
+    assert http_client._should_retry(exc_429) is True
+
     resp_404 = httpx.Response(status_code=404)
     exc_404 = httpx.HTTPStatusError(
         "x",
@@ -143,4 +151,24 @@ async def test_get_bytes_scopes_cache_by_max_bytes() -> None:
     assert await http_client.get_bytes("https://example.test/file", max_bytes=None) == b"abcdef"
     with pytest.raises(ValueError, match="download exceeds max_bytes=3"):
         await http_client.get_bytes("https://example.test/file", max_bytes=3)
+    assert route.call_count == 2
+
+
+@respx.mock
+async def test_get_json_retries_on_429_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> None:
+    http_client.clear_cache()
+    route = respx.get("https://example.test/rate").mock(
+        side_effect=[
+            httpx.Response(429),
+            httpx.Response(200, json={"ok": True}),
+        ]
+    )
+
+    async def no_sleep(_seconds: float) -> None:
+        return None
+
+    monkeypatch.setattr(asyncio, "sleep", no_sleep)
+    data = await http_client.get_json("https://example.test/rate")
+
+    assert data == {"ok": True}
     assert route.call_count == 2

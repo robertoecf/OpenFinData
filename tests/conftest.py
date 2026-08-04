@@ -18,10 +18,3 @@ from findata import http_client
 def _clear_cache() -> None:
     """Ensure a clean HTTP cache between tests."""
     http_client.clear_cache()
-
-
-@pytest.fixture
-async def _shutdown_http_client() -> None:
-    """Close the shared httpx client after the test."""
-    yield
-    await http_client.close_client()

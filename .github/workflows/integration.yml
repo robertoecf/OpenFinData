@@ -1,0 +1,37 @@
+name: Nightly integration
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+
+      - name: Run integration tests
+        id: integration-tests
+        run: pytest -m integration -v 2>&1 | tee pytest-integration.log
+
+      - name: Upload failure log
+        if: steps.integration-tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-integration-log
+          path: pytest-integration.log

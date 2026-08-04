@@ -4,7 +4,7 @@
 # Split of responsibility:
 #   - Ruff   → formatting + base lint + AI guardrails (complexity, max-args, magic numbers).
 #   - Mypy   → strict type checking.
-#   - Pytest → unit-test fast path (integration tests run on CI).
+#   - Pytest → unit-test fast path (integration tests run on the scheduled CI workflow).
 #   - ggshield (opt-in) → secret leak detection.
 
 set -euo pipefail
