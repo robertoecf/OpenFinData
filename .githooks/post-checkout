@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-# Dados Financeiros Abertos pre-commit hook.
-# Context check (worktree/branch) + fast lint on staged Python files.
+# Warn when the root checkout drifts off main / onto agent branches.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
-
 if [[ -f "${SCRIPT_DIR}/guardrails.sh" ]]; then
   # shellcheck source=/dev/null
   source "${SCRIPT_DIR}/guardrails.sh"
@@ -14,5 +12,4 @@ else
   source "${ROOT}/scripts/git/guardrails.sh"
 fi
 
-guardrails_require_allowed_context "commit"
-guardrails_pre_commit
+guardrails_warn_post_checkout

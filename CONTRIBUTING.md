@@ -12,8 +12,31 @@ python3 -m venv .venv
 . .venv/bin/activate
 pip install -e '.[dev]'
 
-# Instala os git hooks (opcional mas recomendado)
+# Root checkout é inspect-only. Crie uma worktree antes de commit/push:
+git worktree add .worktrees/minha-feature -b feature/minha-feature
+cd .worktrees/minha-feature
+
+# Instala os git hooks (recomendado; compartilhados por todas as worktrees)
 bash scripts/git/install-hooks.sh
+```
+
+## Worktrees (obrigatório)
+
+Root checkout e `main` são **inspect-only** — os hooks bloqueiam commit/push
+neles. Trabalhe numa worktree:
+
+| Quem | Branch | Worktree |
+|---|---|---|
+| Humano | `feature/<slug>`, `fix/<slug>`, … | `.worktrees/<slug>` (ou path sob `.worktrees/`) |
+| Claude / Cursor | `claude/<slug>` ou `cursor/<slug>` | `.claude/worktrees/*` ou `$HOME/.cursor/worktrees/*` |
+| Codex | `codex/<slug>` | `.worktrees/codex-*` |
+
+Ver [`CLAUDE.md`](CLAUDE.md) e [`docs/agents/openfindata-ship/`](docs/agents/openfindata-ship/).
+
+Gate local canônico antes de publicar:
+
+```bash
+bash scripts/ship/preflight.sh
 ```
 
 ## Os três tools da casa
@@ -63,18 +86,27 @@ pytest                           # unit + API (rápido, ~1s)
 
 ## Git hooks
 
-Instalados via `bash scripts/git/install-hooks.sh`, que aponta
-`core.hooksPath` para `.githooks/`. Dois hooks:
+Instalados via `bash scripts/git/install-hooks.sh`, que copia os hooks para
+`<git-common-dir>/openfindata-hooks/` (compartilhado por todas as worktrees) e
+aponta `core.hooksPath` para lá. Três hooks:
 
-- **pre-commit** — só no diff staged, em segundos:
-  - `ruff check` + `ruff format --check` nos arquivos `.py` staged.
+- **pre-commit** — contexto (worktree/branch) + lint no staged:
+  - bloqueia commit no root checkout ou em `main` (use worktree; ver acima);
+  - `ruff check` + `ruff format --check` nos arquivos `.py` staged;
   - `ggshield secret scan pre-commit` (se `ggshield` estiver instalado).
-- **pre-push** — rede de segurança completa:
-  - `ruff format --check` + `ruff check` no repo inteiro (`src`, `tests`, `scripts`).
-  - `mypy --strict` em `src/findata`.
+- **pre-push** — contexto + rede de segurança completa:
+  - `ruff format --check` + `ruff check` no repo inteiro (`src`, `tests`, `scripts`);
+  - `mypy --strict` em `src/findata`;
   - `pytest -q` (unit + API; integration fica no workflow noturno/agendado).
+- **post-checkout** — aviso se o root checkout sair de `main`.
+
+Bypass de emergência (não é fluxo normal): `OPENFINDATA_GUARDRAILS_BYPASS=1`.
+Se você instalou hooks e ainda está no clone raiz, o bloqueio é esperado —
+mova o trabalho para uma worktree em vez de bypassar.
 
 Pra desinstalar: `git config --unset core.hooksPath`.
+
+Workflows de agente (ship, MCP trust, orientation): [`docs/agents/`](docs/agents/).
 
 ## Testes
 

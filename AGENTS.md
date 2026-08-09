@@ -4,10 +4,27 @@ This file is for coding agents working in this repository. Keep it practical:
 follow the project conventions, avoid speculative dependencies, and produce
 reproducible data work.
 
+For Claude Code / Cursor harness specifics (worktrees, ship routing), see
+[`CLAUDE.md`](CLAUDE.md).
+
+## Agent skills
+
+Workflow docs live under `docs/agents/`. Keep this section as pointers:
+
+- Cold-start orientation map: [`docs/agents/orientation.md`](docs/agents/orientation.md)
+- Domain docs consumption: [`docs/agents/domain.md`](docs/agents/domain.md)
+- Quality gates and preflight: [`docs/agents/quality.md`](docs/agents/quality.md)
+- MCP Trust review gate: [`docs/agents/mcp-trust-review.md`](docs/agents/mcp-trust-review.md)
+- MCP Trust reviewer skill: [`.claude/skills/mcp-trust-reviewer/SKILL.md`](.claude/skills/mcp-trust-reviewer/SKILL.md)
+- Ship parent workflow: [`docs/agents/openfindata-ship/SKILL.md`](docs/agents/openfindata-ship/SKILL.md)
+
+Harness-global skills (adversarial-review, deslop, handoff, tdd, …) are not
+duplicated in this repo; use the installed host skills.
+
 ## Project baseline
 
-- Canonical working directory: the repository root, i.e. the directory that
-  contains this `AGENTS.md`.
+- Implementation checkout: a dedicated **worktree**, never the root checkout
+  and never `main`. Root/`main` are inspect-only (see `CLAUDE.md`).
 - Project name: Dados Financeiros Abertos.
 - Distribution/package slug: `openfindata`.
 - Import package and CLI remain `findata` for compatibility.
@@ -23,7 +40,13 @@ reproducible data work.
 ## Quality gates
 
 Before a code change is considered ready, run the smallest relevant check first,
-then the full gate from the repository root before merging or release work:
+then the full gate from the **worktree** before merging or release work:
+
+```bash
+bash scripts/ship/preflight.sh
+```
+
+Expanded equivalent:
 
 ```bash
 .venv/bin/ruff format --check src/ tests/ scripts/
@@ -33,7 +56,8 @@ then the full gate from the repository root before merging or release work:
 ```
 
 Ruff owns the Biome-like formatter/lint baseline and the ESLint-like AI
-guardrails configured in `pyproject.toml`.
+guardrails configured in `pyproject.toml`. Details:
+[`docs/agents/quality.md`](docs/agents/quality.md).
 
 For documentation-only edits, at least run:
 
