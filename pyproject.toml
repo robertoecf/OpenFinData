@@ -32,6 +32,9 @@ dependencies = [
     "httpx>=0.28",
     "pydantic>=2.0",
     "fastapi-mcp>=0.4",
+    # fastapi-mcp 0.4 calls mcp.Server(name, description); mcp 2.x dropped the
+    # description positional arg — cap below 2 until fastapi-mcp catches up.
+    "mcp>=1.12,<2",
     "typer>=0.15",
     "rich>=13.0",
     "slowapi>=0.1.9",
@@ -151,6 +154,16 @@ max-statements = 50
 python_version = "3.11"
 strict = true
 ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["findata"]
+branch = true
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
 
 [[tool.mypy.overrides]]
 module = ["yfinance", "yfinance.*", "fastapi_mcp", "fastapi_mcp.*"]

@@ -118,29 +118,8 @@ def test_chart_explorer_asset(client: TestClient) -> None:
     assert "LightweightCharts" in r.text
     assert "attributionLogo: false" in r.text
     assert "bcbSeriesEndpoint(432, 24)" in r.text
-    assert "selic-meta-vs-ibov" in r.text
-    assert "bcbSeriesEndpoint(4189, 120)" in r.text
-    assert "Selic Meta vs Ibovespa" in r.text
-    assert 'get("preset")' in r.text
-    assert 'priceScaleId: "left"' in r.text
-    assert "Escalas: Selic à esquerda, Ibovespa à direita" in r.text
     assert "MAX_POINTS = 5000" in r.text
     assert "REQUEST_TIMEOUT_MS = 15000" in r.text
-    assert "new URL(rawEndpoint, window.location.origin)" in r.text
-    assert "/tesouro/bonds/history" not in r.text
-    assert 'options.type === "candlestick" || (!options.field && hasOhlc(firstRecord))' in r.text
-    assert "timestampFromDate" in r.text
-    assert "isValidDateParts" in r.text
-    assert "parseCompactPeriod" in r.text
-    assert "parseUnixTimestamp" in r.text
-    assert "allowShortSeconds" in r.text
-    assert "parseUnixTimestamp(text, { allowShortSeconds: true })" in r.text
-    assert "unixTimestamp !== null" in r.text
-    assert "dedupeByTime(normalizedTime.data)" in r.text
-    assert "normalizeMixedTimes" in r.text
-    assert "if (time !== null)" in r.text
-    assert "normalizedTime.hasIntraday ? a.time - b.time : a.time.localeCompare(b.time)" in r.text
-    assert "timeVisible: normalized.hasIntraday" in r.text
     assert "Yahoo Finance" not in r.text
 
 

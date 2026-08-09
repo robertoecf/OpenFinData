@@ -72,7 +72,7 @@ Instalados via `bash scripts/git/install-hooks.sh`, que aponta
 - **pre-push** — rede de segurança completa:
   - `ruff format --check` + `ruff check` no repo inteiro (`src`, `tests`, `scripts`).
   - `mypy --strict` em `src/findata`.
-  - `pytest -q` (unit + API; integration fica só na CI).
+  - `pytest -q` (unit + API; integration fica no workflow noturno/agendado).
 
 Pra desinstalar: `git config --unset core.hooksPath`.
 
@@ -80,7 +80,7 @@ Pra desinstalar: `git config --unset core.hooksPath`.
 
 ```bash
 pytest                       # padrão — unit + API (sem rede)
-pytest -m integration        # bate nos endpoints públicos reais
+pytest -m integration        # manual; também roda no workflow noturno/agendado
 pytest -m ""                 # tudo
 ```
 

@@ -8,7 +8,7 @@ import httpx
 import pytest
 import respx
 
-from findata.auth import MissingCredentialsError, OAuth2ClientCredentials, OAuth2Token
+from findata.auth import AuthError, MissingCredentialsError, OAuth2ClientCredentials, OAuth2Token
 
 
 def test_token_is_expired_with_safety_margin() -> None:
@@ -74,7 +74,7 @@ async def test_oauth_failed_token_request_raises() -> None:
     )
     flow = _ANBIMA("cid", "wrong")
     async with httpx.AsyncClient() as http:
-        with pytest.raises(Exception):  # noqa: B017 — AuthError or subclass is fine
+        with pytest.raises(AuthError):
             await flow.get_token(http)
 
 

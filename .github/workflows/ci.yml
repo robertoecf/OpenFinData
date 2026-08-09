@@ -42,7 +42,12 @@ jobs:
         run: mypy src/findata
 
       - name: Pytest
+        if: matrix.python-version != '3.12'
         run: pytest -v
+
+      - name: Pytest + coverage
+        if: matrix.python-version == '3.12'
+        run: pytest -v --cov=findata --cov-report=term-missing --cov-fail-under=60
 
   build:
     runs-on: ubuntu-latest
