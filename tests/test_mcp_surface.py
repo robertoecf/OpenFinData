@@ -60,6 +60,9 @@ def test_rest_api_untouched_by_curation() -> None:
 
 
 def test_mcp_transport_mounted_on_public_app() -> None:
+    from findata.api.app import _MCP_ENABLED
+
+    assert _MCP_ENABLED, "MCP companion failed to initialize — check fastapi-mcp/mcp compatibility"
     paths = {getattr(r, "path", None) for r in app.routes}
     assert "/mcp" in paths
 
