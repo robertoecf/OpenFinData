@@ -65,6 +65,23 @@ O compose publica só em `127.0.0.1:8000` e usa labels Traefik. **Não** anexe e
 rede a stacks hermes/wealthuman. **Não** habilite code mode
 (`FINDATA_MCP_CODE_MODE` deve permanecer ausente).
 
+
+## Traefik host mode + health
+
+Traefik on this VPS uses `network_mode: host`. Point the service at the published
+loopback port:
+
+```yaml
+traefik.http.services.openfindata.loadbalancer.server.url=http://127.0.0.1:8000
+```
+
+Do **not** set `traefik.docker.network=...` for this layout.
+
+Traefik v3 **drops routers for Docker-unhealthy containers**. If `/health` is rate
+limited, the container goes unhealthy and public HTTPS returns Traefik
+`404 page not found` even while `curl 127.0.0.1:8000/health` still works.
+`/health` is rate-limit exempt for that reason.
+
 ## Smoke checks
 
 ```bash
