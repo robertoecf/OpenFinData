@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # Dados Financeiros Abertos pre-push hook.
-# Runs the full check suite before code leaves the machine:
-# ruff format/check (full tree) → mypy --strict → pytest (no integration tests).
+# Context check + full suite: ruff → mypy --strict → pytest (no integration).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 if [[ -f "${SCRIPT_DIR}/guardrails.sh" ]]; then
+  # shellcheck source=/dev/null
   source "${SCRIPT_DIR}/guardrails.sh"
 else
   ROOT="$(git rev-parse --show-toplevel)"
+  # shellcheck source=/dev/null
   source "${ROOT}/scripts/git/guardrails.sh"
 fi
 
+guardrails_require_allowed_context "push"
 guardrails_pre_push
