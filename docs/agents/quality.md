@@ -11,13 +11,16 @@ A partir da raiz da **worktree** (não do root checkout):
 bash scripts/ship/preflight.sh
 ```
 
-Equivalente expandido (mesmo conjunto que o preflight `--push`):
+Equivalente expandido (mesmo conjunto que o preflight `--push`). Interpretador:
+worktree `.venv`, senão `.venv` na raiz do repo comum, senão `python3` — ver
+`CLAUDE.md` § Python / `.venv`.
 
 ```bash
-.venv/bin/ruff format --check src/ tests/ scripts/
-.venv/bin/ruff check src/ tests/ scripts/
-.venv/bin/python -m mypy src/findata
-.venv/bin/python -m pytest tests/ -q
+# Prefer: bash scripts/ship/preflight.sh
+"$PY" -m ruff format --check src/ tests/ scripts/
+"$PY" -m ruff check src/ tests/ scripts/
+"$PY" -m mypy src/findata
+"$PY" -m pytest tests/ -q
 ```
 
 Docs-only: no mínimo `git diff --check`.

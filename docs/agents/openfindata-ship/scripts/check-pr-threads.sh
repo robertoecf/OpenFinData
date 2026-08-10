@@ -6,13 +6,10 @@ set -euo pipefail
 
 PR="${1:?usage: check-pr-threads.sh <pr-number> [owner/repo]}"
 REPO_SLUG="${2:-$(gh repo view --json nameWithOwner --jq '.nameWithOwner')}"
-case "$REPO_SLUG" in
-  */*) ;;
-  *)
-    echo "[check-pr-threads] repo slug inválido: '$REPO_SLUG' (esperado owner/repo)" >&2
-    exit 2
-    ;;
-esac
+if [[ ! "$REPO_SLUG" =~ ^[^/]+/[^/]+$ ]]; then
+  echo "[check-pr-threads] repo slug inválido: '$REPO_SLUG' (esperado owner/repo)" >&2
+  exit 2
+fi
 OWNER="${REPO_SLUG%%/*}"
 NAME="${REPO_SLUG##*/}"
 

@@ -23,11 +23,17 @@ bash scripts/git/install-hooks.sh
 ## Worktrees (obrigatório)
 
 Root checkout e `main` são **inspect-only** — os hooks bloqueiam commit/push
-neles. Trabalhe numa worktree:
+neles. Trabalhe numa worktree.
+
+Prefixos de agente (`claude/*`, `cursor/*`, `codex/*`) são **obrigatórios** nas
+worktrees de agente (`.claude/worktrees/*`, `$HOME/.cursor/worktrees/*`,
+`.worktrees/codex-*`). Em worktree manual sob `.worktrees/<slug>` (não
+`codex-*`), branches humanas como `feature/<slug>` ou `fix/<slug>` são
+permitidas.
 
 | Quem | Branch | Worktree |
 |---|---|---|
-| Humano | `feature/<slug>`, `fix/<slug>`, … | `.worktrees/<slug>` (ou path sob `.worktrees/`) |
+| Humano | `feature/<slug>`, `fix/<slug>`, … | `.worktrees/<slug>` (manual; não use o prefixo `codex-`) |
 | Claude / Cursor | `claude/<slug>` ou `cursor/<slug>` | `.claude/worktrees/*` ou `$HOME/.cursor/worktrees/*` |
 | Codex | `codex/<slug>` | `.worktrees/codex-*` |
 

@@ -73,9 +73,17 @@ bash docs/agents/openfindata-ship/scripts/readiness.sh
 .venv/bin/findata serve --reload   # ou scripts/dev_server.sh
 ```
 
-Worktrees podem reutilizar o `.venv` do root checkout se não tiverem venv
-próprio. `scripts/ship/preflight.sh` e os guardrails já tentam o `.venv` da
-worktree e, em seguida, o `.venv` na raiz do repositório comum.
+### Python / `.venv` (contrato único)
+
+Resolver usado por `scripts/ship/preflight.sh` e `scripts/git/guardrails.sh`:
+
+1. `<worktree>/.venv/bin/python` se existir;
+2. senão `<repo-root>/.venv/bin/python` (venv criado no clone raiz);
+3. senão `python3` no `PATH`.
+
+Comandos documentados como `.venv/bin/...` significam “o interpretador desse
+resolver”, não “somente um `.venv` local à worktree”. Preferência: criar o
+venv no root uma vez (`CONTRIBUTING.md`) e reutilizá-lo nas worktrees.
 
 ## Skills no repo
 

@@ -46,13 +46,15 @@ then the full gate from the **worktree** before merging or release work:
 bash scripts/ship/preflight.sh
 ```
 
-Expanded equivalent:
+Expanded equivalent (same interpreter resolver as preflight: worktree
+`.venv`, then repo-root `.venv`, then `python3`):
 
 ```bash
-.venv/bin/ruff format --check src/ tests/ scripts/
-.venv/bin/ruff check src/ tests/ scripts/
-.venv/bin/python -m mypy src/findata
-.venv/bin/python -m pytest tests/ -q
+# PY=$(first existing: .venv/bin/python | <repo-root>/.venv/bin/python | python3)
+"$PY" -m ruff format --check src/ tests/ scripts/
+"$PY" -m ruff check src/ tests/ scripts/
+"$PY" -m mypy src/findata
+"$PY" -m pytest tests/ -q
 ```
 
 Ruff owns the Biome-like formatter/lint baseline and the ESLint-like AI

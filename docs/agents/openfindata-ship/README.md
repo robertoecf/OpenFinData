@@ -14,8 +14,8 @@ paralela como source of truth.
 
 Helpers:
 
-- `scripts/readiness.sh` — hygiene de worktree/branch antes do ship
-- `scripts/check-pr-threads.sh` — falha se houver review threads abertas
+- `docs/agents/openfindata-ship/scripts/readiness.sh` — hygiene de worktree/branch antes do ship
+- `docs/agents/openfindata-ship/scripts/check-pr-threads.sh` — falha se houver review threads abertas
 
 Preflight do repo (fora desta pasta):
 

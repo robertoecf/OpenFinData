@@ -15,8 +15,11 @@ antes de explorar ou alterar o código.
 - **`docs/source-notes/`** — notas por fonte (`basedosdados`, `yahoo`, `advfn`, …).
 - **[`CLAUDE.md`](../../CLAUDE.md)** — worktrees e roteamento de ship (Claude/Cursor).
 
-Se um arquivo não existir na worktree, siga em silêncio e use a fonte canônica
-mais próxima. Não invente glossário paralelo.
+Se um documento **obrigatório de política/segurança** estiver ausente
+(`SOURCES_WITH_AUTH.md`, `MCP_SURFACE.md`, `AGENTS.md`), pare com
+`MISSING_REFERENCE: <path>` e não continue como se a política não existisse.
+Notas opcionais (`docs/source-notes/`, roadmap) podem cair para a fonte
+canônica mais próxima em silêncio. Não invente glossário paralelo.
 
 ## Layout
 

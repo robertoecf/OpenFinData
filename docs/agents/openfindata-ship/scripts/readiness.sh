@@ -10,8 +10,8 @@ fi
 
 cd "$top" || exit 1
 branch=$(git branch --show-current 2>/dev/null || true)
-git_dir=$(git rev-parse --git-dir 2>/dev/null || true)
-common_dir=$(git rev-parse --git-common-dir 2>/dev/null || true)
+git_dir=$(git rev-parse --path-format=absolute --git-dir 2>/dev/null || true)
+common_dir=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)
 status=$(git status --porcelain)
 fail=0
 warn=0
@@ -35,7 +35,7 @@ else
   ok "not on main"
 fi
 
-if [ -d "$top/.git" ]; then
+if [ -n "$git_dir" ] && [ -n "$common_dir" ] && [ "$git_dir" = "$common_dir" ]; then
   failmsg "root checkout detected; use a dedicated linked worktree before shipping"
 else
   ok "worktree checkout detected"
