@@ -1,5 +1,7 @@
 # Deploy público do Dados Financeiros Abertos no seu PC (WSL + Cloudflare Tunnel)
 
+> **VPS + gVisor:** para deploy em VPS com runtime runsc, veja [`docs/DEPLOY_GVISOR.md`](DEPLOY_GVISOR.md).
+
 > **Meta:** expor o **Dados Financeiros Abertos** como **servidor MCP público** — acessível via
 > HTTPS, com TLS, rate limit, e _sem_ abrir porta no roteador nem pagar nada.
 >
@@ -71,7 +73,7 @@ Pronto. Em ~30s:
 
 ```bash
 curl https://findata.seudominio.com.br/health
-# {"status":"ok","version":"0.1.0"}
+# {"status":"ok","version":"0.3.1"}
 
 curl https://findata.seudominio.com.br/stats
 # { ... uptime, cache, rate limits ... }

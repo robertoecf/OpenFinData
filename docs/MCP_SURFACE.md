@@ -1,6 +1,6 @@
 # MCP surface: curated tools over the REST API
 
-> Status: prototype / design proposal (alpha 0.3.x). Non-breaking: the REST API
+> Status: implemented (alpha curated catalog). Non-breaking: the REST API
 > is untouched. Implemented in [`src/findata/api/mcp_app.py`](../src/findata/api/mcp_app.py).
 
 ## Problem
@@ -65,7 +65,7 @@ b3_quote  b3_cotahist  b3_index                          (B3: 9 → 3)
 tesouro_bonds  tesouro_siconfi                           (Tesouro: 6 → 2)
 ibge_indicator  ibge_ipca_breakdown                      (IBGE: 4 → 2)
 ipea_series  ipea_search                                 (IPEA: 4 → 2)
-anbima                                                   (ANBIMA: 3 → 1)
+anbima                                                   (ANBIMA: ima|ettj|debentures|tpf)
 openfinance_directory                                    (Open Finance: 15 → 1)
 basedosdados_search  basedosdados_sql                    (BdD: 7 → 2)
 receita_arrecadacao   aneel_leiloes   susep_empresas
@@ -85,6 +85,7 @@ findata_run_code                                         (code mode, opt-in)
 | `b3_index` | index portfolio + monthly + list | `dataset`, omit `symbol` to list |
 | `tesouro_bonds` | bonds list/search/history | `dataset` |
 | `tesouro_siconfi` | `rreo`, `rgf`, `entes` | `report` |
+| `anbima` | ima, ettj, debentures, tpf | `dataset=ima\|ettj\|debentures\|tpf` |
 | `openfinance_directory` | participants/endpoints/resources/roles | `dataset` |
 
 ## Tradeoffs
