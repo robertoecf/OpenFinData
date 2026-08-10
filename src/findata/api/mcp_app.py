@@ -659,25 +659,33 @@ async def ipea_search(
     "/anbima",
     operation_id="anbima",
     response_model=None,
-    summary="ANBIMA public data, IMA index family, ETTJ yield curve, or debenture quotes",
+    summary="ANBIMA public data: IMA, ETTJ, debentures, or TPF secondary-market quotes",
 )
 async def anbima_tool(
-    dataset: Literal["ima", "ettj", "debentures"] = Query("ima"),
+    dataset: Literal["ima", "ettj", "debentures", "tpf"] = Query("ima"),
     family: str | None = Query(
         None, description="ima: filter to one IMA family, e.g. IRF-M, IMA-B"
     ),
     data: date | None = Query(None, description="Reference date (ettj/debentures; default latest)"),
     emissor: str | None = Query(None, description="debentures: issuer-name substring filter"),
-    limit: int = Query(500, ge=1, le=5000),
+    titulo: str | None = Query(None, description="tpf: bond-type filter, e.g. LTN, NTN-B, LFT"),
+    limit: int = Query(1000, ge=1, le=5000),
 ) -> Any:
     """``ima`` returns the latest IMA snapshot (optionally one ``family``); ``ettj``
     returns the zero-coupon yield curve for ``data``; ``debentures`` returns daily
-    secondary-market quotes (optionally filtered by ``emissor``).
+    secondary-market quotes (optionally filtered by ``emissor``); ``tpf`` returns
+    federal-bond secondary-market quotes (optionally filtered by ``titulo``).
     """
     if dataset == "ettj":
         return await anbima_src.get_ettj(data)
     if dataset == "debentures":
         return (await anbima_src.get_debentures(data, emissor=emissor))[:limit]
+    if dataset == "tpf":
+        rows = await anbima_src.get_tpf(data)
+        if titulo:
+            needle = titulo.casefold()
+            rows = [row for row in rows if needle in row.titulo.casefold()]
+        return rows[:limit]
     fam = anbima_src.IMAFamily(family) if family else None
     return (await anbima_src.get_ima(fam))[:limit]
 

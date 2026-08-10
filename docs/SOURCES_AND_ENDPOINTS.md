@@ -20,7 +20,7 @@ Para testar interativamente, rode `findata serve` e abra `/api/docs` ou `/redoc`
 | Open Finance Brasil | Diretório público, participantes, recursos, JWKS e Portal de Dados | `/openfinance/resources`, `/openfinance/participants`, `/openfinance/endpoints`, `/openfinance/directory/api-resources`, `/openfinance/portal/datasets` | Não para dados públicos |
 | B3 | Cotações, COTAHIST oficial, composição teórica e evolução mensal de índices | `/b3/quote/{ticker}`, `/b3/history/{ticker}`, `/b3/quotes`, `/b3/cotahist/year/{year}`, `/b3/indices`, `/b3/indices/{symbol}`, `/b3/indices/{symbol}/monthly` | Não |
 | Yahoo Finance | Endpoint experimental de gráfico de preços | `/yahoo/chart/{symbol}` | Não; fonte não oficial |
-| ANBIMA | IMA, ETTJ e debêntures via arquivos públicos | `/anbima/ima`, `/anbima/ettj`, `/anbima/debentures` | Não para os arquivos usados |
+| ANBIMA | IMA, ETTJ, debêntures e TPF via arquivos públicos | `/anbima/ima`, `/anbima/ettj`, `/anbima/debentures`, `/anbima/tpf` | Não para os arquivos usados |
 | Receita Federal | Arrecadação por período, UF e tributo | `/receita/arrecadacao`, `/receita/tributos` | Não |
 | ANEEL | Leilões de geração e transmissão | `/aneel/leiloes/geracao`, `/aneel/leiloes/transmissao` | Não |
 | SUSEP | Entidades supervisionadas | `/susep/empresas`, `/susep/empresas/search` | Não |
@@ -100,6 +100,8 @@ O projeto também aceita `BASE_DOS_DADOS_BILLING_PROJECT_ID` e
 projeto.
 
 ### ANBIMA
+
+No MCP, a tool `anbima` inclui o seletor `dataset=tpf` além de `ima`, `ettj` e `debentures`.
 
 O módulo atual usa arquivos públicos em `www.anbima.com.br/informacoes/*`
 (XLS/CSV/TXT), não a API comercial autenticada Sensedia. Produtos autenticados

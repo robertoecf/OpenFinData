@@ -1,0 +1,42 @@
+{
+  "base_url": "https://obm.com.br",
+  "robots": {
+    "status": 200,
+    "disallow": [
+      "/api/",
+      "/ops"
+    ],
+    "body_preview": "# As a condition of accessing this website, you agree to abide by the following\n# content signals:\n\n# (a)  If a Content-Signal = yes, you may collect content for the corresponding\n#      use.\n# (b)  If a Content-Signal = no, you may not collect content for the\n#      corresponding use.\n# (c)  If the website operator does not include a Content-Signal for a\n#      corresponding use, the website operator neither grants nor restricts\n#      permission via Content-Signal with respect to the corresponding use.\n\n# The content signals and their meanings are:\n\n# search:   building a search index and providing search results (e.g., returning\n#           hyperlinks and short excerpts from your website's contents). Search does not\n#           include providing AI-generated search summaries.\n# ai-input"
+  },
+  "sitemap": {
+    "url": "https://obm.com.br/sitemap.xml",
+    "status": 200,
+    "url_count": 21,
+    "by_section": {
+      "/sitemap": 21
+    },
+    "sample": [
+      "https://obm.com.br/sitemap/static.xml",
+      "https://obm.com.br/sitemap/funds.xml",
+      "https://obm.com.br/sitemap/equities.xml",
+      "https://obm.com.br/sitemap/bdrs.xml",
+      "https://obm.com.br/sitemap/etfs.xml",
+      "https://obm.com.br/sitemap/fiis.xml",
+      "https://obm.com.br/sitemap/treasuries.xml",
+      "https://obm.com.br/sitemap/debentures.xml",
+      "https://obm.com.br/sitemap/letras-financeiras.xml",
+      "https://obm.com.br/sitemap/indices.xml",
+      "https://obm.com.br/sitemap/crypto.xml",
+      "https://obm.com.br/sitemap/blog.xml",
+      "https://obm.com.br/sitemap/glossario.xml",
+      "https://obm.com.br/sitemap/fidc.xml",
+      "https://obm.com.br/sitemap/fip.xml",
+      "https://obm.com.br/sitemap/fiagro.xml",
+      "https://obm.com.br/sitemap/fi-infra.xml",
+      "https://obm.com.br/sitemap/cri.xml",
+      "https://obm.com.br/sitemap/cra.xml",
+      "https://obm.com.br/sitemap/empresas.xml",
+      "https://obm.com.br/sitemap/entidades.xml"
+    ]
+  }
+}

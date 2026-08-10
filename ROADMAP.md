@@ -1,6 +1,6 @@
 # Roadmap & Next Steps
 
-Status: **v0.1.0 — alpha, release-ready for local/self-hosted use.**
+Status: **v0.3.1 — alpha.** CI live at [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Public VPS+gVisor path: [`docs/DEPLOY_GVISOR.md`](docs/DEPLOY_GVISOR.md).
 
 ## 🟢 Ready to use right now
 
@@ -22,21 +22,12 @@ Status: **v0.1.0 — alpha, release-ready for local/self-hosted use.**
    ```
    Or Docker: `docker compose up -d`.
 
-2. **Enable GitHub Actions CI**
-   The CI workflow is staged at [`.github-pending/ci.yml`](.github-pending/ci.yml)
-   because the local `gh` token is missing the `workflow` scope. To enable:
-   ```bash
-   gh auth refresh -s workflow
-   mkdir -p .github/workflows
-   mv .github-pending/ci.yml .github/workflows/ci.yml
-   rmdir .github-pending
-   git add .github && git commit -m "ci: enable GitHub Actions"
-   git push
-   ```
+2. **GitHub Actions CI**
+   CI is live at [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 3. **Publish to PyPI**
    - Reserve the name: <https://pypi.org/project/openfindata/>
-   - Create a release: `git tag v0.1.0 && git push --tags`
+   - Create a release: `git tag v0.3.1 && git push --tags`
    - Add a `release.yml` workflow that runs on tags and publishes via
      [trusted publishing](https://docs.pypi.org/trusted-publishers/).
 
