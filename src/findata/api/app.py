@@ -225,8 +225,9 @@ async def meta() -> dict[str, object]:
 
 
 @app.get("/health", tags=["Meta"])
+@limiter.exempt  # type: ignore[untyped-decorator]
 async def health() -> dict[str, str]:
-    """Liveness probe."""
+    """Liveness probe (exempt from rate limits so Docker/Traefik healthchecks stay green)."""
     return {"status": "ok", "version": _VERSION}
 
 
