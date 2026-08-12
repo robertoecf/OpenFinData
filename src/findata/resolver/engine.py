@@ -10,7 +10,9 @@ Classification is decided in this order, most-specific signal first:
 3. **External providers** (optional, injected) — Mais Retorno MCP, CVM/B3,
    restricted web search. Not bundled here (they are client-side / networked);
    the resolver takes a chain of async callbacks so a deployment can wire them.
-   Each step that fires lowers ``confidence`` and is appended to ``cascade``.
+   Mais Retorno is the operator's own key/quota (public Free tier: 500
+   credits/month; see ``docs/RESOLVER.md``). Each step that fires lowers
+   ``confidence`` and is appended to ``cascade``.
 
 The seed + rules layers are pure and offline, so the spec's test set resolves
 deterministically with no network. ``source`` is ``"openfindata"`` for every

@@ -64,6 +64,21 @@ Quirks da API ANBIMA (já validamos em testes ao vivo):
 
 
 
+## Mais Retorno MCP (cascata do resolver): Free com cota
+
+Não é fonte core do openfindata — é um degrau opcional da cascata de
+`resolve_asset` (`docs/RESOLVER.md`). O operador traz a própria API key; o
+projeto não embute credenciais.
+
+Plano **Free** permanente (sem cartão), conforme
+[maisretorno.com/mcp](https://maisretorno.com/mcp) (conferido em 2026-08-12):
+500 créditos/mês, histórico de até 1 ano, MCP incluso, rate limit 15 req/s.
+Cota esgotada → HTTP 429. Volume e histórico completo ficam nos planos pagos.
+
+Trate como `free_logged_in` com cota mensal: self-serve, mas não anônimo e
+não ilimitado. Detalhes e escopo (o que o MCP não cobre) estão em
+`docs/RESOLVER.md`.
+
 ## Base dos Dados: grátis, mas com login/projeto do usuário
 
 Base dos Dados não entra na mesma categoria da API autenticada da ANBIMA. O

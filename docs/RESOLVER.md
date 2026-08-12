@@ -92,7 +92,8 @@ Quando `confidence < ~0.9` ou status `candidate`, é gancho de revisão humana.
 
 1. **openfindata** (primário, offline): seed curado + regras estruturais. Resolve
    o test set sem rede.
-2. **Mais Retorno MCP** (dados BR de fundo/CNPJ/classe CVM).
+2. **Mais Retorno MCP** (dados BR de fundo/CNPJ/classe CVM) — provider externo
+   opcional; ver limites Free abaixo.
 3. **outro provider** (CVM dados abertos / B3).
 4. **web_search restrito** a `maisretorno.com`, `b3.com.br`,
    `yahoofinance.com.br`, `debentures.com.br`.
@@ -100,8 +101,30 @@ Quando `confidence < ~0.9` ou status `candidate`, é gancho de revisão humana.
 Cada degrau preenche o que o anterior não trouxe e **baixa a confidence**;
 `source` reflete a origem final; `cascade` loga o caminho. Os degraus 2 a 4 são
 um ponto de extensão injetável (`AssetProvider`), consultado só quando o
-resultado do núcleo está fraco. No estado atual deste PR, **só o degrau 1 está
-ligado** (os externos são stubs a conectar no deploy).
+resultado do núcleo está fraco. Hoje **só o degrau 1 está ligado** (os externos
+são stubs a conectar no deploy).
+
+### Mais Retorno MCP: plano Free e cotas
+
+O openfindata **não embute** chave nem cota da Mais Retorno. Quem ligar o
+degrau 2 no deploy traz a própria API key
+([developers.maisretorno.com](https://developers.maisretorno.com)). Referência
+pública do produto: [maisretorno.com/mcp](https://maisretorno.com/mcp)
+(conferido em 2026-08-12).
+
+Limites relevantes do plano **Free** (permanente, sem cartão):
+
+| Item | Free |
+|---|---|
+| Créditos | 500/mês (1 chamada na API de dados ≈ 1 crédito) |
+| Histórico | até 1 ano (planos pagos: histórico completo) |
+| MCP | disponível no Free (mesmos endpoints/classes dos planos pagos) |
+| Rate limit | 15 req/s em todos os planos |
+| Cota esgotada | HTTP 429 até renovar o ciclo (aviso por email ~80%) |
+
+Fora do escopo desse MCP (não usar como fallback para esses ativos): CRI, CRA,
+FIDC, debêntures e ativos offshore. Volume e profundidade de histórico sobem
+nos planos pagos; o rate limit por segundo não.
 
 ## Test set (passa 100%, offline)
 
@@ -126,7 +149,8 @@ ligado** (os externos são stubs a conectar no deploy).
 
 ## Pendências antes de produção
 
-- Conectar os providers externos reais (Mais Retorno MCP, web search restrito).
+- Conectar os providers externos reais (Mais Retorno MCP com API key/cota do
+  operador — Free = 500 créditos/mês —, e web search restrito).
 - Confirmação ISIN-level da incentivada (12.431) via ANBIMA/debentures.com.br no
   degrau de cascata — hoje fica `candidate`.
 - Ampliar o seed curado de ETFs conforme novos ETFs forem listados na B3.
