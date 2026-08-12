@@ -92,8 +92,8 @@ Quando `confidence < ~0.9` ou status `candidate`, é gancho de revisão humana.
 
 1. **openfindata** (primário, offline): seed curado + regras estruturais. Resolve
    o test set sem rede.
-2. **Mais Retorno MCP** (dados BR de fundo/CNPJ/classe CVM) — provider externo
-   opcional; ver limites Free abaixo.
+2. **Mais Retorno** (dados BR de fundo/CNPJ/classe CVM) — provider externo
+   opcional via API de dados / MCP; ver limites Free abaixo.
 3. **outro provider** (CVM dados abertos / B3).
 4. **web_search restrito** a `maisretorno.com`, `b3.com.br`,
    `yahoofinance.com.br`, `debentures.com.br`.
@@ -104,27 +104,38 @@ um ponto de extensão injetável (`AssetProvider`), consultado só quando o
 resultado do núcleo está fraco. Hoje **só o degrau 1 está ligado** (os externos
 são stubs a conectar no deploy).
 
-### Mais Retorno MCP: plano Free e cotas
+### Mais Retorno: plano Free e cotas
 
 O openfindata **não embute** chave nem cota da Mais Retorno. Quem ligar o
-degrau 2 no deploy traz a própria API key
-([developers.maisretorno.com](https://developers.maisretorno.com)). Referência
-pública do produto: [maisretorno.com/mcp](https://maisretorno.com/mcp)
-(conferido em 2026-08-12).
+degrau 2 no deploy usa a conta do operador. A API de dados tem dois canais
+sobre o **mesmo saldo de créditos**
+([developers.maisretorno.com](https://developers.maisretorno.com), conferido em
+2026-08-12):
+
+- **REST** (típico para um `AssetProvider` server-side): API key
+  (`X-Api-Key` / `Authorization: Bearer`) gerada em
+  [maisretorno.com/app/meu-perfil/api](https://maisretorno.com/app/meu-perfil/api).
+- **MCP** (agente de IA): URL
+  `https://data.maisretorno.com/mr-data/v4/mcp`, autenticação **OAuth** (sem
+  api-key). Página de produto:
+  [maisretorno.com/mcp](https://maisretorno.com/mcp).
 
 Limites relevantes do plano **Free** (permanente, sem cartão):
 
 | Item | Free |
 |---|---|
-| Créditos | 500/mês (1 chamada na API de dados ≈ 1 crédito) |
+| Créditos | 500/mês no mesmo saldo REST+MCP |
+| Custo por chamada | variável (ex.: search grátis; `asset-info`/quotes/`fund-class-subclass` = 1; stats/drawdown = 5; `wallet-detail` = 10; compare/backtest = 25) |
 | Histórico | até 1 ano (planos pagos: histórico completo) |
-| MCP | disponível no Free (mesmos endpoints/classes dos planos pagos) |
+| MCP | disponível no Free (mesmas classes/endpoints dos planos pagos) |
 | Rate limit | 15 req/s em todos os planos |
 | Cota esgotada | HTTP 429 até renovar o ciclo (aviso por email ~80%) |
 
-Fora do escopo desse MCP (não usar como fallback para esses ativos): CRI, CRA,
-FIDC, debêntures e ativos offshore. Volume e profundidade de histórico sobem
-nos planos pagos; o rate limit por segundo não.
+Não trate 500 créditos como “500 resoluções”: um provider que chame stats ou
+carteira consome bem mais por ativo. Fora do escopo dessa API/MCP (não usar
+como fallback para esses ativos): CRI, CRA, FIDC, debêntures e ativos offshore.
+Volume e profundidade de histórico sobem nos planos pagos; o rate limit por
+segundo não.
 
 ## Test set (passa 100%, offline)
 
@@ -149,8 +160,9 @@ nos planos pagos; o rate limit por segundo não.
 
 ## Pendências antes de produção
 
-- Conectar os providers externos reais (Mais Retorno MCP com API key/cota do
-  operador — Free = 500 créditos/mês —, e web search restrito).
+- Conectar os providers externos reais (Mais Retorno via REST/API key do
+  operador — Free = 500 créditos/mês no saldo compartilhado com o MCP —, e
+  web search restrito).
 - Confirmação ISIN-level da incentivada (12.431) via ANBIMA/debentures.com.br no
   degrau de cascata — hoje fica `candidate`.
 - Ampliar o seed curado de ETFs conforme novos ETFs forem listados na B3.

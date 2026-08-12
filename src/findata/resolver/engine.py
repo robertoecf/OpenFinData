@@ -7,12 +7,12 @@ Classification is decided in this order, most-specific signal first:
 2. **Structural rules** (this module) — name/ticker patterns that *are*
    derivable: COE, debenture, CRA/CRI, bank paper, Tesouro, IE/global,
    FII, FIA/Ações, Multimercado, FIDC/FIP, plain tickers.
-3. **External providers** (optional, injected) — Mais Retorno MCP, CVM/B3,
+3. **External providers** (optional, injected) — Mais Retorno, CVM/B3,
    restricted web search. Not bundled here (they are client-side / networked);
    the resolver takes a chain of async callbacks so a deployment can wire them.
-   Mais Retorno is the operator's own key/quota (public Free tier: 500
-   credits/month; see ``docs/RESOLVER.md``). Each step that fires lowers
-   ``confidence`` and is appended to ``cascade``.
+   Mais Retorno uses the operator's own account/quota (see
+   ``docs/RESOLVER.md``). Each step that fires lowers ``confidence`` and is
+   appended to ``cascade``.
 
 The seed + rules layers are pure and offline, so the spec's test set resolves
 deterministically with no network. ``source`` is ``"openfindata"`` for every
