@@ -11,10 +11,13 @@ adheres to [Semantic Versioning](https://semver.org/).
 - **Resolver docs: Mais Retorno Free limits.** `docs/RESOLVER.md` now
   states that the optional cascade step uses the operator's own account and
   documents the public Free tier (500 credits/month shared by REST+MCP,
-  variable per-call cost, 1-year history, 15 req/s, HTTP 429 when exhausted),
-  distinguishing REST API key vs MCP OAuth, with dated links to
+  variable per-call cost, 1-year history, 15 req/s, HTTP 429 until renewal or
+  upgrade), distinguishing REST API key vs MCP OAuth, with dated links to
   [maisretorno.com/mcp](https://maisretorno.com/mcp) and
-  [developers.maisretorno.com](https://developers.maisretorno.com).
+  [developers.maisretorno.com](https://developers.maisretorno.com). Also
+  aligns the cascade wording with runtime behavior: a provider result replaces
+  the current classification (provider owns ``confidence``/``source``); the
+  resolver only prepends ``cascade``.
 - **Distribution slug renamed `findata-br` → `openfindata`.** The PyPI
   distribution name is now `openfindata` (`pip install openfindata`,
   `pip install 'openfindata[b3]'`), aligning the package slug with the
