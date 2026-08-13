@@ -76,7 +76,8 @@ Plano **Free** permanente (sem cartão), conforme
 2026-08-12): 500 créditos/mês no mesmo saldo para REST e MCP, histórico de até
 1 ano, rate limit 15 req/s. Custo por operação é variável (não 1 crédito por
 qualquer chamada). REST autentica com API key; MCP autentica com OAuth.
-Cota esgotada → HTTP 429. Volume e histórico completo ficam nos planos pagos.
+Cota esgotada → HTTP 429 até renovar o ciclo ou fazer upgrade. Volume e
+histórico completo ficam nos planos pagos.
 
 Trate como `free_logged_in` com cota mensal: self-serve, mas não anônimo e
 não ilimitado. Detalhes e escopo (o que a API/MCP não cobre) estão em

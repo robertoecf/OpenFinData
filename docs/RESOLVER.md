@@ -98,11 +98,12 @@ Quando `confidence < ~0.9` ou status `candidate`, é gancho de revisão humana.
 4. **web_search restrito** a `maisretorno.com`, `b3.com.br`,
    `yahoofinance.com.br`, `debentures.com.br`.
 
-Cada degrau preenche o que o anterior não trouxe e **baixa a confidence**;
-`source` reflete a origem final; `cascade` loga o caminho. Os degraus 2 a 4 são
-um ponto de extensão injetável (`AssetProvider`), consultado só quando o
-resultado do núcleo está fraco. Hoje **só o degrau 1 está ligado** (os externos
-são stubs a conectar no deploy).
+Cada degrau que retorna resultado **substitui** a classificação atual (o
+provider controla campos, `source` e `confidence`); o resolver só antepõe o
+`cascade` anterior ao `cascade` devolvido. Os degraus 2 a 4 são um ponto de
+extensão injetável (`AssetProvider`), consultado só quando o resultado do
+núcleo está fraco. Hoje **só o degrau 1 está ligado** (os externos são stubs a
+conectar no deploy).
 
 ### Mais Retorno: plano Free e cotas
 
@@ -129,7 +130,7 @@ Limites relevantes do plano **Free** (permanente, sem cartão):
 | Histórico | até 1 ano (planos pagos: histórico completo) |
 | MCP | disponível no Free (mesmas classes/endpoints dos planos pagos) |
 | Rate limit | 15 req/s em todos os planos |
-| Cota esgotada | HTTP 429 até renovar o ciclo (aviso por email ~80%) |
+| Cota esgotada | HTTP 429 até renovar o ciclo ou fazer upgrade (aviso por email ~80%) |
 
 Não trate 500 créditos como “500 resoluções”: um provider que chame stats ou
 carteira consome bem mais por ativo. Fora do escopo dessa API/MCP (não usar
