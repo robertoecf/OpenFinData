@@ -7,10 +7,13 @@ Classification is decided in this order, most-specific signal first:
 2. **Structural rules** (this module) — name/ticker patterns that *are*
    derivable: COE, debenture, CRA/CRI, bank paper, Tesouro, IE/global,
    FII, FIA/Ações, Multimercado, FIDC/FIP, plain tickers.
-3. **External providers** (optional, injected) — Mais Retorno MCP, CVM/B3,
+3. **External providers** (optional, injected) — Mais Retorno, CVM/B3,
    restricted web search. Not bundled here (they are client-side / networked);
    the resolver takes a chain of async callbacks so a deployment can wire them.
-   Each step that fires lowers ``confidence`` and is appended to ``cascade``.
+   Mais Retorno uses the operator's own account/quota (see
+   ``docs/RESOLVER.md``). A non-``None`` provider result replaces the current
+   classification (provider owns fields/``source``/``confidence``); the
+   resolver only prepends the prior ``cascade``.
 
 The seed + rules layers are pure and offline, so the spec's test set resolves
 deterministically with no network. ``source`` is ``"openfindata"`` for every
@@ -101,10 +104,11 @@ _CONFIDENT_ENOUGH = 0.9
 class AssetProvider(Protocol):
     """An external cascade step (Mais Retorno, CVM/B3, web search).
 
-    Receives the normalized input and the best classification so far; returns an
-    enriched classification (new ``source``, possibly higher-detail fields) or
-    ``None`` to pass. Implementations live outside the library because they are
-    networked / client-side; the resolver only orchestrates them.
+    Receives the normalized input and the best classification so far; returns a
+    full classification that **replaces** the current result (provider owns
+    fields, ``source``, and ``confidence``), or ``None`` to pass. The resolver
+    only prepends the prior ``cascade``. Implementations live outside the
+    library because they are networked / client-side.
     """
 
     async def __call__(
@@ -707,8 +711,9 @@ async def resolve_asset(
     Runs the deterministic core (curated seed → structural rules), then walks the
     optional external provider chain (Mais Retorno → CVM/B3 → restricted web
     search) only while the result is still weak (``Indefinido`` or low
-    confidence). Each provider that fires is appended to ``cascade`` and may lower
-    confidence; the deepest one to set a field owns ``source``.
+    confidence). A provider result replaces the current classification; the
+    resolver prepends the prior ``cascade``. The provider owns ``source`` and
+    ``confidence``.
 
     No PII: callers pass only an asset identifier, never client data.
     """
