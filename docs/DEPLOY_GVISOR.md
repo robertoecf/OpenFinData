@@ -1,7 +1,11 @@
-# Deploy público com gVisor (VPS)
+# FastAPI interno com gVisor (VPS + Tailscale)
 
-Guia prático para subir o **Dados Financeiros Abertos** em VPS com runtime
-**runsc (gVisor)**, Traefik em host mode e rede isolada.
+O processo Python **não é a superfície pública**. MCP público:
+[`DEPLOY_WORKERS_MCP.md`](DEPLOY_WORKERS_MCP.md).
+
+Este guia sobe o FastAPI em VPS com runtime **runsc (gVisor)**,
+publicado só em loopback e no IP Tailscale — sem Traefik, sem 80/443
+para este serviço.
 
 > Esta VPS **não tem KVM aninhado**. O gVisor em modo **systrap** é a camada de
 > sandbox do processo do container, **não** uma segunda VM.
@@ -9,9 +13,7 @@ Guia prático para subir o **Dados Financeiros Abertos** em VPS com runtime
 ## Pré-requisitos
 
 - Docker Engine com runtime **runsc** instalado
-- Traefik já em host mode na monvanti-vps (entrypoints `websecure`, certresolver
-  `letsencrypt`)
-- Domínio apontando para a VPS
+- IP Tailscale da VPS (compose usa `TAILSCALE_IP`, default `100.90.45.18`)
 
 ### Instalar gVisor / runsc (snippet)
 
@@ -57,56 +59,37 @@ export OPENFINDATA_HOST=seu.dominio
 ## Subir o serviço
 
 ```bash
+export TAILSCALE_IP=$(tailscale ip -4)
+python3 deploy/assert_tailscale_bind.py   # recusa 0.0.0.0 / IPs fora de 100.64.0.0/10
 cd /opt/openfindata
 docker compose -f deploy/docker-compose.gvisor.yml up -d --build
 ```
 
-O compose publica só em `127.0.0.1:8000` e usa labels Traefik. **Não** anexe esta
-rede a stacks hermes/wealthuman. **Não** habilite code mode
-(`FINDATA_MCP_CODE_MODE` deve permanecer ausente).
+O compose publica em `127.0.0.1:8000` e no IP Tailscale. **Sem** labels
+Traefik. **Não** anexe esta rede a stacks hermes/wealthuman. **Não** habilite
+code mode (`FINDATA_MCP_CODE_MODE` fica `"0"` neste compose).
 
 
-## Traefik host mode + health
-
-Traefik on this VPS uses `network_mode: host`. Point the service at the published
-loopback port:
-
-```yaml
-traefik.http.services.openfindata.loadbalancer.server.url=http://127.0.0.1:8000
-```
-
-Do **not** set `traefik.docker.network=...` for this layout.
-
-Traefik v3 **drops routers for Docker-unhealthy containers**. If `/health` is rate
-limited, the container goes unhealthy and public HTTPS returns Traefik
-`404 page not found` even while `curl 127.0.0.1:8000/health` still works.
-`/health` is rate-limit exempt for that reason.
-
-## Smoke checks
+## Smoke checks (Tailscale / loopback)
 
 ```bash
 curl -sS http://127.0.0.1:8000/health
 curl -sS http://127.0.0.1:8000/stats
 curl -sS 'http://127.0.0.1:8000/bcb/series/name/selic?n=3'
-# MCP HTTP transport:
-curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/mcp
+# from a Tailscale peer:
+curl -sS "http://${TAILSCALE_IP:-100.90.45.18}:8000/health"
 ```
 
-Pelo domínio (via Traefik):
-
-```bash
-curl -sS "https://${OPENFINDATA_HOST}/health"
-curl -sS "https://${OPENFINDATA_HOST}/stats"
-curl -sS "https://${OPENFINDATA_HOST}/bcb/series/name/selic?n=3"
-```
+Público (Worker, não esta VPS): ver [`DEPLOY_WORKERS_MCP.md`](DEPLOY_WORKERS_MCP.md).
 
 ## Checklist de segurança
 
 - [ ] `runtime: runsc` ativo no container
-- [ ] publish apenas em loopback (`127.0.0.1:8000`)
+- [ ] publish em loopback + IP Tailscale (não 0.0.0.0, sem Traefik)
 - [ ] sem mount de `docker.sock`
 - [ ] sem `network_mode: host`
-- [ ] code mode desligado (sem `FINDATA_MCP_CODE_MODE`)
+- [ ] `python3 deploy/assert_tailscale_bind.py` passou
+- [ ] code mode desligado (`FINDATA_MCP_CODE_MODE=0` neste compose)
 - [ ] rede isolada `openfindata_net` (não compartilhada com hermes/wealthuman)
 - [ ] limite de memória (`mem_limit: 512m`) e CPU (`cpus: 1.0`)
 - [ ] `read_only: true`, `cap_drop: [ALL]`, `no-new-privileges:true`
@@ -127,6 +110,5 @@ docker inspect --format '{{.HostConfig.Runtime}}' openfindata
 curl -v http://127.0.0.1:8000/health
 ```
 
-Se o Traefik não rotear, confira `OPENFINDATA_HOST`, se o Traefik enxerga a rede
-do container e se o entrypoint `websecure` + `letsencrypt` já estão válidos na
-monvanti-vps.
+Se o FastAPI não responder na Tailscale, confira `TAILSCALE_IP`, `ufw` (não
+expor 8000 na internet) e se o container ainda tem labels Traefik (não deve).

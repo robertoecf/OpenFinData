@@ -1,6 +1,6 @@
 # Roadmap & Next Steps
 
-Status: **v0.3.1 — alpha.** CI live at [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Public VPS+gVisor path: [`docs/DEPLOY_GVISOR.md`](docs/DEPLOY_GVISOR.md).
+Status: **v0.3.1 — alpha.** CI live at [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Public MCP: [`docs/DEPLOY_WORKERS_MCP.md`](docs/DEPLOY_WORKERS_MCP.md). Internal FastAPI/gVisor: [`docs/DEPLOY_GVISOR.md`](docs/DEPLOY_GVISOR.md).
 
 ## 🟢 Ready to use right now
 

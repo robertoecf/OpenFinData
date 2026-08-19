@@ -3,17 +3,23 @@
 from __future__ import annotations
 
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from slowapi.middleware import SlowAPIMiddleware
 
 from findata import __version__ as _pkg_version
 from findata._limits import RateLimitExceeded, _rate_limit_exceeded_handler, limiter
+from findata.api.origin_guard import (
+    ORIGIN_TOKEN_HEADER,
+    assert_code_mode_origin_configured,
+    is_health_path,
+    origin_token_authorized,
+)
 from findata.api.routers import (
     anbima,
     aneel,
@@ -78,6 +84,7 @@ ADVERTISED_SOURCES: dict[str, str] = {
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    assert_code_mode_origin_configured()
     yield
     await close_client()
     # Shut the optional B3 thread pool down only if it was ever created.
@@ -118,6 +125,18 @@ app.mount("/site", StaticFiles(directory=WEB_STATIC_DIR), name="site")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 app.add_middleware(SlowAPIMiddleware)
+
+
+@app.middleware("http")
+async def _origin_token_if_code_mode(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    if is_health_path(request.url.path) or origin_token_authorized(
+        request.headers.get(ORIGIN_TOKEN_HEADER)
+    ):
+        return await call_next(request)
+    return JSONResponse(status_code=401, content={"detail": "origin token required"})
 
 
 @app.exception_handler(ValueError)

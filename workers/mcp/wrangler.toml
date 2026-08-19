@@ -1,0 +1,22 @@
+name = "openfindata-mcp"
+main = "src/index.ts"
+compatibility_date = "2026-08-13"
+account_id = "d8588d9ee01519d5cc5adeebc7f83d32"
+workers_dev = true
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+run_worker_first = true
+
+[observability]
+enabled = true
+
+[[routes]]
+pattern = "openfindata.com.br"
+custom_domain = true
+
+[[routes]]
+pattern = "www.openfindata.com.br"
+custom_domain = true
