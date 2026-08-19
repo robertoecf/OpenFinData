@@ -1,0 +1,58 @@
+# Private Charlie MCP — gVisor + code mode.
+# NEVER expose this stack without Cloudflare Tunnel + Access (service token).
+# Public surface is workers/mcp (no code mode). Internal REST is docker-compose.gvisor.yml.
+#
+# Usage:
+#   docker compose -f deploy/docker-compose.charlie-mcp.yml up -d --build
+#   # then cloudflared points at http://127.0.0.1:8001
+services:
+  openfindata-charlie-mcp:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: openfindata:latest
+    container_name: openfindata-charlie-mcp
+    runtime: runsc
+    restart: unless-stopped
+    ports:
+      # Loopback only — Tunnel (and optional Tailscale SSH tunnel) reach this.
+      - "127.0.0.1:8001:8000"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    volumes:
+      - ./resolv.gvisor.conf:/etc/resolv.conf:ro
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=256m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 1024m
+    cpus: 1.5
+    user: "65534:65534"
+    pids_limit: 512
+    healthcheck:
+      disable: true
+    environment:
+      FINDATA_RATE_LIMIT_ENABLED: "true"
+      # Higher than public Worker; Charlie is authenticated and low-concurrency.
+      FINDATA_RATE_LIMIT_DEFAULT: "120/minute;5000/day"
+      # Private Charlie only — never set this on the public Worker or Traefik path.
+      FINDATA_MCP_CODE_MODE: "1"
+      # Fail-closed: compose refuses to start if this is unset/empty.
+      # Inject the same value as header X-Openfindata-Origin-Token from Charlie.
+      FINDATA_MCP_ORIGIN_TOKEN: "${FINDATA_MCP_ORIGIN_TOKEN:?set FINDATA_MCP_ORIGIN_TOKEN for Charlie code-mode}"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - openfindata_charlie_net
+
+networks:
+  openfindata_charlie_net:
+    driver: bridge
+    # Isolated from hermes / wealthuman / public openfindata_net.

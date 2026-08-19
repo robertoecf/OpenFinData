@@ -1,7 +1,9 @@
 # MCP surface: curated tools over the REST API
 
-> Status: implemented (alpha curated catalog). Non-breaking: the REST API
-> is untouched. Implemented in [`src/findata/api/mcp_app.py`](../src/findata/api/mcp_app.py).
+> Status: implemented (alpha curated catalog). REST is untouched.
+> Internal MCP (FastAPI): [`src/findata/api/mcp_app.py`](../src/findata/api/mcp_app.py).
+> Public MCP (Cloudflare Worker, JSON sources only): [`workers/mcp`](../workers/mcp)
+> and [`docs/DEPLOY_WORKERS_MCP.md`](DEPLOY_WORKERS_MCP.md).
 
 ## Problem
 

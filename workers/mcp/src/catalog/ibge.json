@@ -1,0 +1,51 @@
+{
+  "indicators": {
+    "ipca_mensal": {
+      "agregado": 7060,
+      "variavel": 63,
+      "description": "IPCA variação mensal por grupo",
+      "classificacao": "315"
+    },
+    "ipca_acumulado_ano": {
+      "agregado": 7060,
+      "variavel": 69,
+      "description": "IPCA acumulado no ano por grupo",
+      "classificacao": "315"
+    },
+    "ipca_acumulado_12m": {
+      "agregado": 7060,
+      "variavel": 2265,
+      "description": "IPCA acumulado 12 meses por grupo",
+      "classificacao": "315"
+    },
+    "ipca_peso": {
+      "agregado": 7060,
+      "variavel": 66,
+      "description": "IPCA peso mensal por grupo",
+      "classificacao": "315"
+    },
+    "inpc_mensal": {
+      "agregado": 7063,
+      "variavel": 44,
+      "description": "INPC variação mensal",
+      "classificacao": "315"
+    },
+    "pib_trimestral": {
+      "agregado": 5932,
+      "variavel": 6561,
+      "description": "PIB taxa acumulada em 4 trimestres"
+    }
+  },
+  "ipca_groups": {
+    "7169": "Índice geral",
+    "7170": "1.Alimentação e bebidas",
+    "7445": "2.Habitação",
+    "7486": "3.Artigos de residência",
+    "7558": "4.Vestuário",
+    "7625": "5.Transportes",
+    "7660": "6.Saúde e cuidados pessoais",
+    "7712": "7.Despesas pessoais",
+    "7766": "8.Educação",
+    "7786": "9.Comunicação"
+  }
+}

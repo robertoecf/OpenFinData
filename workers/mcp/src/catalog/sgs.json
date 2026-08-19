@@ -1,0 +1,428 @@
+{
+  "selic": {
+    "code": 432,
+    "name": "Taxa Selic",
+    "unit": "% a.a.",
+    "freq": "diária"
+  },
+  "selic_meta": {
+    "code": 4189,
+    "name": "Taxa Selic Meta",
+    "unit": "% a.a.",
+    "freq": "diária"
+  },
+  "cdi": {
+    "code": 12,
+    "name": "Taxa CDI",
+    "unit": "% a.a.",
+    "freq": "diária"
+  },
+  "cdi_acum_mensal": {
+    "code": 4389,
+    "name": "CDI acumulado mensal",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "cdi_mensal": {
+    "code": 4391,
+    "name": "CDI mensal",
+    "unit": "% a.m.",
+    "freq": "mensal"
+  },
+  "tr": {
+    "code": 226,
+    "name": "Taxa Referencial (TR)",
+    "unit": "%",
+    "freq": "diária"
+  },
+  "tjlp": {
+    "code": 256,
+    "name": "Taxa de Juros de Longo Prazo (TJLP)",
+    "unit": "% a.a.",
+    "freq": "mensal"
+  },
+  "tlp": {
+    "code": 27572,
+    "name": "Taxa de Longo Prazo (TLP)",
+    "unit": "% a.a.",
+    "freq": "mensal"
+  },
+  "cdb": {
+    "code": 3946,
+    "name": "Taxa média de CDB pré-fixado (histórico, descontinuado em 2012)",
+    "unit": "% a.a.",
+    "freq": "mensal"
+  },
+  "poupanca": {
+    "code": 195,
+    "name": "Rendimento poupança",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "dolar_ptax": {
+    "code": 1,
+    "name": "Dólar PTAX venda",
+    "unit": "BRL/USD",
+    "freq": "diária"
+  },
+  "dolar_compra": {
+    "code": 10813,
+    "name": "Dólar PTAX compra",
+    "unit": "BRL/USD",
+    "freq": "diária"
+  },
+  "euro": {
+    "code": 21619,
+    "name": "Euro PTAX venda",
+    "unit": "BRL/EUR",
+    "freq": "diária"
+  },
+  "libra": {
+    "code": 21623,
+    "name": "Libra esterlina PTAX venda",
+    "unit": "BRL/GBP",
+    "freq": "diária"
+  },
+  "iene": {
+    "code": 21625,
+    "name": "Iene PTAX venda",
+    "unit": "BRL/JPY",
+    "freq": "diária"
+  },
+  "franco_suico": {
+    "code": 21624,
+    "name": "Franco suíço PTAX venda",
+    "unit": "BRL/CHF",
+    "freq": "diária"
+  },
+  "ipca": {
+    "code": 433,
+    "name": "IPCA mensal",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "ipca_12m": {
+    "code": 13522,
+    "name": "IPCA acumulado 12 meses",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "ipca_15": {
+    "code": 7478,
+    "name": "IPCA-15 mensal",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "ipca_e": {
+    "code": 1635,
+    "name": "IPCA-E (especial) mensal",
+    "unit": "%",
+    "freq": "trimestral"
+  },
+  "ipca_e_acum": {
+    "code": 1638,
+    "name": "IPCA-E acumulado no trimestre",
+    "unit": "%",
+    "freq": "trimestral"
+  },
+  "igpm": {
+    "code": 189,
+    "name": "IGP-M mensal",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "igpdi": {
+    "code": 190,
+    "name": "IGP-DI mensal",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "igp10": {
+    "code": 7448,
+    "name": "IGP-10 mensal",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "inpc": {
+    "code": 188,
+    "name": "INPC mensal",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "ipc_fipe": {
+    "code": 193,
+    "name": "IPC-FIPE mensal",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "ipca_livres": {
+    "code": 11428,
+    "name": "IPCA preços livres",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "ipca_monitorados": {
+    "code": 4449,
+    "name": "IPCA preços monitorados",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "ipca_servicos": {
+    "code": 10844,
+    "name": "IPCA serviços",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "ipca_bens": {
+    "code": 10764,
+    "name": "IPCA bens não-duráveis",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "ipca_nucleo_ms": {
+    "code": 4466,
+    "name": "IPCA núcleo por médias aparadas com suavização",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "ipca_nucleo_ma": {
+    "code": 16121,
+    "name": "IPCA núcleo por médias aparadas sem suavização",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "pib_mensal": {
+    "code": 4380,
+    "name": "PIB mensal (IBC-Br)",
+    "unit": "índice",
+    "freq": "mensal"
+  },
+  "ibcbr": {
+    "code": 24364,
+    "name": "IBC-Br dessazonalizado",
+    "unit": "índice",
+    "freq": "mensal"
+  },
+  "ibcbr_agro": {
+    "code": 27574,
+    "name": "IBC-Br setor agropecuário",
+    "unit": "índice",
+    "freq": "mensal"
+  },
+  "ibcbr_servicos": {
+    "code": 27576,
+    "name": "IBC-Br setor serviços",
+    "unit": "índice",
+    "freq": "mensal"
+  },
+  "producao_industrial": {
+    "code": 21859,
+    "name": "Produção industrial geral (IBGE)",
+    "unit": "índice",
+    "freq": "mensal"
+  },
+  "capacidade_ociosa": {
+    "code": 1344,
+    "name": "Utilização da capacidade instalada na indústria (FGV)",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "desemprego": {
+    "code": 24369,
+    "name": "Taxa de desocupação (PNAD Contínua)",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "vendas_varejo": {
+    "code": 1455,
+    "name": "Vendas no varejo (volume)",
+    "unit": "índice",
+    "freq": "mensal"
+  },
+  "icc_fgv": {
+    "code": 4393,
+    "name": "Índice de Confiança do Consumidor (FGV)",
+    "unit": "índice",
+    "freq": "mensal"
+  },
+  "icei_cni": {
+    "code": 7341,
+    "name": "Índice de Confiança do Empresário Industrial (CNI)",
+    "unit": "índice",
+    "freq": "mensal"
+  },
+  "m1": {
+    "code": 1828,
+    "name": "Meios de pagamento M1 (saldo em final de período)",
+    "unit": "R$ milhões",
+    "freq": "mensal"
+  },
+  "m2": {
+    "code": 1832,
+    "name": "Meios de pagamento M2 (saldo em final de período)",
+    "unit": "R$ milhões",
+    "freq": "mensal"
+  },
+  "m3": {
+    "code": 1831,
+    "name": "Meios de pagamento M3 (saldo em final de período)",
+    "unit": "R$ milhões",
+    "freq": "mensal"
+  },
+  "m4": {
+    "code": 1833,
+    "name": "Meios de pagamento M4 (saldo em final de período)",
+    "unit": "R$ milhões",
+    "freq": "mensal"
+  },
+  "base_monetaria": {
+    "code": 1788,
+    "name": "Base monetária (saldo em final de período)",
+    "unit": "R$ milhões",
+    "freq": "mensal"
+  },
+  "papel_moeda": {
+    "code": 1786,
+    "name": "Papel-moeda emitido (saldo em final de período)",
+    "unit": "R$ milhões",
+    "freq": "mensal"
+  },
+  "credito_total": {
+    "code": 20539,
+    "name": "Saldo de crédito do SFN — total",
+    "unit": "R$ milhões",
+    "freq": "mensal"
+  },
+  "credito_pf": {
+    "code": 20570,
+    "name": "Saldo de crédito do SFN — pessoas físicas",
+    "unit": "R$ milhões",
+    "freq": "mensal"
+  },
+  "credito_pj": {
+    "code": 20543,
+    "name": "Saldo de crédito do SFN — pessoas jurídicas",
+    "unit": "R$ milhões",
+    "freq": "mensal"
+  },
+  "inadimplencia_total": {
+    "code": 21082,
+    "name": "Inadimplência da carteira — total",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "inadimplencia_pf": {
+    "code": 21084,
+    "name": "Inadimplência da carteira — pessoas físicas",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "inadimplencia_pj": {
+    "code": 21083,
+    "name": "Inadimplência da carteira — pessoas jurídicas",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "spread_medio": {
+    "code": 20783,
+    "name": "Spread médio das operações de crédito",
+    "unit": "p.p.",
+    "freq": "mensal"
+  },
+  "taxa_credito_pf": {
+    "code": 20741,
+    "name": "Taxa média de juros — crédito PF",
+    "unit": "% a.a.",
+    "freq": "mensal"
+  },
+  "taxa_credito_pj": {
+    "code": 20714,
+    "name": "Taxa média de juros — crédito PJ",
+    "unit": "% a.a.",
+    "freq": "mensal"
+  },
+  "endividamento_familias": {
+    "code": 21379,
+    "name": "Endividamento das famílias (% renda 12m)",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "balanca_comercial": {
+    "code": 22707,
+    "name": "Balança comercial — saldo mensal",
+    "unit": "US$ milhões",
+    "freq": "mensal"
+  },
+  "exportacoes": {
+    "code": 22708,
+    "name": "Exportações — total mensal",
+    "unit": "US$ milhões",
+    "freq": "mensal"
+  },
+  "importacoes": {
+    "code": 22709,
+    "name": "Importações — total mensal",
+    "unit": "US$ milhões",
+    "freq": "mensal"
+  },
+  "conta_corrente": {
+    "code": 22701,
+    "name": "Transações correntes — saldo mensal",
+    "unit": "US$ milhões",
+    "freq": "mensal"
+  },
+  "idp": {
+    "code": 22865,
+    "name": "Investimento Direto no País (IDP) — ingressos líquidos",
+    "unit": "US$ milhões",
+    "freq": "mensal"
+  },
+  "reservas_internacionais": {
+    "code": 3546,
+    "name": "Reservas internacionais — conceito liquidez (mensal)",
+    "unit": "US$ milhões",
+    "freq": "mensal"
+  },
+  "reservas_diaria": {
+    "code": 13621,
+    "name": "Reservas internacionais — conceito liquidez (diária)",
+    "unit": "US$ milhões",
+    "freq": "diária"
+  },
+  "divida_pib": {
+    "code": 4513,
+    "name": "Dívida líquida setor público / PIB",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "dbgg_pib": {
+    "code": 13762,
+    "name": "Dívida bruta governo geral (DBGG) / PIB",
+    "unit": "%",
+    "freq": "mensal"
+  },
+  "dbgg_saldo": {
+    "code": 4502,
+    "name": "Dívida bruta governo geral (DBGG) — saldo",
+    "unit": "R$ milhões",
+    "freq": "mensal"
+  },
+  "resultado_primario": {
+    "code": 4649,
+    "name": "Resultado primário do setor público — fluxo mensal",
+    "unit": "R$ milhões",
+    "freq": "mensal"
+  },
+  "resultado_nominal": {
+    "code": 4647,
+    "name": "Resultado nominal do setor público — fluxo mensal",
+    "unit": "R$ milhões",
+    "freq": "mensal"
+  },
+  "juros_nominais_pib": {
+    "code": 5727,
+    "name": "Juros nominais do setor público — % do PIB acum. 12m",
+    "unit": "% PIB",
+    "freq": "mensal"
+  }
+}
