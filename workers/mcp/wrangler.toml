@@ -13,6 +13,24 @@ run_worker_first = true
 [observability]
 enabled = true
 
+# Public /mcp only. Period must be 10 or 60 (Workers Rate Limit API).
+# Counters are per Cloudflare location, keyed by client IP in the handler.
+[[ratelimits]]
+name = "MCP_RATE_LIMIT"
+namespace_id = "45801"
+
+  [ratelimits.simple]
+  limit = 60
+  period = 60
+
+[[ratelimits]]
+name = "MCP_BURST_LIMIT"
+namespace_id = "45802"
+
+  [ratelimits.simple]
+  limit = 20
+  period = 10
+
 [[routes]]
 pattern = "openfindata.com.br"
 custom_domain = true

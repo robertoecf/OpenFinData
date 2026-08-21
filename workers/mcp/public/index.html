@@ -28,6 +28,11 @@
         Superfície pública: <a href="/mcp"><code>/mcp</code></a> (Streamable HTTP).
         REST/FastAPI, CLI e code mode não ficam na internet — só na rede Tailscale.
       </p>
+      <p class="muted">
+        Uso justo: cerca de 60 req/min por IP (pico 20 / 10s). Sem API key.
+        Sem execução de código no endpoint público. Excesso em
+        <code>/mcp</code> responde 429 + Retry-After.
+      </p>
       <p>Tools neste Worker (fontes JSON públicas, sem processar Python):</p>
       <ul>
         <li><code>bcb_series</code> <code>bcb_ptax</code> <code>bcb_focus</code></li>

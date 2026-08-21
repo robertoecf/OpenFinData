@@ -1,4 +1,5 @@
 import { createMcpHandler } from "agents/mcp/server";
+import { enforceMcpRateLimits } from "./rateLimit";
 import { createServer } from "./server";
 
 const mcp = createMcpHandler(createServer, { route: "/mcp" });
@@ -15,6 +16,14 @@ export default {
       });
     }
     if (url.pathname === "/mcp" || url.pathname.startsWith("/mcp/")) {
+      const limited = await enforceMcpRateLimits(
+        request,
+        env.MCP_RATE_LIMIT,
+        env.MCP_BURST_LIMIT,
+      );
+      if (limited) {
+        return limited;
+      }
       return mcp(request, env, ctx);
     }
     return env.ASSETS.fetch(request);

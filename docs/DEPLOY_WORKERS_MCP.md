@@ -47,8 +47,12 @@ curl -sS https://openfindata.com.br/health
 
 Upstream calls no Worker têm timeout (15s) e teto de payload (2 MB;
 8 MB só no Directory Open Finance). Séries BCB sem intervalo caem em
-`last_n≤200`. Coloque um rate limit no hostname no dashboard Cloudflare
-(WAF / Rate limiting rules) — o Worker não tem SlowAPI.
+`last_n≤200`.
+
+`/mcp` usa Workers Rate Limit bindings (não Cloudflare Queues): 60 req /
+60s por IP e pico 20 / 10s. Overflow é síncrono: HTTP 429 + `Retry-After`
+e corpo `{ "error": "rate_limited" }`. Landing `/` e `/health` ficam
+fora do limite. Os contadores são por localização Cloudflare.
 
 ## FastAPI interno (Tailscale)
 
