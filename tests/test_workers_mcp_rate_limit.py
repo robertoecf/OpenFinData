@@ -6,8 +6,12 @@ The Worker is TypeScript; this file only locks the agreed numbers and the
 
 from __future__ import annotations
 
+import shutil
+import subprocess
 import tomllib
 from pathlib import Path
+
+import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 WORKER = REPO / "workers" / "mcp"
@@ -62,3 +66,20 @@ def test_landing_states_fair_use() -> None:
     assert "execução de código" in html
     assert "429" in html
     assert "Retry-After" in html
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_rate_limit_helpers_execute_in_node() -> None:
+    result = subprocess.run(
+        [
+            "node",
+            "--experimental-strip-types",
+            "--test",
+            str(WORKER / "src" / "rateLimit.test.ts"),
+        ],
+        cwd=WORKER,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
