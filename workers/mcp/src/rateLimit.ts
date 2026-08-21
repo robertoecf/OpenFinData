@@ -9,18 +9,10 @@ export type LimitBinding = {
 };
 
 export function clientKey(request: Request): string {
+  // Production Workers always set CF-Connecting-IP. Do not fall back to
+  // X-Forwarded-For: that header is client-spoofable when the CF header is absent.
   const cfIp = request.headers.get("cf-connecting-ip")?.trim();
-  if (cfIp) {
-    return `mcp:${cfIp}`;
-  }
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) {
-      return `mcp:${first}`;
-    }
-  }
-  return "mcp:unknown";
+  return cfIp ? `mcp:${cfIp}` : "mcp:unknown";
 }
 
 export function rateLimitedResponse(retryAfterSeconds: number): Response {
