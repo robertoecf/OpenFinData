@@ -1,6 +1,10 @@
 # Deploy público do Dados Financeiros Abertos no seu PC (WSL + Cloudflare Tunnel)
 
-> **VPS + gVisor:** para deploy em VPS com runtime runsc, veja [`docs/DEPLOY_GVISOR.md`](DEPLOY_GVISOR.md).
+> **MCP público (Workers):** [`docs/DEPLOY_WORKERS_MCP.md`](DEPLOY_WORKERS_MCP.md).
+> **FastAPI interno (VPS + gVisor + Tailscale):** [`docs/DEPLOY_GVISOR.md`](DEPLOY_GVISOR.md).
+
+> **Meta (este doc):** expor o FastAPI **no seu PC** via Cloudflare Tunnel — não é o
+> caminho de produção. Produção pública é o Worker.
 
 > **Meta:** expor o **Dados Financeiros Abertos** como **servidor MCP público** — acessível via
 > HTTPS, com TLS, rate limit, e _sem_ abrir porta no roteador nem pagar nada.

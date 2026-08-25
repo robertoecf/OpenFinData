@@ -1,0 +1,38 @@
+{
+  "selic_over_mensal": {
+    "code": "BM12_TJOVER12",
+    "description": "Taxa Selic over acumulada no mês",
+    "unidade": "% a.m.",
+    "periodicidade": "mensal"
+  },
+  "ipca_anual_ipea": {
+    "code": "PAN12_IPCAG12",
+    "description": "IPCA acumulado 12 meses (IPEA)",
+    "unidade": "% a.a.",
+    "periodicidade": "mensal"
+  },
+  "pib_real_anual": {
+    "code": "SCN10_PIBG10",
+    "description": "PIB - variação real anual (IBGE/SCN)",
+    "unidade": "% a.a.",
+    "periodicidade": "anual"
+  },
+  "desemprego_pme": {
+    "code": "PME12_TDESOC12",
+    "description": "Taxa de desocupação - PME (série longa, descontinuada em 2016)",
+    "unidade": "%",
+    "periodicidade": "mensal"
+  },
+  "salario_minimo_real": {
+    "code": "GAC12_SALMINRE12",
+    "description": "Salário mínimo real (base=jul/1994)",
+    "unidade": "R$",
+    "periodicidade": "mensal"
+  },
+  "divida_externa_pib": {
+    "code": "BM12_DEXTT12",
+    "description": "Dívida externa / PIB",
+    "unidade": "% do PIB",
+    "periodicidade": "mensal"
+  }
+}

@@ -19,7 +19,9 @@ the tool catalog from *this* app while serving ``/mcp`` on the public app. The
   A, curation: only the headline tools are exposed, with real descriptions.
   B, consolidation: ``bcb_*``/``cvm_*``/``tesouro_*``… fold many routes into one.
   C, code mode: optional ``findata_run_code`` runs a Python snippet against the
-      library (gated by ``FINDATA_MCP_CODE_MODE=1``; off by default).
+      library (gated by ``FINDATA_MCP_CODE_MODE=1``; off by default). When on,
+      ``FINDATA_MCP_ORIGIN_TOKEN`` is required at startup and on every non-health
+      request.
 """
 
 from __future__ import annotations
@@ -859,6 +861,7 @@ class RunCodeRequest(BaseModel):
 
     code: str = Field(
         ...,
+        max_length=50_000,
         description="Python source to execute. The `findata` library is importable. "
         "Source functions are async, wrap calls in asyncio.run(). Print results to stdout.",
     )
@@ -929,7 +932,7 @@ if _CODE_MODE_ENABLED:
 
         Security: runs in an isolated child interpreter with a timeout and output
         cap, but is NOT a hardened sandbox. Enabled only when the server sets
-        FINDATA_MCP_CODE_MODE=1.
+        FINDATA_MCP_CODE_MODE=1 and FINDATA_MCP_ORIGIN_TOKEN (fail-closed).
         """
         return await _execute_code(payload.code, payload.timeout_s)
 
