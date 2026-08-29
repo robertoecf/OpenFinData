@@ -15,7 +15,8 @@ Fund (FI / FIF) coverage:
 
 | Module             | Product (CVM)                                | Cadence           |
 |--------------------|----------------------------------------------|-------------------|
-| `funds.py`         | CAD (cadastro) + INF_DIARIO (cota / NAV)     | static / daily    |
+| `funds.py`         | CAD legado (`cad_fi.csv`) + INF_DIARIO (cota)| static / daily    |
+| `cadastro.py`      | RCVM 175 registro fundo/classe/subclasse     | daily (Tue–Sat)   |
 | `holdings.py`      | CDA (Composição da Carteira) — every asset   | monthly           |
 | `lamina.py`        | LAMINA (factsheet + rentabilidade mês/ano)   | monthly           |
 | `profile.py`       | PERFIL_MENSAL (cotistas por tipo)            | monthly           |
@@ -29,6 +30,12 @@ from findata.sources.cvm._directory import (
     latest_period,
     list_files,
     list_periods,
+)
+from findata.sources.cvm.cadastro import (
+    FundCadastro,
+    FundClasse,
+    FundSubclass,
+    get_fund_cadastro,
 )
 from findata.sources.cvm.companies import Company, get_companies, search_company
 from findata.sources.cvm.fca import (
@@ -86,12 +93,15 @@ __all__ = [
     "FIPInforme",
     "FinancialEntry",
     "Fund",
+    "FundCadastro",
+    "FundClasse",
     "FundDaily",
     "FundHolding",
     "FundLamina",
     "FundLaminaReturnMonth",
     "FundLaminaReturnYear",
     "FundProfile",
+    "FundSubclass",
     "IPEDocument",
     "StatementType",
     "get_companies",
@@ -105,6 +115,7 @@ __all__ = [
     "get_fii_complemento",
     "get_fii_geral",
     "get_fip",
+    "get_fund_cadastro",
     "get_fund_catalog",
     "get_fund_daily",
     "get_fund_holdings",

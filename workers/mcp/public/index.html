@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>openfindata — MCP público</title>
+    <meta
+      name="description"
+      content="MCP público de dados financeiros abertos do Brasil (BCB, IBGE, IPEA, Tesouro, Open Finance, CVM fundos)."
+    />
+    <style>
+      :root { color-scheme: dark; }
+      body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 0; background: #0b0d10; color: #e8eaed; }
+      main { max-width: 42rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+      h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.03em; }
+      p, li { line-height: 1.55; color: #c5c9d1; }
+      a { color: #8ab4ff; }
+      code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; }
+      pre { background: #161a20; padding: 0.9rem 1rem; overflow: auto; border-radius: 8px; }
+      .muted { color: #8b919c; font-size: 0.95rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="muted">Dados Financeiros Abertos · alpha</p>
+      <h1>MCP público no Cloudflare Workers</h1>
+      <p>
+        Superfície pública: <a href="/mcp"><code>/mcp</code></a> (Streamable HTTP).
+        REST/FastAPI, CLI e code mode não ficam na internet — só na rede Tailscale.
+      </p>
+      <p class="muted">
+        Uso justo: cerca de 60 req/min por IP (pico 20 / 10s). Sem API key.
+        Sem execução de código no endpoint público. Excesso em
+        <code>/mcp</code> responde 429 + Retry-After.
+      </p>
+      <p>Tools neste Worker (fontes públicas, sem processar Python):</p>
+      <ul>
+        <li><code>bcb_series</code> <code>bcb_ptax</code> <code>bcb_focus</code></li>
+        <li><code>ibge_indicator</code> <code>ibge_ipca_breakdown</code></li>
+        <li><code>ipea_series</code> <code>ipea_search</code></li>
+        <li><code>tesouro_siconfi</code></li>
+        <li><code>openfinance_directory</code></li>
+        <li><code>cvm_fund</code> — cadastro RCVM 175 + série de cotas INF_DIARIO (não CDA)</li>
+      </ul>
+      <p class="muted">
+        B3/ANBIMA/registry, CDA/lâmina/perfil e a API REST completa continuam no
+        pacote Python (<code>pip install openfindata</code>) e no FastAPI interno.
+      </p>
+      <p>Cliente MCP:</p>
+      <pre>{
+  "mcpServers": {
+    "openfindata": {
+      "url": "https://openfindata.com.br/mcp"
+    }
+  }
+}</pre>
+      <p>
+        Código:
+        <a href="https://github.com/robertoecf/OpenFinData">github.com/robertoecf/OpenFinData</a>
+      </p>
+    </main>
+  </body>
+</html>

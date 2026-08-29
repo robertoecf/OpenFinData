@@ -8,6 +8,7 @@ from typing import TypeVar
 from fastapi import APIRouter, Query
 
 from findata.sources.cvm import (
+    FundCadastro,
     companies,
     fca,
     fidc,
@@ -15,6 +16,7 @@ from findata.sources.cvm import (
     financials,
     fip,
     funds,
+    get_fund_cadastro,
     holdings,
     ipe,
     lamina,
@@ -154,8 +156,18 @@ async def list_funds(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=1000),
 ) -> list[funds.Fund]:
-    """List all registered investment funds (paginated)."""
+    """List funds from the legacy cad_fi.csv (non-RCVM175-adapted only)."""
     return _page(await funds.get_fund_catalog(only_active, classe), skip, limit)
+
+
+@router.get("/funds/cadastro")
+async def fund_cadastro(
+    cnpj: str | None = Query(default=None, description="Fund CNPJ (punctuated or digits)"),
+    q: str | None = Query(default=None, min_length=2, description="Name fragment"),
+    limit: int = Query(default=20, ge=1, le=100),
+) -> list[FundCadastro]:
+    """RCVM 175 cadastral lookup (fundo + classe + subclasse). Requires cnpj or q."""
+    return await get_fund_cadastro(cnpj=cnpj, q=q, limit=limit)
 
 
 @router.get("/funds/daily")

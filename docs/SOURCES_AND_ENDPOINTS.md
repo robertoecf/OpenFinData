@@ -13,7 +13,7 @@ Para testar interativamente, rode `findata serve` e abra `/api/docs` ou `/redoc`
 | BCB PTAX | Cotações oficiais de moedas | `/bcb/ptax/usd`, `/bcb/ptax/usd/period`, `/bcb/ptax/{currency}`, `/bcb/currencies` | Não |
 | BCB Focus | Expectativas de mercado | `/bcb/focus/indicators`, `/bcb/focus/annual`, `/bcb/focus/monthly`, `/bcb/focus/selic`, `/bcb/focus/top5` | Não |
 | Base dos Dados | Catálogo público, datasets gratuitos e consultas SQL via BigQuery | `/basedosdados/info`, `/basedosdados/search`, `/basedosdados/direct-download/free`, `/basedosdados/datasets`, `/basedosdados/tables`, `/basedosdados/columns` | Gratuito com login/projeto BigQuery para SQL |
-| CVM | Companhias, DFP/ITR, IPE, FCA, fundos, CDA, lâmina, perfil, FII, FIDC e FIP | `/cvm/companies`, `/cvm/financials/dfp`, `/cvm/financials/itr`, `/cvm/companies/ipe`, `/cvm/funds`, `/cvm/funds/holdings`, `/cvm/funds/lamina`, `/cvm/funds/profile` | Não |
+| CVM | Companhias, DFP/ITR, IPE, FCA, fundos (RCVM 175 cadastro + INF_DIARIO), CDA, lâmina, perfil, FII, FIDC e FIP | `/cvm/companies`, `/cvm/financials/dfp`, `/cvm/financials/itr`, `/cvm/companies/ipe`, `/cvm/funds`, `/cvm/funds/cadastro`, `/cvm/funds/daily`, `/cvm/funds/holdings`, `/cvm/funds/lamina`, `/cvm/funds/profile` | Não |
 | Tesouro | Tesouro Direto e dados SICONFI | `/tesouro/bonds`, `/tesouro/bonds/search`, `/tesouro/bonds/history`, `/tesouro/siconfi/rreo`, `/tesouro/siconfi/rgf`, `/tesouro/siconfi/entes` | Não |
 | IBGE | Indicadores econômicos, IPCA e grupos/subitens | `/ibge/indicators`, `/ibge/indicators/{name}`, `/ibge/ipca/breakdown`, `/ibge/ipca/groups` | Não |
 | IPEA Data | Catálogo e séries macroeconômicas OData | `/ipea/catalog`, `/ipea/search`, `/ipea/series/{sercodigo}`, `/ipea/metadata/{sercodigo}` | Não |
@@ -33,7 +33,8 @@ Para testar interativamente, rode `findata serve` e abra `/api/docs` ou `/redoc`
 curl 'http://localhost:8000/bcb/series/name/selic?n=5'
 curl 'http://localhost:8000/bcb/focus/annual?indicator=IPCA&top=3'
 curl 'http://localhost:8000/cvm/companies/search?q=petrobras'
-curl 'http://localhost:8000/cvm/funds/daily?cnpj=00.280.302/0001-60&limit=5'
+curl 'http://localhost:8000/cvm/funds/cadastro?cnpj=38.729.027/0001-92'
+curl 'http://localhost:8000/cvm/funds/daily?cnpj=38729027000192&year=2026&month=8&limit=5'
 curl 'http://localhost:8000/b3/quote/PETR4'
 curl 'http://localhost:8000/b3/indices/IBOV/monthly?start=2026-01-01&end=2026-05-11'
 curl 'http://localhost:8000/b3/cotahist/year/2025?limit=5'
@@ -52,6 +53,8 @@ findata ibge ipca -n 6
 findata ipea search desemprego
 findata openfinance participants --role DADOS -n 20
 findata cvm search Petrobras
+findata cvm cadastro --cnpj 38.729.027/0001-92
+findata cvm daily 38729027000192 -y 2026 -m 8
 findata b3 quote PETR4
 findata b3 index-monthly IBOV --start 2026-01-01 --end 2026-05-11
 findata anbima ima -i IMA-B

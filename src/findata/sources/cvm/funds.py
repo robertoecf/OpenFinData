@@ -9,7 +9,7 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 from findata._cache import TTLCache
-from findata.sources.cvm.parser import fetch_csv, fetch_csv_from_zip
+from findata.sources.cvm.parser import cnpj_digits, fetch_csv, fetch_csv_from_zip
 
 FUND_CATALOG_URL = "https://dados.cvm.gov.br/dados/FI/CAD/DADOS/cad_fi.csv"
 FUND_DAILY_URL = "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_{ym}.zip"
@@ -39,6 +39,8 @@ class FundDaily(BaseModel):
     captacao_dia: float
     resgate_dia: float
     nr_cotistas: int
+    tp_fundo_classe: str = ""
+    id_subclasse: str = ""
 
 
 # Parsed-data cache (avoids re-parsing the 17MB CSV on every call)
@@ -103,6 +105,8 @@ def _parse_daily_row(row: dict[str, str]) -> FundDaily | None:
             captacao_dia=float(row.get("CAPTC_DIA", "0") or "0"),
             resgate_dia=float(row.get("RESG_DIA", "0") or "0"),
             nr_cotistas=int(row.get("NR_COTST", "0") or "0"),
+            tp_fundo_classe=row.get("TP_FUNDO_CLASSE", ""),
+            id_subclasse=row.get("ID_SUBCLASSE", ""),
         )
     except (ValueError, KeyError):
         return None
@@ -119,14 +123,16 @@ async def get_fund_daily(
         year: Year (2021+).
         month: Month (1-12).
         cnpj_filter: Filter by fund CNPJ (highly recommended to reduce memory).
+            Punctuated and digit-only forms both match.
     """
     ym = f"{year}{month:02d}"
     url = FUND_DAILY_URL.format(ym=ym)
     rows = await fetch_csv_from_zip(url)
+    needle = cnpj_digits(cnpj_filter) if cnpj_filter else ""
     results: list[FundDaily] = []
     for row in rows:
         cnpj = row.get("CNPJ_FUNDO_CLASSE") or row.get("CNPJ_FUNDO", "")
-        if cnpj_filter and cnpj != cnpj_filter:
+        if needle and cnpj_digits(cnpj) != needle:
             continue
         parsed = _parse_daily_row(row)
         if parsed is not None:

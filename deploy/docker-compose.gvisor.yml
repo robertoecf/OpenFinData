@@ -12,7 +12,10 @@ services:
     runtime: runsc
     restart: unless-stopped
     ports:
+      # Loopback + Tailscale CGNAT only. Never 0.0.0.0.
+      # Validate first: python3 deploy/assert_tailscale_bind.py
       - "127.0.0.1:8000:8000"
+      - "${TAILSCALE_IP:-100.90.45.18}:8000:8000"
     # gVisor does not reliably use Docker's 127.0.0.11 stub DNS.
     # Mount a resolv.conf that points straight at public resolvers.
     dns:
@@ -31,9 +34,7 @@ services:
     cpus: 1.0
     user: "65534:65534"
     pids_limit: 256
-    # Traefik v3 drops routers for Docker-unhealthy containers. The image
-    # HEALTHCHECK hits /health; disable it here so a rate-limit blip cannot
-    # take the public router offline. /health remains exempt in the app.
+    # Image HEALTHCHECK hits /health and can 429 under rate limit; keep off.
     healthcheck:
       disable: true
     environment:
@@ -48,14 +49,6 @@ services:
         max-file: "5"
     networks:
       - openfindata_net
-    labels:
-      - traefik.enable=true
-      # Traefik runs in host network mode on this VPS — reach the published loopback port.
-      # Production: export OPENFINDATA_HOST=api.seudominio.com before up.
-      - traefik.http.routers.openfindata.rule=Host(`${OPENFINDATA_HOST:-findata.localhost}`)
-      - traefik.http.routers.openfindata.entrypoints=websecure
-      - traefik.http.routers.openfindata.tls.certresolver=letsencrypt
-      - traefik.http.services.openfindata.loadbalancer.server.url=http://127.0.0.1:8000
 
 networks:
   openfindata_net:
