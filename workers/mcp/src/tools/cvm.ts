@@ -24,6 +24,14 @@ function cnpjNeedles(digits: string): string[] {
   return digits.length === 14 ? [digits, maskCnpj(digits)] : [digits];
 }
 
+function fieldCnpjEquals(
+  row: Record<string, string>,
+  fields: readonly string[],
+  digits: string,
+): boolean {
+  return fields.some((field) => cnpjDigits(row[field]) === digits);
+}
+
 function mapFundo(row: Record<string, string>, classes: Record<string, unknown>[]) {
   return {
     source: "cvm_registro_fundo_classe",
@@ -83,13 +91,12 @@ function mapSubclass(row: Record<string, string>) {
 
 async function catalogByCnpj(zip: Uint8Array, digits: string, limit: number) {
   const needles = cnpjNeedles(digits);
-  const fundosByCnpj = await scanZipCsvForNeedles(zip, "registro_fundo.csv", needles, limit);
-  const classesByCnpj = await scanZipCsvForNeedles(
-    zip,
-    "registro_classe.csv",
-    needles,
-    CATALOG_CLASS_CAP,
-  );
+  const fundosByCnpj = (
+    await scanZipCsvForNeedles(zip, "registro_fundo.csv", needles, Math.max(limit, CATALOG_CLASS_CAP))
+  ).filter((row) => fieldCnpjEquals(row, ["CNPJ_Fundo"], digits));
+  const classesByCnpj = (
+    await scanZipCsvForNeedles(zip, "registro_classe.csv", needles, CATALOG_CLASS_CAP)
+  ).filter((row) => fieldCnpjEquals(row, ["CNPJ_Classe"], digits));
   const keepIds = new Set(fundosByCnpj.map((row) => row.ID_Registro_Fundo ?? ""));
   for (const row of classesByCnpj) {
     keepIds.add(row.ID_Registro_Fundo ?? "");
@@ -225,12 +232,9 @@ export async function cvmFund(args: {
   const ym = `${year}${String(month).padStart(2, "0")}`;
   const zip = await fetchCvmZip(DAILY_URL.replace("{ym}", ym));
   const csvName = `inf_diario_fi_${ym}.csv`;
-  const rows = await scanZipCsvForNeedles(
-    zip,
-    csvName,
-    cnpjNeedles(digits),
-    Math.min(limit, DAILY_SCAN_CAP),
-  );
+  const rows = (
+    await scanZipCsvForNeedles(zip, csvName, cnpjNeedles(digits), Math.min(limit, DAILY_SCAN_CAP))
+  ).filter((row) => fieldCnpjEquals(row, ["CNPJ_FUNDO_CLASSE", "CNPJ_FUNDO"], digits));
   return jsonResult({
     source: "cvm_inf_diario",
     year,

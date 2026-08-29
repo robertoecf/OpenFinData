@@ -146,6 +146,21 @@ test("cvm_fund catalog resolves punctuated CNPJ", async () => {
   assert.equal(body[0]?.classes[0]?.classificacao, "Multimercado");
 });
 
+test("cvm_fund catalog ignores administrator CNPJ in the same row", async () => {
+  mockZip(
+    "registro_fundo_classe.zip",
+    storeZip({
+      "registro_fundo.csv": FUNDO_CSV,
+      "registro_classe.csv": CLASSE_CSV,
+      "registro_subclasse.csv": SUB_CSV,
+    }),
+  );
+  const result = await cvmFund({ dataset: "catalog", cnpj: "59.281.253/0001-23" });
+  assert.equal(result.isError, undefined);
+  const body = JSON.parse(result.content[0].text) as unknown[];
+  assert.equal(body.length, 0);
+});
+
 test("cvm_fund daily matches digit CNPJ to punctuated INF_DIARIO", async () => {
   mockZip(
     "inf_diario_fi_202608.zip",

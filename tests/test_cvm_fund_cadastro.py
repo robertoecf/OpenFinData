@@ -114,6 +114,13 @@ async def test_cadastro_by_name_fragment() -> None:
 
 
 @respx.mock
+async def test_cadastro_ignores_administrator_cnpj() -> None:
+    respx.get(REGISTRO_URL).mock(return_value=httpx.Response(200, content=_registro_zip()))
+    rows = await get_fund_cadastro(cnpj="59.281.253/0001-23")
+    assert rows == []
+
+
+@respx.mock
 async def test_cadastro_requires_cnpj_or_q() -> None:
     with pytest.raises(ValueError, match="cnpj"):
         await get_fund_cadastro()
