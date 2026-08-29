@@ -58,8 +58,9 @@ curl -sS https://openfindata.com.br/health
 
 Upstream calls no Worker têm timeout (15s) e teto de payload (2 MB;
 8 MB no Directory Open Finance; 16 MB / 45s só em `cvm_fund`, porque o
-cadastro e o INF_DIARIO mensal vêm em ZIP). Séries BCB sem intervalo
-caem em `last_n≤200`. Rate limits de `/mcp` não mudam.
+cadastro e o INF_DIARIO mensal vêm em ZIP). O Worker faz scan em stream
+do CSV deflate (não materializa os ~48 MB do INF_DIARIO). Séries BCB sem
+intervalo caem em `last_n≤200`. Rate limits de `/mcp` não mudam.
 
 `/mcp` usa Workers Rate Limit bindings (não Cloudflare Queues): 60 req /
 60s por IP e pico 20 / 10s. Overflow é síncrono: HTTP 429 + `Retry-After`

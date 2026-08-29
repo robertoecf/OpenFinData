@@ -18,12 +18,13 @@ function u32(buf: Uint8Array, offset: number): number {
   );
 }
 
-async function inflateRaw(data: Uint8Array): Promise<Uint8Array> {
-  const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
-}
+type ZipEntry = {
+  name: string;
+  method: number;
+  payload: Uint8Array;
+};
 
-export async function zipFile(zip: Uint8Array, name: string): Promise<Uint8Array> {
+function findZipEntry(zip: Uint8Array, name: string): ZipEntry {
   let offset = 0;
   while (offset + 30 <= zip.length) {
     const sig = u32(zip, offset);
@@ -45,18 +46,41 @@ export async function zipFile(zip: Uint8Array, name: string): Promise<Uint8Array
       throw new Error(`zip entry ${entryName} truncated`);
     }
     if (entryName === name || entryName.endsWith(`/${name}`)) {
-      const payload = zip.subarray(dataStart, dataEnd);
-      if (method === 0) {
-        return payload;
-      }
-      if (method === 8) {
-        return inflateRaw(payload);
-      }
-      throw new Error(`unsupported zip method ${method} for ${entryName}`);
+      return { name: entryName, method, payload: zip.subarray(dataStart, dataEnd) };
     }
     offset = dataEnd;
   }
   throw new Error(`zip entry not found: ${name}`);
+}
+
+function inflateRawStream(data: Uint8Array): ReadableStream<Uint8Array> {
+  return new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+}
+
+async function inflateRaw(data: Uint8Array): Promise<Uint8Array> {
+  return new Uint8Array(await new Response(inflateRawStream(data)).arrayBuffer());
+}
+
+function zipCsvSource(zip: Uint8Array, name: string): Uint8Array | ReadableStream<Uint8Array> {
+  const entry = findZipEntry(zip, name);
+  if (entry.method === 0) {
+    return entry.payload;
+  }
+  if (entry.method === 8) {
+    return inflateRawStream(entry.payload);
+  }
+  throw new Error(`unsupported zip method ${entry.method} for ${entry.name}`);
+}
+
+export async function zipFile(zip: Uint8Array, name: string): Promise<Uint8Array> {
+  const entry = findZipEntry(zip, name);
+  if (entry.method === 0) {
+    return entry.payload;
+  }
+  if (entry.method === 8) {
+    return inflateRaw(entry.payload);
+  }
+  throw new Error(`unsupported zip method ${entry.method} for ${entry.name}`);
 }
 
 export function cnpjDigits(value: string | undefined): string {
@@ -103,6 +127,49 @@ function eachCsvLine(bytes: Uint8Array, visit: (line: Uint8Array) => boolean): v
   }
 }
 
+async function eachCsvLineFrom(
+  source: Uint8Array | ReadableStream<Uint8Array>,
+  visit: (line: Uint8Array) => boolean,
+): Promise<void> {
+  if (source instanceof Uint8Array) {
+    eachCsvLine(source, visit);
+    return;
+  }
+  const reader = source.getReader();
+  let leftover = new Uint8Array(0);
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) {
+        if (leftover.length > 0) {
+          visit(leftover);
+        }
+        return;
+      }
+      const chunk = value ?? new Uint8Array(0);
+      const combined = new Uint8Array(leftover.length + chunk.length);
+      combined.set(leftover);
+      combined.set(chunk, leftover.length);
+      let start = 0;
+      for (let i = 0; i < combined.length; i++) {
+        if (combined[i] === 10) {
+          let end = i;
+          if (end > start && combined[end - 1] === 13) {
+            end -= 1;
+          }
+          if (end > start && !visit(combined.subarray(start, end))) {
+            return;
+          }
+          start = i + 1;
+        }
+      }
+      leftover = combined.slice(start);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export function scanCsv(
   bytes: Uint8Array,
   keep: (row: Record<string, string>, raw: string) => boolean,
@@ -134,6 +201,52 @@ export function scanCsvForNeedles(
   const out: Record<string, string>[] = [];
   let header: string[] | null = null;
   eachCsvLine(bytes, (line) => {
+    if (header === null) {
+      header = LATIN1.decode(line).split(";");
+      return true;
+    }
+    if (!encoded.some((needle) => lineContains(line, needle))) {
+      return true;
+    }
+    out.push(parseCsvRow(header, LATIN1.decode(line)));
+    return out.length < limit;
+  });
+  return out;
+}
+
+export async function scanZipCsv(
+  zip: Uint8Array,
+  name: string,
+  keep: (row: Record<string, string>, raw: string) => boolean,
+  limit: number,
+): Promise<Record<string, string>[]> {
+  const out: Record<string, string>[] = [];
+  let header: string[] | null = null;
+  await eachCsvLineFrom(zipCsvSource(zip, name), (line) => {
+    const raw = LATIN1.decode(line);
+    if (header === null) {
+      header = raw.split(";");
+      return true;
+    }
+    const row = parseCsvRow(header, raw);
+    if (keep(row, raw)) {
+      out.push(row);
+    }
+    return out.length < limit;
+  });
+  return out;
+}
+
+export async function scanZipCsvForNeedles(
+  zip: Uint8Array,
+  name: string,
+  needles: string[],
+  limit: number,
+): Promise<Record<string, string>[]> {
+  const encoded = needles.filter(Boolean).map((item) => new TextEncoder().encode(item));
+  const out: Record<string, string>[] = [];
+  let header: string[] | null = null;
+  await eachCsvLineFrom(zipCsvSource(zip, name), (line) => {
     if (header === null) {
       header = LATIN1.decode(line).split(";");
       return true;

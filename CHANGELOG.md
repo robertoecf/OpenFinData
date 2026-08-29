@@ -15,7 +15,8 @@ adheres to [Semantic Versioning](https://semver.org/).
   already adapted to Resolução 175. CDA carteira stays off the public Worker
   (separate delayed monthly feed). FastAPI/CLI gain `GET /cvm/funds/cadastro`,
   `findata cvm cadastro`, `findata cvm daily`, and digit-normalized INF_DIARIO
-  CNPJ matching. Rate limits on `/mcp` are unchanged.
+  CNPJ matching. Rate limits on `/mcp` are unchanged. The Worker scans the
+  deflated CSV in stream so INF_DIARIO does not materialize ~48 MB in RAM.
 
 ### Changed
 

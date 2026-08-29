@@ -1,12 +1,12 @@
 import { errorResult, getBytes, jsonResult } from "../lib/http.ts";
-import { cnpjDigits, optFloat, scanCsv, scanCsvForNeedles, zipFile } from "../lib/zipCsv.ts";
+import { cnpjDigits, optFloat, scanZipCsv, scanZipCsvForNeedles } from "../lib/zipCsv.ts";
 
 const REGISTRO_URL = "https://dados.cvm.gov.br/dados/FI/CAD/DADOS/registro_fundo_classe.zip";
 const DAILY_URL = "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_{ym}.zip";
 
 const CVM_TIMEOUT_MS = 45_000;
 const CVM_MAX_BYTES = 16_000_000;
-const CATALOG_SCAN_CAP = 200;
+const CATALOG_CLASS_CAP = 2_000;
 const DAILY_SCAN_CAP = 2_000;
 
 async function fetchCvmZip(url: string): Promise<Uint8Array> {
@@ -83,11 +83,12 @@ function mapSubclass(row: Record<string, string>) {
 
 async function catalogByCnpj(zip: Uint8Array, digits: string, limit: number) {
   const needles = cnpjNeedles(digits);
-  const fundosByCnpj = scanCsvForNeedles(await zipFile(zip, "registro_fundo.csv"), needles, limit);
-  const classesByCnpj = scanCsvForNeedles(
-    await zipFile(zip, "registro_classe.csv"),
+  const fundosByCnpj = await scanZipCsvForNeedles(zip, "registro_fundo.csv", needles, limit);
+  const classesByCnpj = await scanZipCsvForNeedles(
+    zip,
+    "registro_classe.csv",
     needles,
-    CATALOG_SCAN_CAP,
+    CATALOG_CLASS_CAP,
   );
   const keepIds = new Set(fundosByCnpj.map((row) => row.ID_Registro_Fundo ?? ""));
   for (const row of classesByCnpj) {
@@ -96,21 +97,19 @@ async function catalogByCnpj(zip: Uint8Array, digits: string, limit: number) {
   const fundos =
     fundosByCnpj.length > 0
       ? fundosByCnpj
-      : scanCsv(
-          await zipFile(zip, "registro_fundo.csv"),
-          (row) => keepIds.has(row.ID_Registro_Fundo ?? ""),
-          limit,
-        );
-  const classes = scanCsv(
-    await zipFile(zip, "registro_classe.csv"),
+      : await scanZipCsv(zip, "registro_fundo.csv", (row) => keepIds.has(row.ID_Registro_Fundo ?? ""), limit);
+  const classes = await scanZipCsv(
+    zip,
+    "registro_classe.csv",
     (row) => keepIds.has(row.ID_Registro_Fundo ?? ""),
-    CATALOG_SCAN_CAP,
+    CATALOG_CLASS_CAP,
   );
   const classIds = new Set(classes.map((row) => row.ID_Registro_Classe ?? ""));
-  const subclasses = scanCsv(
-    await zipFile(zip, "registro_subclasse.csv"),
+  const subclasses = await scanZipCsv(
+    zip,
+    "registro_subclasse.csv",
     (row) => classIds.has(row.ID_Registro_Classe ?? ""),
-    CATALOG_SCAN_CAP,
+    CATALOG_CLASS_CAP,
   );
   const subclassesByClasse = new Map<string, Record<string, unknown>[]>();
   for (const row of subclasses) {
@@ -131,8 +130,9 @@ async function catalogByCnpj(zip: Uint8Array, digits: string, limit: number) {
 
 async function catalogByName(zip: Uint8Array, q: string, limit: number) {
   const needle = q.toLowerCase();
-  const fundos = scanCsv(
-    await zipFile(zip, "registro_fundo.csv"),
+  const fundos = await scanZipCsv(
+    zip,
+    "registro_fundo.csv",
     (row) => (row.Denominacao_Social ?? "").toLowerCase().includes(needle),
     limit,
   );
@@ -140,16 +140,18 @@ async function catalogByName(zip: Uint8Array, q: string, limit: number) {
     return [];
   }
   const fundoIds = new Set(fundos.map((row) => row.ID_Registro_Fundo ?? ""));
-  const classes = scanCsv(
-    await zipFile(zip, "registro_classe.csv"),
+  const classes = await scanZipCsv(
+    zip,
+    "registro_classe.csv",
     (row) => fundoIds.has(row.ID_Registro_Fundo ?? ""),
-    CATALOG_SCAN_CAP,
+    CATALOG_CLASS_CAP,
   );
   const classIds = new Set(classes.map((row) => row.ID_Registro_Classe ?? ""));
-  const subclasses = scanCsv(
-    await zipFile(zip, "registro_subclasse.csv"),
+  const subclasses = await scanZipCsv(
+    zip,
+    "registro_subclasse.csv",
     (row) => classIds.has(row.ID_Registro_Classe ?? ""),
-    CATALOG_SCAN_CAP,
+    CATALOG_CLASS_CAP,
   );
   const subclassesByClasse = new Map<string, Record<string, unknown>[]>();
   for (const row of subclasses) {
@@ -223,7 +225,12 @@ export async function cvmFund(args: {
   const ym = `${year}${String(month).padStart(2, "0")}`;
   const zip = await fetchCvmZip(DAILY_URL.replace("{ym}", ym));
   const csvName = `inf_diario_fi_${ym}.csv`;
-  const rows = scanCsvForNeedles(await zipFile(zip, csvName), cnpjNeedles(digits), Math.min(limit, DAILY_SCAN_CAP));
+  const rows = await scanZipCsvForNeedles(
+    zip,
+    csvName,
+    cnpjNeedles(digits),
+    Math.min(limit, DAILY_SCAN_CAP),
+  );
   return jsonResult({
     source: "cvm_inf_diario",
     year,

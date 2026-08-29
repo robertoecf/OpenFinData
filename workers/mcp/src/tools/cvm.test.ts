@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { deflateRawSync } from "node:zlib";
 import { afterEach, test } from "node:test";
 import { cvmFund } from "./cvm.ts";
-import { zipFile } from "../lib/zipCsv.ts";
+import { scanZipCsvForNeedles, zipFile } from "../lib/zipCsv.ts";
 
 function crc32(data: Uint8Array): number {
   let crc = 0xffffffff;
@@ -111,6 +111,13 @@ test("zipFile inflates deflated CSV (CVM method 8)", async () => {
   const zip = deflateZip({ "registro_fundo.csv": FUNDO_CSV });
   const bytes = await zipFile(zip, "registro_fundo.csv");
   assert.match(new TextDecoder().decode(bytes), /38729027000192/);
+});
+
+test("scanZipCsvForNeedles streams deflated CSV without requiring zipFile", async () => {
+  const zip = deflateZip({ "registro_fundo.csv": FUNDO_CSV });
+  const rows = await scanZipCsvForNeedles(zip, "registro_fundo.csv", ["38729027000192"], 5);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]?.CNPJ_Fundo, "38729027000192");
 });
 
 test("cvm_fund catalog requires cnpj or q", async () => {

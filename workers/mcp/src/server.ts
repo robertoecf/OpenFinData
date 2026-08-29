@@ -141,7 +141,7 @@ export function createServer() {
     "cvm_fund",
     {
       description:
-        "CVM open-ended funds (condomínio aberto). catalog: cadastral RCVM 175 by CNPJ or name. daily: INF_DIARIO cota/PL/cotistas for one month. Not CDA carteira (separate delayed feed). Not Mais Retorno.",
+        "CVM fund registry + open-fund cota series. catalog: RCVM 175 cadastro by CNPJ or name (any registered type; forma_condominio says Aberto/Fechado). daily: INF_DIARIO cota/PL/cotistas for one month (fundos abertos). Not CDA carteira. Not Mais Retorno.",
       inputSchema: {
         dataset: z.enum(["catalog", "daily"]).default("catalog"),
         cnpj: z.string().optional().describe("Fund CNPJ, punctuated or digits"),
