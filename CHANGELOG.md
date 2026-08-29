@@ -6,6 +6,17 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Public MCP `cvm_fund` (Worker) + RCVM 175 cadastro.** The public
+  Worker at `/mcp` now resolves an open-ended fund by CNPJ (or name) against
+  official CVM `registro_fundo_classe.zip` and returns INF_DIARIO cota/PL/cotistas
+  for a month. `cad_fi.csv` is not used for that lookup — it omits funds
+  already adapted to Resolução 175. CDA carteira stays off the public Worker
+  (separate delayed monthly feed). FastAPI/CLI gain `GET /cvm/funds/cadastro`,
+  `findata cvm cadastro`, `findata cvm daily`, and digit-normalized INF_DIARIO
+  CNPJ matching. Rate limits on `/mcp` are unchanged.
+
 ### Changed
 
 - **Resolver docs: Mais Retorno Free limits.** `docs/RESOLVER.md` now

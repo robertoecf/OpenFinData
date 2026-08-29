@@ -1051,6 +1051,70 @@ cvm_app = typer.Typer(help="CVM — companies and funds", no_args_is_help=True)
 app.add_typer(cvm_app, name="cvm")
 
 
+@cvm_app.command("cadastro")
+def cvm_cadastro(
+    cnpj: str | None = typer.Option(None, "--cnpj", help="Fund CNPJ (punctuated or digits)"),
+    q: str | None = typer.Option(None, "--q", help="Name fragment when CNPJ is unknown"),
+    limit: int = typer.Option(20, "--limit", "-n", min=1, max=100),
+) -> None:
+    """Look up an open-ended fund in the official CVM RCVM 175 cadastro."""
+    from findata.sources.cvm import get_fund_cadastro
+
+    rows = _run(get_fund_cadastro(cnpj=cnpj, q=q, limit=limit))
+    if not rows:
+        rprint("[yellow]No fund matched.[/yellow]")
+        return
+    for fund in rows:
+        rprint(f"[bold]{fund.nome}[/bold]  ({fund.cnpj})")
+        rprint(f"  Tipo: {fund.tipo}  ·  Situação: {fund.situacao}  ·  CVM: {fund.codigo_cvm}")
+        rprint(f"  Gestor: {fund.gestor or '-'}  ·  Admin: {fund.administrador or '-'}")
+        if fund.patrimonio_liquido is not None:
+            rprint(f"  PL fundo: {fund.patrimonio_liquido:,.2f}  ({fund.data_patrimonio_liquido})")
+        for classe in fund.classes:
+            rprint(
+                f"  Classe {classe.cnpj_classe}: {classe.classificacao or '-'} / "
+                f"{classe.classe_anbima or '-'}  ·  condomínio {classe.forma_condominio or '-'}"
+            )
+            if classe.patrimonio_liquido is not None:
+                rprint(
+                    f"    PL classe: {classe.patrimonio_liquido:,.2f}  "
+                    f"({classe.data_patrimonio_liquido})"
+                )
+
+
+@cvm_app.command("daily")
+def cvm_daily(
+    cnpj: str = typer.Argument(help="Fund CNPJ (punctuated or digits)"),
+    year: int = typer.Option(..., "--year", "-y"),
+    month: int = typer.Option(..., "--month", "-m"),
+    limit: int = typer.Option(31, "--limit", "-n", min=1, max=5000),
+) -> None:
+    """Show INF_DIARIO cota / PL / cotistas for one fund and month."""
+    from findata.sources.cvm import get_fund_daily
+
+    rows = _run(get_fund_daily(year, month, cnpj))[:limit]
+    if not rows:
+        rprint(f"[yellow]No daily rows for {cnpj} in {year}-{month:02d}.[/yellow]")
+        return
+    table = Table(title=f"INF_DIARIO — {cnpj} — {year}-{month:02d}")
+    table.add_column("Data", style="cyan")
+    table.add_column("Cota", justify="right")
+    table.add_column("PL", justify="right", style="green")
+    table.add_column("Cotistas", justify="right")
+    table.add_column("Captação", justify="right")
+    table.add_column("Resgate", justify="right")
+    for row in rows:
+        table.add_row(
+            row.dt_comptc,
+            _fmt(row.vl_quota, ".8f"),
+            _fmt(row.vl_patrimonio_liq, ",.2f"),
+            f"{row.nr_cotistas:,}",
+            _fmt(row.captacao_dia, ",.2f"),
+            _fmt(row.resgate_dia, ",.2f"),
+        )
+    rprint(table)
+
+
 @cvm_app.command("holdings")
 def cvm_holdings(
     cnpj: str = typer.Argument(help="Fund CNPJ (with or without punctuation)"),

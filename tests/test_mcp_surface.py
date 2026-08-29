@@ -20,7 +20,7 @@ from findata.api.app import app
 from findata.api.mcp_app import mcp_app
 
 EXPECTED_TOOLS = 25  # curated tools with code mode OFF (the default)
-EXPECTED_REST_OPERATIONS = 96  # all REST routes (unconditional); bump when the surface changes
+EXPECTED_REST_OPERATIONS = 97  # all REST routes (unconditional); bump when the surface changes
 
 _HTTP_METHODS = {"get", "post", "put", "delete", "patch"}
 
@@ -53,6 +53,7 @@ def test_rest_api_untouched_by_curation() -> None:
     for p in (
         "/bcb/ptax/usd/period",
         "/bcb/focus/selic",
+        "/cvm/funds/cadastro",
         "/cvm/funds/holdings",
         "/cvm/funds/fidc/direitos-creditorios",
     ):

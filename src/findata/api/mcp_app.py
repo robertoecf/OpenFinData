@@ -55,6 +55,7 @@ from findata.sources.cvm import (
     financials,
     fip,
     funds,
+    get_fund_cadastro,
     holdings,
     ipe,
     lamina,
@@ -303,14 +304,17 @@ async def cvm_financials(
     "/cvm/fund",
     operation_id="cvm_fund",
     response_model=None,
-    summary="Open-ended CVM funds (FI): catalog, daily NAV, holdings, factsheet, returns, profile",
+    summary="Open-ended CVM funds: cadastro by CNPJ, daily NAV/cota, holdings, factsheet",
 )
 async def cvm_fund(
     dataset: Literal[
         "catalog", "daily", "holdings", "lamina", "returns", "profile", "periods"
     ] = Query("catalog"),
     cnpj: str | None = Query(
-        None, description="Fund CNPJ (required for holdings; recommended elsewhere)"
+        None, description="Fund CNPJ (required for catalog lookup, daily, holdings)"
+    ),
+    q: str | None = Query(
+        None, min_length=2, description="catalog: name fragment when CNPJ is unknown"
     ),
     year: int | None = Query(None, description="Reference year (required except catalog/periods)"),
     month: int | None = Query(None, ge=1, le=12, description="Reference month (monthly datasets)"),
@@ -332,12 +336,15 @@ async def cvm_fund(
     ] = Query("INF_DIARIO", description="periods: which CVM document set to list stamps for"),
     limit: int = Query(500, ge=1, le=5000),
 ) -> Any:
-    """Open funds in one tool. ``catalog`` lists registered funds; ``periods`` lists
-    the YYYYMM stamps available upstream for ``product``. The rest need ``year``;
-    ``daily``/``holdings``/``lamina``/``returns``/``profile`` need ``month`` too, and
-    ``holdings`` requires ``cnpj`` (the monthly CDA file is huge).
+    """Open funds in one tool. ``catalog`` with ``cnpj`` or ``q`` reads the official
+    RCVM 175 registro (fundo+classe+subclasse). Bare ``catalog`` still pages the
+    legacy ``cad_fi.csv`` (non-adapted funds only). ``periods`` lists YYYYMM
+    stamps. ``daily`` is INF_DIARIO (cota/PL/cotistas). CDA ``holdings`` is a
+    separate monthly delayed feed and is not the cota series.
     """
     if dataset == "catalog":
+        if cnpj or q:
+            return await get_fund_cadastro(cnpj=cnpj, q=q, limit=limit)
         return (await funds.get_fund_catalog(True, None))[:limit]
     if dataset == "periods":
         return await list_periods("FI", f"DOC/{product}")

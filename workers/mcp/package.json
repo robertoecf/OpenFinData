@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "types": "wrangler types"
+    "types": "wrangler types",
+    "test": "node --test --experimental-strip-types src/rateLimit.test.ts src/tools/cvm.test.ts"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^5.20260813.1",

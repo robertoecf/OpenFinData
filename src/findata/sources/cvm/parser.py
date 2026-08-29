@@ -4,9 +4,17 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 import zipfile
 
 from findata.http_client import get_bytes
+
+_NON_DIGIT = re.compile(r"\D")
+
+
+def cnpj_digits(value: str | None) -> str:
+    """Strip a CNPJ to digits so punctuated and bare forms compare equal."""
+    return _NON_DIGIT.sub("", value or "")
 
 
 async def fetch_csv(url: str) -> list[dict[str, str]]:

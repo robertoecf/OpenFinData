@@ -10,11 +10,22 @@ publicado só em loopback + IP Tailscale. REST/docs/CLI continuam aí.
 
 O Worker **não alcança a Tailscale**. Encaminhar `/mcp` para a VPS
 recolocaria o processo Python no caminho público (via token/túnel).
-As tools deste Worker chamam as APIs JSON oficiais (BCB, IBGE, IPEA,
-SICONFI, Open Finance Directory).
+As tools deste Worker chamam fontes públicas oficiais: APIs JSON (BCB,
+IBGE, IPEA, SICONFI, Open Finance Directory) e os ZIPs/CSV da CVM em
+`dados.cvm.gov.br` para fundos abertos (`cvm_fund`).
 
-Fora deste Worker (CVM ZIP, B3 COTAHIST, ANBIMA XLS, registry FTS5,
-code mode): `pip install openfindata` ou FastAPI interno.
+Fora deste Worker (CDA/carteira, lâmina, perfil, B3 COTAHIST, ANBIMA XLS,
+registry FTS5, code mode): `pip install openfindata` ou FastAPI interno.
+
+`cvm_fund` no Worker:
+
+- `dataset=catalog` + `cnpj` ou `q` — cadastro oficial RCVM 175
+  (`registro_fundo_classe.zip`: fundo + classe + subclasse). `cad_fi.csv`
+  não lista fundos já adaptados à Resolução 175.
+- `dataset=daily` + `cnpj` — série de cotas INF_DIARIO do mês
+  (`year`/`month`; default = mês UTC corrente).
+- Não inclui CDA (composição da carteira): feed mensal atrasado e pesado,
+  separado do informe diário. Não usa Mais Retorno.
 
 ## Deploy
 
@@ -46,8 +57,9 @@ curl -sS https://openfindata.com.br/health
 ```
 
 Upstream calls no Worker têm timeout (15s) e teto de payload (2 MB;
-8 MB só no Directory Open Finance). Séries BCB sem intervalo caem em
-`last_n≤200`.
+8 MB no Directory Open Finance; 16 MB / 45s só em `cvm_fund`, porque o
+cadastro e o INF_DIARIO mensal vêm em ZIP). Séries BCB sem intervalo
+caem em `last_n≤200`. Rate limits de `/mcp` não mudam.
 
 `/mcp` usa Workers Rate Limit bindings (não Cloudflare Queues): 60 req /
 60s por IP e pico 20 / 10s. Overflow é síncrono: HTTP 429 + `Retry-After`

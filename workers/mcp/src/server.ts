@@ -6,6 +6,7 @@ import { ibgeIndicator, ibgeIpcaBreakdown } from "./tools/ibge";
 import { ipeaSearch, ipeaSeries } from "./tools/ipea";
 import { tesouroSiconfi } from "./tools/tesouro";
 import { openfinanceDirectory } from "./tools/openfinance";
+import { cvmFund } from "./tools/cvm";
 
 type ToolResult = { content: [{ type: "text"; text: string }]; isError?: boolean };
 
@@ -134,6 +135,23 @@ export function createServer() {
       },
     },
     wrap((args) => tesouroSiconfi(args)),
+  );
+
+  server.registerTool(
+    "cvm_fund",
+    {
+      description:
+        "CVM open-ended funds (condomínio aberto). catalog: cadastral RCVM 175 by CNPJ or name. daily: INF_DIARIO cota/PL/cotistas for one month. Not CDA carteira (separate delayed feed). Not Mais Retorno.",
+      inputSchema: {
+        dataset: z.enum(["catalog", "daily"]).default("catalog"),
+        cnpj: z.string().optional().describe("Fund CNPJ, punctuated or digits"),
+        q: z.string().optional().describe("catalog: name fragment when CNPJ is unknown"),
+        year: z.number().int().min(2021).optional(),
+        month: z.number().int().min(1).max(12).optional(),
+        limit: z.number().int().min(1).max(2000).optional(),
+      },
+    },
+    wrap((args) => cvmFund(args)),
   );
 
   server.registerTool(

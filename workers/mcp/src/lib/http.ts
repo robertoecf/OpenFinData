@@ -4,11 +4,12 @@ export const FETCH_TIMEOUT_MS = 15_000;
 export const MAX_RESPONSE_BYTES = 2_000_000;
 
 export class UpstreamError extends Error {
-  constructor(
-    readonly status: number,
-    readonly url: string,
-  ) {
+  readonly status: number;
+  readonly url: string;
+  constructor(status: number, url: string) {
     super(`upstream ${status} for ${url}`);
+    this.status = status;
+    this.url = url;
     this.name = "UpstreamError";
   }
 }
@@ -24,6 +25,25 @@ export type GetJsonOptions = {
   maxBytes?: number;
   timeoutMs?: number;
 };
+
+export async function getBytes(url: string, options?: GetJsonOptions): Promise<Uint8Array> {
+  const maxBytes = options?.maxBytes ?? MAX_RESPONSE_BYTES;
+  const timeoutMs = options?.timeoutMs ?? FETCH_TIMEOUT_MS;
+  const response = await fetch(url, {
+    headers: { "user-agent": USER_AGENT },
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!response.ok) {
+    throw new UpstreamError(response.status, url);
+  }
+  const buffer = await response.arrayBuffer();
+  if (buffer.byteLength > maxBytes) {
+    throw new UpstreamLimitError(
+      `upstream response too large (${buffer.byteLength} bytes, max ${maxBytes})`,
+    );
+  }
+  return new Uint8Array(buffer);
+}
 
 export async function getJson(
   url: string,
