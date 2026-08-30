@@ -11,7 +11,7 @@ export default {
       return Response.json({
         status: "ok",
         surface: "mcp-worker",
-        version: "0.3.2",
+        version: "0.3.3",
         mcp: "/mcp",
       });
     }

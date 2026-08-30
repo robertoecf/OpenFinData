@@ -24,7 +24,7 @@ function wrap<T>(run: (args: T) => Promise<ToolResult>) {
 export function createServer() {
   const server = new McpServer({
     name: "openfindata",
-    version: "0.3.2",
+    version: "0.3.3",
     websiteUrl: "https://openfindata.com.br",
   });
 
@@ -141,14 +141,29 @@ export function createServer() {
     "cvm_fund",
     {
       description:
-        "CVM open-fund raw layer. catalog: RCVM 175 cadastro by CNPJ or name. daily: INF_DIARIO cota/PL/cotistas (omit year/month for latest published month; months=1..3 lookback). periods: available CDA or INF_DIARIO YYYYMM stamps. holdings: CDA carteira for one month (omit year/month for latest; CONFID is sigilo, not a complete open book). Not Mais Retorno.",
+        "CVM open-fund official layer (never Mais Retorno; no Sharpe/CAGR/drawdown). " +
+        "Mais Retorno data mapping: search_assets/get_asset_info/list_fund_structure/get_fund_class_subclass → dataset=catalog " +
+        "(q matches fundo, classe and subclasse names; classes[].subclasses are different investments — do not pick a FIDC série). " +
+        "get_quotes → dataset=daily (INF_DIARIO; omit year/month for latest; months=1..12 lookback or start/end YYYY-MM-DD, max 12 months; " +
+        "single-class 555→175 continuation is stitched; report served[].nicename/class/subclass actually returned). " +
+        "get_available_wallets → dataset=periods product=CDA. get_wallet_detail → dataset=holdings (omit year/month for latest CDA; CONFID is sigilo).",
       inputSchema: {
         dataset: z.enum(["catalog", "daily", "holdings", "periods"]).default("catalog"),
-        cnpj: z.string().optional().describe("Fund CNPJ, punctuated or digits"),
-        q: z.string().optional().describe("catalog: name fragment when CNPJ is unknown"),
+        cnpj: z.string().optional().describe("Fund or class CNPJ, punctuated or digits"),
+        q: z.string().optional().describe("catalog: name fragment (fundo, classe or subclasse)"),
         year: z.number().int().min(2018).optional(),
         month: z.number().int().min(1).max(12).optional(),
-        months: z.number().int().min(1).max(3).optional().describe("daily: lookback months including the end month"),
+        months: z
+          .number()
+          .int()
+          .min(1)
+          .max(12)
+          .optional()
+          .describe("daily: lookback months including the end month (max 12; page longer windows)"),
+        start: z.string().optional().describe("daily: YYYY-MM-DD inclusive start (use with end)"),
+        end: z.string().optional().describe("daily: YYYY-MM-DD inclusive end (use with start)"),
+        id_subclasse: z.string().optional().describe("daily: keep only this CVM série; do not guess"),
+        compact: z.boolean().optional().describe("daily: served[].dates + served[].vl_quota instead of series[]"),
         product: z.enum(["CDA", "INF_DIARIO"]).optional().describe("periods: which directory to list"),
         blocks: z
           .string()

@@ -8,6 +8,14 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Public MCP `cvm_fund` quotes/structure parity (CVM only).** `dataset=daily`
+  accepts `start`/`end` or `months` up to 12, stitches a single-class RCVM 175
+  continuation onto legacy 555 INF_DIARIO when the files share sibling CNPJs,
+  and returns `served[].nicename` / class / subclass for the series actually
+  returned. Multiple subclasses stay grouped (`pick_required`) — the tool does
+  not pick a FIDC série. `dataset=catalog` `q` also matches classe and
+  subclasse names. Worker tool description maps Mais Retorno data tools onto
+  `cvm_fund` datasets. Calc/analytics tools stay out. Rate limits unchanged.
 - **Public MCP `cvm_fund` (Worker) + RCVM 175 cadastro.** The public
   Worker at `/mcp` now resolves an open-ended fund by CNPJ (or name) against
   official CVM `registro_fundo_classe.zip` and returns INF_DIARIO cota/PL/cotistas

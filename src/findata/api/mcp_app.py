@@ -35,6 +35,7 @@ import tempfile
 from datetime import date
 from typing import Any, Literal
 
+import httpx
 from fastapi import APIRouter, FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -62,7 +63,10 @@ from findata.sources.cvm import (
     latest_period,
     list_periods,
     profile,
+    quote_served_label,
+    related_quote_cnpjs,
 )
+from findata.sources.cvm.parser import cnpj_digits
 from findata.sources.ibge import indicators
 from findata.sources.ipea import series as ipea_series
 from findata.sources.openfinance import directory as of_dir
@@ -76,6 +80,7 @@ _MIN_YEAR_B3_COTAHIST = 1986  # B3 publishes COTAHIST since 1986
 _RGF_MAX_PERIOD = 3  # RGF quadrimestre runs 1..3
 _DAILY_MONTHS_MAX = 12
 _YYYYMM_LEN = 6
+_STITCH_SIBLING_CNPJS = 2  # requested + one fundo/classe pair
 
 
 def _stamp_to_year_month(stamp: str) -> tuple[int, int]:
@@ -104,6 +109,160 @@ async def _resolve_cvm_month(year: int | None, month: int | None, product: str) 
     if not latest:
         raise HTTPException(404, f"no published {product} period")
     return _stamp_to_year_month(latest)
+
+
+def _parse_iso_month(value: str) -> tuple[int, int]:
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError as exc:
+        raise HTTPException(400, "start/end must be YYYY-MM-DD") from exc
+    return parsed.year, parsed.month
+
+
+def _stamps_inclusive(start: tuple[int, int], end: tuple[int, int]) -> list[tuple[int, int]]:
+    if start > end:
+        raise HTTPException(400, "`start` must be on or before `end`")
+    stamps: list[tuple[int, int]] = []
+    year, month = start
+    while (year, month) <= end:
+        stamps.append((year, month))
+        if len(stamps) > _DAILY_MONTHS_MAX:
+            raise HTTPException(
+                400,
+                f"daily window exceeds {_DAILY_MONTHS_MAX} months; page `start`/`end`",
+            )
+        year, month = _add_months(year, month, 1)
+    return stamps
+
+
+async def _daily_month_stamps(
+    year: int | None,
+    month: int | None,
+    months: int,
+    start: str | None,
+    end: str | None,
+) -> list[tuple[int, int]]:
+    if start or end:
+        if not start or not end:
+            raise HTTPException(400, "pass both `start` and `end`, or omit both")
+        return _stamps_inclusive(_parse_iso_month(start), _parse_iso_month(end))
+    resolved_year, resolved_month = await _resolve_cvm_month(year, month, "INF_DIARIO")
+    return _lookback_months(resolved_year, resolved_month, months)
+
+
+def _group_daily_series(
+    series: list[Any],
+    cadastro: list[Any],
+    compact: bool,
+    requested: str,
+    needles: list[str],
+) -> dict[str, Any]:
+    target = requested if cadastro and len(needles) == _STITCH_SIBLING_CNPJS else ""
+    groups: dict[tuple[str, str], list[Any]] = {}
+    for row in series:
+        cnpj = getattr(row, "cnpj", "") if not isinstance(row, dict) else row.get("cnpj", "")
+        sub = (
+            getattr(row, "id_subclasse", "")
+            if not isinstance(row, dict)
+            else row.get("id_subclasse", "")
+        )
+        row_digits = cnpj_digits(str(cnpj))
+        group_cnpj = target if target and row_digits in needles else row_digits
+        key = (group_cnpj, str(sub or ""))
+        groups.setdefault(key, []).append(row)
+    served: list[dict[str, Any]] = []
+    for (cnpj, sub), rows in groups.items():
+        label = quote_served_label(cadastro, cnpj, sub)
+        item: dict[str, Any] = {
+            "cnpj": cnpj,
+            "id_subclasse": sub,
+            **label,
+            "points": len(rows),
+        }
+        if compact:
+            item["dates"] = [
+                getattr(row, "dt_comptc", "")
+                if not isinstance(row, dict)
+                else row.get("dt_comptc", "")
+                for row in rows
+            ]
+            item["vl_quota"] = [
+                getattr(row, "vl_quota", 0) if not isinstance(row, dict) else row.get("vl_quota", 0)
+                for row in rows
+            ]
+        served.append(item)
+    pick_required = len(served) > 1
+    note = (
+        "Multiple INF_DIARIO series for this CNPJ (classes/subclasses). "
+        "They are different investments — pass `id_subclasse` or the class CNPJ; do not pick."
+        if pick_required
+        else "Report served[].nicename / class / subclass actually returned."
+    )
+    payload: dict[str, Any] = {
+        "source": "cvm_inf_diario",
+        "pick_required": pick_required,
+        "served": served,
+        "note": note,
+    }
+    if not compact:
+        payload["series"] = series
+    return payload
+
+
+async def _cvm_fund_quotes(
+    cnpj: str,
+    year: int | None,
+    month: int | None,
+    months: int,
+    start: str | None,
+    end: str | None,
+    id_subclasse: str | None,
+    compact: bool,
+    limit: int,
+) -> dict[str, Any]:
+    stamps = await _daily_month_stamps(year, month, months, start, end)
+    try:
+        cadastro = await get_fund_cadastro(cnpj=cnpj, limit=20)
+    except httpx.HTTPError:
+        cadastro = []
+    needles = related_quote_cnpjs(cadastro, cnpj) if cadastro else [cnpj]
+    series: list[Any] = []
+    missing: list[str] = []
+    for stamp_year, stamp_month in stamps:
+        try:
+            chunk = await funds.get_fund_daily(stamp_year, stamp_month, ",".join(needles))
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == httpx.codes.NOT_FOUND:
+                missing.append(f"{stamp_year}{stamp_month:02d}")
+                continue
+            raise
+        series.extend(chunk)
+        if len(series) >= limit:
+            series = series[:limit]
+            break
+    if id_subclasse:
+        series = [
+            row
+            for row in series
+            if (
+                getattr(row, "id_subclasse", "")
+                if not isinstance(row, dict)
+                else row.get("id_subclasse", "")
+            )
+            == id_subclasse
+        ]
+    payload = _group_daily_series(series, cadastro, compact, cnpj_digits(cnpj), needles)
+    payload.update(
+        {
+            "cnpj": cnpj_digits(cnpj),
+            "from": f"{stamps[0][0]}{stamps[0][1]:02d}" if stamps else None,
+            "to": f"{stamps[-1][0]}{stamps[-1][1]:02d}" if stamps else None,
+            "months": len(stamps),
+            "needles": needles,
+            "missing": missing,
+        }
+    )
+    return payload
 
 
 # ── Registry: the entry point ─────────────────────────────────────
@@ -354,6 +513,18 @@ async def cvm_fund(
     months: int = Query(
         1, ge=1, le=_DAILY_MONTHS_MAX, description="daily: lookback months including the end month"
     ),
+    start: str | None = Query(
+        None, description="daily: YYYY-MM-DD inclusive start (use with end; max 12 months)"
+    ),
+    end: str | None = Query(
+        None, description="daily: YYYY-MM-DD inclusive end (use with start; max 12 months)"
+    ),
+    id_subclasse: str | None = Query(
+        None, description="daily: keep only this CVM subclass/série; do not guess for the user"
+    ),
+    compact: bool = Query(
+        False, description="daily: served[].dates + served[].vl_quota instead of series[]"
+    ),
     horizon: Literal["monthly", "yearly"] = Query(
         "monthly", description="returns granularity (dataset=returns)"
     ),
@@ -372,13 +543,14 @@ async def cvm_fund(
     ] = Query("INF_DIARIO", description="periods: which CVM document set to list stamps for"),
     limit: int = Query(500, ge=1, le=5000),
 ) -> Any:
-    """Open funds in one tool. ``catalog`` with ``cnpj`` or ``q`` reads the official
-    RCVM 175 registro (fundo+classe+subclasse). Bare ``catalog`` still pages the
-    legacy ``cad_fi.csv`` (non-adapted funds only). ``periods`` lists YYYYMM
-    stamps. ``daily`` is INF_DIARIO (cota/PL/cotistas); omit ``year``/``month``
-    for the latest published month, or pass ``months`` to look back. CDA
-    ``holdings`` is a separate monthly delayed feed — omit ``year``/``month``
-    for the latest CDA. CONFID rows are sigilo, not a complete open book.
+    """Open funds in one tool. Mais Retorno data mapping (CVM/official only; no
+    calc tools): ``catalog`` = search_assets + get_asset_info +
+    list_fund_structure + get_fund_class_subclass (``q`` matches fundo,
+    classe and subclasse names); ``daily`` = get_quotes (``start``/``end`` or
+    ``months``≤12; ``served[].nicename`` is what was returned; never pick a
+    FIDC série); ``periods``+``holdings`` = get_available_wallets +
+    get_wallet_detail. Bare ``catalog`` still pages legacy ``cad_fi.csv``.
+    CDA ``holdings`` CONFID is sigilo, not a complete open book.
     """
     if dataset == "catalog":
         if cnpj or q:
@@ -393,15 +565,11 @@ async def cvm_fund(
         block_list = [b.strip() for b in blocks.split(",") if b.strip()] if blocks else None
         return await holdings.get_fund_holdings(cnpj, year, month, block_list)
     if dataset == "daily":
-        year, month = await _resolve_cvm_month(year, month, "INF_DIARIO")
-        if months == 1:
-            return (await funds.get_fund_daily(year, month, cnpj))[:limit]
-        series: list[Any] = []
-        for stamp_year, stamp_month in _lookback_months(year, month, months):
-            series.extend(await funds.get_fund_daily(stamp_year, stamp_month, cnpj))
-            if len(series) >= limit:
-                break
-        return series[:limit]
+        if not cnpj:
+            raise HTTPException(400, "dataset=daily requires `cnpj`")
+        return await _cvm_fund_quotes(
+            cnpj, year, month, months, start, end, id_subclasse, compact, limit
+        )
     if year is None:
         raise HTTPException(400, f"dataset={dataset} requires `year`")
     if month is None:

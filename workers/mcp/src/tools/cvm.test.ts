@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { deflateRawSync } from "node:zlib";
 import { afterEach, test } from "node:test";
-import { cvmFund, listCvmZipMonths } from "./cvm.ts";
+import { cvmFund, listCvmZipMonths, relatedQuoteCnpjs } from "./cvm.ts";
 import { listZipEntryNames, scanZipCsvForNeedles, zipFile } from "../lib/zipCsv.ts";
 
 function crc32(data: Uint8Array): number {
@@ -323,6 +323,158 @@ test("cvm_fund daily months=2 concatenates two INF_DIARIO months", async () => {
   assert.equal(body.series.length, 2);
   assert.equal(body.series[0]?.vl_quota, 2.9);
   assert.equal(body.series[1]?.vl_quota, 2.94);
+});
+
+test("cvm_fund catalog matches a class-only name", async () => {
+  const classeOnly =
+    CLASSE_CSV +
+    "66089;99999;21494444000109;1;2024-12-02;2015-02-04;2024-12-02;Classes de Cotas de Fundos FIF;" +
+    "SERIE SENIOR UNICA XYZ;Em Funcionamento Normal;2024-12-02;Renda Fixa;DI;N;Previdência RF;;;N;N;Aberto;N;Público;1;2026-08-26;1;AUD;2;CUST;3;CTRL\n";
+  mockZip(
+    "registro_fundo_classe.zip",
+    storeZip({
+      "registro_fundo.csv": FUNDO_CSV,
+      "registro_classe.csv": classeOnly,
+      "registro_subclasse.csv": SUB_CSV,
+    }),
+  );
+  const result = await cvmFund({ dataset: "catalog", q: "serie senior unica xyz" });
+  assert.equal(result.isError, undefined);
+  const body = JSON.parse(result.content[0].text) as Array<{ cnpj: string }>;
+  assert.equal(body.length, 1);
+  assert.equal(body[0]?.cnpj, "38729027000192");
+});
+
+test("relatedQuoteCnpjs stitches only a single-class sibling CNPJ", () => {
+  const single = relatedQuoteCnpjs(
+    [
+      {
+        cnpj: "11111111000191",
+        nome: "FUNDO",
+        classes: [
+          {
+            cnpj_classe: "22222222000191",
+            nome: "CLASSE",
+            tipo_classe: "FIF",
+            classificacao: "Multimercado",
+            classe_anbima: "Livre",
+            subclasses: [],
+          },
+        ],
+      },
+    ],
+    "22222222000191",
+  );
+  assert.deepEqual(single, ["22222222000191", "11111111000191"]);
+  const multi = relatedQuoteCnpjs(
+    [
+      {
+        cnpj: "11111111000191",
+        nome: "FUNDO",
+        classes: [
+          {
+            cnpj_classe: "22222222000191",
+            nome: "A",
+            tipo_classe: "FIF",
+            classificacao: "RF",
+            classe_anbima: "",
+            subclasses: [],
+          },
+          {
+            cnpj_classe: "33333333000191",
+            nome: "B",
+            tipo_classe: "FIF",
+            classificacao: "RF",
+            classe_anbima: "",
+            subclasses: [],
+          },
+        ],
+      },
+    ],
+    "22222222000191",
+  );
+  assert.deepEqual(multi, ["22222222000191"]);
+});
+
+test("cvm_fund daily start/end stitches 555 fund CNPJ onto a single class", async () => {
+  const fundo =
+    "ID_Registro_Fundo;CNPJ_Fundo;Codigo_CVM;Denominacao_Social;Situacao;Data_Adaptacao_RCVM175\n" +
+    "1;11111111000191;1;FUNDO LEGADO;Em Funcionamento Normal;2024-09-01\n";
+  const classe =
+    "ID_Registro_Fundo;ID_Registro_Classe;CNPJ_Classe;Codigo_CVM;Denominacao_Social;Situacao;Classificacao;Classificacao_Anbima;Tipo_Classe;Forma_Condominio\n" +
+    "1;10;22222222000191;2;CLASSE CONTINUACAO;Em Funcionamento Normal;Multimercado;Livre;FIF;Aberto\n";
+  const oldDaily =
+    "TP_FUNDO;CNPJ_FUNDO;DT_COMPTC;VL_TOTAL;VL_QUOTA;VL_PATRIM_LIQ;CAPTC_DIA;RESG_DIA;NR_COTST\n" +
+    "FI;11.111.111/0001-91;2024-08-30;1;1.10;100;0;0;1\n";
+  const newDaily =
+    "TP_FUNDO_CLASSE;CNPJ_FUNDO_CLASSE;ID_SUBCLASSE;DT_COMPTC;VL_TOTAL;VL_QUOTA;VL_PATRIM_LIQ;CAPTC_DIA;RESG_DIA;NR_COTST\n" +
+    "CLASSES - FIF;22.222.222/0001-91;;2024-09-02;1;1.20;110;0;0;1\n";
+  mockRoutes([
+    {
+      match: "registro_fundo_classe.zip",
+      body: storeZip({
+        "registro_fundo.csv": fundo,
+        "registro_classe.csv": classe,
+        "registro_subclasse.csv": SUB_CSV,
+      }),
+    },
+    { match: "inf_diario_fi_202408.zip", body: storeZip({ "inf_diario_fi_202408.csv": oldDaily }) },
+    { match: "inf_diario_fi_202409.zip", body: storeZip({ "inf_diario_fi_202409.csv": newDaily }) },
+  ]);
+  const result = await cvmFund({
+    dataset: "daily",
+    cnpj: "22222222000191",
+    start: "2024-08-01",
+    end: "2024-09-30",
+  });
+  assert.equal(result.isError, undefined);
+  const body = JSON.parse(result.content[0].text) as {
+    from: string;
+    to: string;
+    needles: string[];
+    served: Array<{ nicename: string; points: number }>;
+    series: Array<{ vl_quota: number }>;
+  };
+  assert.equal(body.from, "202408");
+  assert.equal(body.to, "202409");
+  assert.deepEqual(body.needles, ["22222222000191", "11111111000191"]);
+  assert.equal(body.series.length, 2);
+  assert.equal(body.served.length, 1);
+  assert.equal(body.served[0]?.nicename, "CLASSE CONTINUACAO");
+  assert.equal(body.served[0]?.points, 2);
+});
+
+test("cvm_fund daily does not collapse two subclasses", async () => {
+  const daily =
+    "TP_FUNDO_CLASSE;CNPJ_FUNDO_CLASSE;ID_SUBCLASSE;DT_COMPTC;VL_TOTAL;VL_QUOTA;VL_PATRIM_LIQ;CAPTC_DIA;RESG_DIA;NR_COTST\n" +
+    "CLASSES - FIF;38.729.027/0001-92;S1;2026-08-03;1;1.00;100;0;0;1\n" +
+    "CLASSES - FIF;38.729.027/0001-92;S2;2026-08-03;1;2.00;200;0;0;10\n";
+  mockRoutes([
+    {
+      match: "registro_fundo_classe.zip",
+      body: storeZip({
+        "registro_fundo.csv": FUNDO_CSV,
+        "registro_classe.csv": CLASSE_CSV,
+        "registro_subclasse.csv":
+          SUB_CSV +
+          "12189;S1;1;2024-09-27;2024-09-27;SENIOR;Em Funcionamento Normal;2024-09-27;Aberto;N;Público;N;N;N\n" +
+          "12189;S2;2;2024-09-27;2024-09-27;SUBORDINADA;Em Funcionamento Normal;2024-09-27;Aberto;N;Público;N;N;N\n",
+      }),
+    },
+    { match: "inf_diario_fi_202608.zip", body: storeZip({ "inf_diario_fi_202608.csv": daily }) },
+  ]);
+  const result = await cvmFund({ dataset: "daily", cnpj: "38729027000192", year: 2026, month: 8 });
+  assert.equal(result.isError, undefined);
+  const body = JSON.parse(result.content[0].text) as {
+    pick_required: boolean;
+    served: Array<{ id_subclasse: string; nicename: string }>;
+  };
+  assert.equal(body.pick_required, true);
+  assert.deepEqual(
+    body.served.map((row) => row.id_subclasse).sort(),
+    ["S1", "S2"],
+  );
+  assert.equal(body.served.find((row) => row.id_subclasse === "S2")?.nicename, "SUBORDINADA");
 });
 
 test("cvm_fund daily without year/month uses the latest INF_DIARIO stamp", async () => {

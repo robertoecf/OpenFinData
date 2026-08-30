@@ -13,7 +13,16 @@ from fastapi.testclient import TestClient
 from findata.api.app import app
 from findata.api.mcp_app import mcp_app
 from findata.http_client import clear_cache
-from findata.sources.cvm.cadastro import REGISTRO_URL, _registro_cache, get_fund_cadastro
+from findata.sources.cvm.cadastro import (
+    REGISTRO_URL,
+    FundCadastro,
+    FundClasse,
+    FundSubclass,
+    _registro_cache,
+    get_fund_cadastro,
+    quote_served_label,
+    related_quote_cnpjs,
+)
 from findata.sources.cvm.funds import FUND_DAILY_URL, get_fund_daily
 
 
@@ -114,6 +123,129 @@ async def test_cadastro_by_name_fragment() -> None:
 
 
 @respx.mock
+async def test_cadastro_by_class_only_name() -> None:
+    classe = (
+        _CLASSE_HEADER
+        + _AMW_CLASSE
+        + (
+            "51617;88888;21494444000109;1;2024-12-02;2015-02-04;2024-12-02;"
+            "Classes de Cotas de Fundos FIF;SERIE SENIOR UNICA XYZ;"
+            "Em Funcionamento Normal;2024-12-02;Renda Fixa;DI de um dia;N;"
+            "Previdência RF;N/A;;N;N;Aberto;N;Público;1;2026-08-26;"
+            "1;AUD;2;CUST;3;CTRL\n"
+        )
+    )
+    payload = _zip_csv(
+        {
+            "registro_fundo.csv": _FUNDO_HEADER + _AMW_FUNDO + _OTHER_FUNDO,
+            "registro_classe.csv": classe,
+            "registro_subclasse.csv": _SUB_HEADER,
+        }
+    )
+    respx.get(REGISTRO_URL).mock(return_value=httpx.Response(200, content=payload))
+    rows = await get_fund_cadastro(q="serie senior unica xyz")
+    assert len(rows) == 1
+    assert rows[0].cnpj == "21494444000109"
+
+
+def test_related_quote_cnpjs_stitches_single_class_only() -> None:
+    single = FundCadastro(
+        cnpj="11111111000191",
+        codigo_cvm="1",
+        nome="FUNDO",
+        tipo="FI",
+        situacao="ok",
+        data_registro="",
+        data_constituicao="",
+        data_adaptacao_rcvm175="2024-09-01",
+        classes=[
+            FundClasse(
+                id_registro_classe="10",
+                cnpj_classe="22222222000191",
+                codigo_cvm="2",
+                nome="CLASSE",
+                tipo_classe="FIF",
+                situacao="ok",
+                classificacao="Multimercado",
+                classe_anbima="Livre",
+                forma_condominio="Aberto",
+                exclusivo="N",
+                publico_alvo="",
+            )
+        ],
+    )
+    assert related_quote_cnpjs([single], "22222222000191") == [
+        "22222222000191",
+        "11111111000191",
+    ]
+    multi = single.model_copy(
+        update={
+            "classes": [
+                single.classes[0],
+                FundClasse(
+                    id_registro_classe="11",
+                    cnpj_classe="33333333000191",
+                    codigo_cvm="3",
+                    nome="OUTRA",
+                    tipo_classe="FIF",
+                    situacao="ok",
+                    classificacao="RF",
+                    classe_anbima="",
+                    forma_condominio="Aberto",
+                    exclusivo="N",
+                    publico_alvo="",
+                ),
+            ]
+        }
+    )
+    assert related_quote_cnpjs([multi], "22222222000191") == ["22222222000191"]
+
+
+def test_quote_served_label_prefers_subclass_name() -> None:
+    fund = FundCadastro(
+        cnpj="38729027000192",
+        codigo_cvm="1",
+        nome="FUNDO",
+        tipo="FI",
+        situacao="ok",
+        data_registro="",
+        data_constituicao="",
+        data_adaptacao_rcvm175="",
+        classes=[
+            FundClasse(
+                id_registro_classe="10",
+                cnpj_classe="38729027000192",
+                codigo_cvm="2",
+                nome="CLASSE",
+                tipo_classe="FIF",
+                situacao="ok",
+                classificacao="Multimercado",
+                classe_anbima="Livre",
+                forma_condominio="Aberto",
+                exclusivo="N",
+                publico_alvo="",
+                subclasses=[
+                    FundSubclass(
+                        id_subclasse="S2",
+                        codigo_cvm="3",
+                        nome="SUBORDINADA",
+                        situacao="ok",
+                        forma_condominio="Aberto",
+                        exclusivo="N",
+                        publico_alvo="",
+                        previdenciario="N",
+                        exclusivo_previdencia_complementar="N",
+                    )
+                ],
+            )
+        ],
+    )
+    label = quote_served_label([fund], "38729027000192", "S2")
+    assert label["nicename"] == "SUBORDINADA"
+    assert label["classificacao"] == "Multimercado"
+
+
+@respx.mock
 async def test_cadastro_ignores_administrator_cnpj() -> None:
     respx.get(REGISTRO_URL).mock(return_value=httpx.Response(200, content=_registro_zip()))
     rows = await get_fund_cadastro(cnpj="59.281.253/0001-23")
@@ -174,6 +306,7 @@ def test_rest_and_mcp_cadastro_by_cnpj() -> None:
 
 @respx.mock
 def test_mcp_daily_accepts_digit_cnpj() -> None:
+    respx.get(REGISTRO_URL).mock(return_value=httpx.Response(200, content=_registro_zip()))
     url = FUND_DAILY_URL.format(ym="202608")
     respx.get(url).mock(return_value=httpx.Response(200, content=_daily_zip()))
     mcp = TestClient(mcp_app).get(
@@ -181,4 +314,6 @@ def test_mcp_daily_accepts_digit_cnpj() -> None:
         params={"dataset": "daily", "cnpj": "38729027000192", "year": 2026, "month": 8},
     )
     assert mcp.status_code == 200
-    assert len(mcp.json()) == 2
+    body = mcp.json()
+    assert len(body["series"]) == 2
+    assert body["served"][0]["points"] == 2

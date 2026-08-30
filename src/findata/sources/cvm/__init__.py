@@ -36,6 +36,8 @@ from findata.sources.cvm.cadastro import (
     FundClasse,
     FundSubclass,
     get_fund_cadastro,
+    quote_served_label,
+    related_quote_cnpjs,
 )
 from findata.sources.cvm.companies import Company, get_companies, search_company
 from findata.sources.cvm.fca import (
@@ -128,5 +130,7 @@ __all__ = [
     "latest_period",
     "list_files",
     "list_periods",
+    "quote_served_label",
+    "related_quote_cnpjs",
     "search_company",
 ]

@@ -210,14 +210,40 @@ def _select_fundos(
         ),
         limit,
     )
-    if selected or not needle_digits:
-        return selected
-    class_ids = {
+    if needle_digits:
+        if selected:
+            return selected
+        class_ids = {
+            row.get("ID_Registro_Fundo", "")
+            for row in tables.classes
+            if cnpj_digits(row.get("CNPJ_Classe")) == needle_digits
+        }
+        return _take(tables.fundos, lambda row: row.get("ID_Registro_Fundo") in class_ids, limit)
+    extra_fundo_ids = {
         row.get("ID_Registro_Fundo", "")
         for row in tables.classes
-        if cnpj_digits(row.get("CNPJ_Classe")) == needle_digits
+        if needle_name in (row.get("Denominacao_Social") or "").casefold()
     }
-    return _take(tables.fundos, lambda row: row.get("ID_Registro_Fundo") in class_ids, limit)
+    sub_class_ids = {
+        row.get("ID_Registro_Classe", "")
+        for row in tables.subclasses
+        if needle_name in (row.get("Denominacao_Social") or "").casefold()
+    }
+    if sub_class_ids:
+        extra_fundo_ids.update(
+            row.get("ID_Registro_Fundo", "")
+            for row in tables.classes
+            if row.get("ID_Registro_Classe") in sub_class_ids
+        )
+    already = {row.get("ID_Registro_Fundo") for row in selected}
+    for row in tables.fundos:
+        fundo_id = row.get("ID_Registro_Fundo")
+        if fundo_id in extra_fundo_ids and fundo_id not in already:
+            selected.append(row)
+            already.add(fundo_id)
+            if len(selected) >= limit:
+                break
+    return selected
 
 
 def _assemble(tables: _RegistroTables, selected: list[dict[str, str]]) -> list[FundCadastro]:
@@ -244,6 +270,75 @@ def _assemble(tables: _RegistroTables, selected: list[dict[str, str]]) -> list[F
         ]
         result.append(_parse_fundo(fundo, parsed_classes))
     return result
+
+
+def related_quote_cnpjs(funds: list[FundCadastro], requested_digits: str) -> list[str]:
+    """INF_DIARIO CNPJs to scan for one catalog hit.
+
+    A single-class RCVM 175 adaptation may add the sibling fundo/classe CNPJ so
+    legacy 555 rows stitch onto the continuation class. Multi-class funds never
+    borrow another class — those series are different investments.
+    """
+    requested = cnpj_digits(requested_digits)
+    out: list[str] = []
+    seen: set[str] = set()
+
+    def add(raw: str) -> None:
+        digits = cnpj_digits(raw)
+        if digits and digits not in seen:
+            seen.add(digits)
+            out.append(digits)
+
+    add(requested)
+    for fund in funds:
+        fund_digits = cnpj_digits(fund.cnpj)
+        class_digits = list(
+            dict.fromkeys(
+                cnpj_digits(classe.cnpj_classe)
+                for classe in fund.classes
+                if cnpj_digits(classe.cnpj_classe)
+            )
+        )
+        matched_fund = fund_digits == requested
+        matched_class = any(cnpj_digits(classe.cnpj_classe) == requested for classe in fund.classes)
+        if matched_fund:
+            for digits in class_digits:
+                add(digits)
+        elif matched_class and len(class_digits) == 1:
+            add(fund_digits)
+    return out
+
+
+def quote_served_label(funds: list[FundCadastro], cnpj: str, id_subclasse: str) -> dict[str, str]:
+    """Nicename / CVM / ANBIMA class for the series actually returned."""
+    digits = cnpj_digits(cnpj)
+    nicename = ""
+    tipo_classe = ""
+    classificacao = ""
+    classe_anbima = ""
+    subclass_name = ""
+    for fund in funds:
+        if cnpj_digits(fund.cnpj) == digits and not nicename:
+            nicename = fund.nome
+        for classe in fund.classes:
+            if cnpj_digits(classe.cnpj_classe) != digits:
+                continue
+            nicename = classe.nome or nicename
+            tipo_classe = classe.tipo_classe
+            classificacao = classe.classificacao
+            classe_anbima = classe.classe_anbima
+            for sub in classe.subclasses:
+                if id_subclasse and sub.id_subclasse == id_subclasse:
+                    subclass_name = sub.nome
+                    if sub.nome:
+                        nicename = sub.nome
+    return {
+        "nicename": nicename,
+        "tipo_classe": tipo_classe,
+        "classificacao": classificacao,
+        "classe_anbima": classe_anbima,
+        "subclass_name": subclass_name,
+    }
 
 
 async def get_fund_cadastro(
