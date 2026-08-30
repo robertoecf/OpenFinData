@@ -59,6 +59,7 @@ from findata.sources.cvm import (
     holdings,
     ipe,
     lamina,
+    latest_period,
     list_periods,
     profile,
 )
@@ -73,6 +74,36 @@ router = APIRouter()
 
 _MIN_YEAR_B3_COTAHIST = 1986  # B3 publishes COTAHIST since 1986
 _RGF_MAX_PERIOD = 3  # RGF quadrimestre runs 1..3
+_DAILY_MONTHS_MAX = 12
+_YYYYMM_LEN = 6
+
+
+def _stamp_to_year_month(stamp: str) -> tuple[int, int]:
+    if len(stamp) != _YYYYMM_LEN or not stamp.isdigit():
+        raise HTTPException(404, f"invalid CVM period stamp {stamp!r}")
+    return int(stamp[:4]), int(stamp[_YYYYMM_LEN - 2 :])
+
+
+def _add_months(year: int, month: int, delta: int) -> tuple[int, int]:
+    absolute = year * 12 + (month - 1) + delta
+    return absolute // 12, absolute % 12 + 1
+
+
+def _lookback_months(end_year: int, end_month: int, count: int) -> list[tuple[int, int]]:
+    return [_add_months(end_year, end_month, offset) for offset in range(-(count - 1), 1)]
+
+
+async def _resolve_cvm_month(year: int | None, month: int | None, product: str) -> tuple[int, int]:
+    if (year is None) != (month is None):
+        raise HTTPException(
+            400, "pass both `year` and `month`, or omit both for the latest published file"
+        )
+    if year is not None and month is not None:
+        return year, month
+    latest = await latest_period("FI", f"DOC/{product}")
+    if not latest:
+        raise HTTPException(404, f"no published {product} period")
+    return _stamp_to_year_month(latest)
 
 
 # ── Registry: the entry point ─────────────────────────────────────
@@ -316,8 +347,13 @@ async def cvm_fund(
     q: str | None = Query(
         None, min_length=2, description="catalog: name fragment when CNPJ is unknown"
     ),
-    year: int | None = Query(None, description="Reference year (required except catalog/periods)"),
+    year: int | None = Query(
+        None, description="Reference year; omit with month for latest CDA/INF_DIARIO"
+    ),
     month: int | None = Query(None, ge=1, le=12, description="Reference month (monthly datasets)"),
+    months: int = Query(
+        1, ge=1, le=_DAILY_MONTHS_MAX, description="daily: lookback months including the end month"
+    ),
     horizon: Literal["monthly", "yearly"] = Query(
         "monthly", description="returns granularity (dataset=returns)"
     ),
@@ -339,8 +375,10 @@ async def cvm_fund(
     """Open funds in one tool. ``catalog`` with ``cnpj`` or ``q`` reads the official
     RCVM 175 registro (fundo+classe+subclasse). Bare ``catalog`` still pages the
     legacy ``cad_fi.csv`` (non-adapted funds only). ``periods`` lists YYYYMM
-    stamps. ``daily`` is INF_DIARIO (cota/PL/cotistas). CDA ``holdings`` is a
-    separate monthly delayed feed and is not the cota series.
+    stamps. ``daily`` is INF_DIARIO (cota/PL/cotistas); omit ``year``/``month``
+    for the latest published month, or pass ``months`` to look back. CDA
+    ``holdings`` is a separate monthly delayed feed — omit ``year``/``month``
+    for the latest CDA. CONFID rows are sigilo, not a complete open book.
     """
     if dataset == "catalog":
         if cnpj or q:
@@ -348,17 +386,26 @@ async def cvm_fund(
         return (await funds.get_fund_catalog(True, None))[:limit]
     if dataset == "periods":
         return await list_periods("FI", f"DOC/{product}")
-    if year is None:
-        raise HTTPException(400, f"dataset={dataset} requires `year`")
     if dataset == "holdings":
-        if not cnpj or month is None:
-            raise HTTPException(400, "dataset=holdings requires `cnpj` and `month`")
+        if not cnpj:
+            raise HTTPException(400, "dataset=holdings requires `cnpj`")
+        year, month = await _resolve_cvm_month(year, month, "CDA")
         block_list = [b.strip() for b in blocks.split(",") if b.strip()] if blocks else None
         return await holdings.get_fund_holdings(cnpj, year, month, block_list)
+    if dataset == "daily":
+        year, month = await _resolve_cvm_month(year, month, "INF_DIARIO")
+        if months == 1:
+            return (await funds.get_fund_daily(year, month, cnpj))[:limit]
+        series: list[Any] = []
+        for stamp_year, stamp_month in _lookback_months(year, month, months):
+            series.extend(await funds.get_fund_daily(stamp_year, stamp_month, cnpj))
+            if len(series) >= limit:
+                break
+        return series[:limit]
+    if year is None:
+        raise HTTPException(400, f"dataset={dataset} requires `year`")
     if month is None:
         raise HTTPException(400, f"dataset={dataset} requires `month`")
-    if dataset == "daily":
-        return (await funds.get_fund_daily(year, month, cnpj))[:limit]
     if dataset == "lamina":
         return (await lamina.get_fund_lamina(year, month, cnpj))[:limit]
     if dataset == "profile":

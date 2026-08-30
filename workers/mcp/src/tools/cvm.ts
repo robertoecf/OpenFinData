@@ -1,13 +1,28 @@
-import { errorResult, getBytes, jsonResult } from "../lib/http.ts";
-import { cnpjDigits, optFloat, scanZipCsv, scanZipCsvForNeedles } from "../lib/zipCsv.ts";
+import { errorResult, getBytes, jsonResult, UpstreamError } from "../lib/http.ts";
+import {
+  cnpjDigits,
+  listZipEntryNames,
+  optFloat,
+  scanZipCsv,
+  scanZipCsvForNeedles,
+} from "../lib/zipCsv.ts";
 
 const REGISTRO_URL = "https://dados.cvm.gov.br/dados/FI/CAD/DADOS/registro_fundo_classe.zip";
 const DAILY_URL = "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_{ym}.zip";
+const CDA_URL = "https://dados.cvm.gov.br/dados/FI/DOC/CDA/DADOS/cda_fi_{ym}.zip";
+const CDA_LISTING_URL = "https://dados.cvm.gov.br/dados/FI/DOC/CDA/DADOS/";
+const DAILY_LISTING_URL = "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/";
 
 const CVM_TIMEOUT_MS = 45_000;
-const CVM_MAX_BYTES = 16_000_000;
+const CVM_MAX_BYTES = 32_000_000;
+const CVM_LISTING_MAX_BYTES = 2_000_000;
 const CATALOG_CLASS_CAP = 2_000;
 const DAILY_SCAN_CAP = 2_000;
+const HOLDINGS_SCAN_CAP = 5_000;
+const DAILY_MONTHS_MAX = 3;
+
+export type CvmDataset = "catalog" | "daily" | "holdings" | "periods";
+export type CvmPeriodProduct = "CDA" | "INF_DIARIO";
 
 async function fetchCvmZip(url: string): Promise<Uint8Array> {
   return getBytes(url, { maxBytes: CVM_MAX_BYTES, timeoutMs: CVM_TIMEOUT_MS });
@@ -177,9 +192,66 @@ async function catalogByName(zip: Uint8Array, q: string, limit: number) {
   return fundos.map((row) => mapFundo(row, classesByFundo.get(row.ID_Registro_Fundo ?? "") ?? []));
 }
 
-function currentYearMonth(): { year: number; month: number } {
-  const now = new Date();
-  return { year: now.getUTCFullYear(), month: now.getUTCMonth() + 1 };
+function formatYm(year: number, month: number): string {
+  return `${year}${String(month).padStart(2, "0")}`;
+}
+
+function addMonths(year: number, month: number, delta: number): { year: number; month: number } {
+  const absolute = year * 12 + (month - 1) + delta;
+  return { year: Math.floor(absolute / 12), month: (absolute % 12) + 1 };
+}
+
+function lookbackMonths(
+  endYear: number,
+  endMonth: number,
+  count: number,
+): { year: number; month: number }[] {
+  const out: { year: number; month: number }[] = [];
+  for (let i = count - 1; i >= 0; i -= 1) {
+    out.push(addMonths(endYear, endMonth, -i));
+  }
+  return out;
+}
+
+export function listCvmZipMonths(html: string, prefix: string): string[] {
+  const escaped = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`${escaped}(\\d{6})\\.zip`, "gi");
+  const months = new Set<string>();
+  for (const match of html.matchAll(re)) {
+    months.add(match[1]!);
+  }
+  return [...months].sort();
+}
+
+async function listPublishedMonths(url: string, prefix: string): Promise<string[]> {
+  const html = new TextDecoder("utf-8").decode(
+    await getBytes(url, { maxBytes: CVM_LISTING_MAX_BYTES, timeoutMs: 15_000 }),
+  );
+  return listCvmZipMonths(html, prefix);
+}
+
+async function resolveYearMonth(
+  args: { year?: number; month?: number },
+  listingUrl: string,
+  prefix: string,
+): Promise<{ year: number; month: number } | { error: string }> {
+  const hasYear = args.year !== undefined;
+  const hasMonth = args.month !== undefined;
+  if (hasYear !== hasMonth) {
+    return { error: "pass both `year` and `month`, or omit both for the latest published file" };
+  }
+  if (hasYear && hasMonth) {
+    if (args.year! < 2018 || args.month! < 1 || args.month! > 12) {
+      return { error: "year must be >= 2018 and month 1-12" };
+    }
+    return { year: args.year!, month: args.month! };
+  }
+  const published = await listPublishedMonths(listingUrl, prefix);
+  const latest = published.at(-1);
+  if (!latest) {
+    return { error: `no published files at ${listingUrl}` };
+  }
+  return { year: Number(latest.slice(0, 4)), month: Number(latest.slice(4, 6)) };
 }
 
 function mapDaily(row: Record<string, string>) {
@@ -197,16 +269,115 @@ function mapDaily(row: Record<string, string>) {
   };
 }
 
+function cdaBlockLabel(filename: string): string {
+  const base = filename.split("/").pop() ?? filename;
+  const upper = base.toUpperCase();
+  const parts = base.replace(/\.csv$/i, "").split("_");
+  if (parts.length >= 4 && parts[2] === "BLC") {
+    return `BLC_${parts[3]}`;
+  }
+  if (upper.includes("CONFID")) {
+    return base.toLowerCase().includes("fie") ? "FIE_CONFID" : "CONFID";
+  }
+  if (base.toLowerCase().startsWith("cda_fie")) {
+    return "FIE";
+  }
+  if (upper.includes("_PL_")) {
+    return "PL";
+  }
+  return "OTHER";
+}
+
+function mapHolding(row: Record<string, string>, bloco: string) {
+  return {
+    cnpj: row.CNPJ_FUNDO_CLASSE || row.CNPJ_FUNDO || "",
+    nome_fundo: row.DENOM_SOCIAL || row.DENOM_CLASSE || "",
+    dt_referencia: row.DT_COMPTC ?? "",
+    bloco,
+    tipo_aplicacao: row.TP_APLIC || null,
+    tipo_ativo: row.TP_ATIVO || null,
+    emissor: row.EMISSOR_LIGADO || row.EMISSOR || null,
+    cnpj_emissor: row.CNPJ_EMISSOR || row.CPF_CNPJ_EMISSOR || null,
+    tipo_negociacao: row.TP_NEGOC || null,
+    quantidade_final: optFloat(row.QT_POS_FINAL),
+    valor_mercado: optFloat(row.VL_MERC_POS_FINAL || row.VL_MERCADO || row.VL_MERC_POSICAO),
+    descricao: row.DS_ATIVO || row.CD_ATIVO || null,
+  };
+}
+
+function parseBlocks(raw: string | undefined): Set<string> | null {
+  if (!raw?.trim()) {
+    return null;
+  }
+  return new Set(
+    raw
+      .split(",")
+      .map((item) => item.trim().toUpperCase())
+      .filter(Boolean),
+  );
+}
+
+async function dailySeries(
+  digits: string,
+  year: number,
+  month: number,
+  limit: number,
+): Promise<ReturnType<typeof mapDaily>[]> {
+  const ym = formatYm(year, month);
+  const zip = await fetchCvmZip(DAILY_URL.replace("{ym}", ym));
+  const csvName = `inf_diario_fi_${ym}.csv`;
+  const rows = (
+    await scanZipCsvForNeedles(zip, csvName, cnpjNeedles(digits), Math.min(limit, DAILY_SCAN_CAP))
+  ).filter((row) => fieldCnpjEquals(row, ["CNPJ_FUNDO_CLASSE", "CNPJ_FUNDO"], digits));
+  return rows.map(mapDaily);
+}
+
+async function holdingsFromZip(
+  zip: Uint8Array,
+  digits: string,
+  blocks: Set<string> | null,
+  limit: number,
+) {
+  const needles = cnpjNeedles(digits);
+  const holdings: ReturnType<typeof mapHolding>[] = [];
+  for (const name of listZipEntryNames(zip)) {
+    if (!name.toLowerCase().endsWith(".csv")) {
+      continue;
+    }
+    const bloco = cdaBlockLabel(name);
+    if (blocks && !blocks.has(bloco)) {
+      continue;
+    }
+    const rows = (
+      await scanZipCsvForNeedles(zip, name, needles, Math.min(limit - holdings.length, HOLDINGS_SCAN_CAP))
+    ).filter((row) => fieldCnpjEquals(row, ["CNPJ_FUNDO_CLASSE", "CNPJ_FUNDO"], digits));
+    for (const row of rows) {
+      holdings.push(mapHolding(row, bloco));
+      if (holdings.length >= limit) {
+        return holdings;
+      }
+    }
+  }
+  return holdings;
+}
+
 export async function cvmFund(args: {
-  dataset?: "catalog" | "daily";
+  dataset?: CvmDataset;
   cnpj?: string;
   q?: string;
   year?: number;
   month?: number;
+  months?: number;
+  product?: CvmPeriodProduct;
+  blocks?: string;
   limit?: number;
 }) {
   const dataset = args.dataset ?? "catalog";
-  const limit = Math.min(args.limit ?? (dataset === "daily" ? 500 : 20), dataset === "daily" ? 2000 : 100);
+  const limit = Math.min(
+    args.limit ?? (dataset === "holdings" ? 2000 : dataset === "daily" ? 500 : 20),
+    dataset === "daily" || dataset === "holdings" ? 2000 : 100,
+  );
+
   if (dataset === "catalog") {
     const digits = cnpjDigits(args.cnpj);
     const q = args.q?.trim() ?? "";
@@ -219,28 +390,79 @@ export async function cvmFund(args: {
       : await catalogByName(zip, q, limit);
     return jsonResult(rows);
   }
+
+  if (dataset === "periods") {
+    const product = args.product ?? "CDA";
+    const listingUrl = product === "CDA" ? CDA_LISTING_URL : DAILY_LISTING_URL;
+    const prefix = product === "CDA" ? "cda_fi_" : "inf_diario_fi_";
+    const periods = await listPublishedMonths(listingUrl, prefix);
+    return jsonResult({
+      source: product === "CDA" ? "cvm_cda" : "cvm_inf_diario",
+      product,
+      latest: periods.at(-1) ?? null,
+      periods,
+    });
+  }
+
   const digits = cnpjDigits(args.cnpj);
   if (digits.length < 8) {
-    return errorResult("dataset=daily requires `cnpj`");
+    return errorResult(`dataset=${dataset} requires \`cnpj\``);
   }
-  const fallback = currentYearMonth();
-  const year = args.year ?? fallback.year;
-  const month = args.month ?? fallback.month;
-  if (year < 2021 || month < 1 || month > 12) {
-    return errorResult("dataset=daily requires year>=2021 and month 1-12");
+
+  if (dataset === "holdings") {
+    const resolved = await resolveYearMonth(args, CDA_LISTING_URL, "cda_fi_");
+    if ("error" in resolved) {
+      return errorResult(resolved.error);
+    }
+    const ym = formatYm(resolved.year, resolved.month);
+    const zip = await fetchCvmZip(CDA_URL.replace("{ym}", ym));
+    const holdings = await holdingsFromZip(zip, digits, parseBlocks(args.blocks), limit);
+    return jsonResult({
+      source: "cvm_cda",
+      year: resolved.year,
+      month: resolved.month,
+      cnpj: digits,
+      truncated: holdings.length >= limit,
+      note: "CDA is a delayed monthly feed. CONFID rows are confidential (sigilo), not a complete open book.",
+      holdings,
+    });
   }
-  const ym = `${year}${String(month).padStart(2, "0")}`;
-  const zip = await fetchCvmZip(DAILY_URL.replace("{ym}", ym));
-  const csvName = `inf_diario_fi_${ym}.csv`;
-  const rows = (
-    await scanZipCsvForNeedles(zip, csvName, cnpjNeedles(digits), Math.min(limit, DAILY_SCAN_CAP))
-  ).filter((row) => fieldCnpjEquals(row, ["CNPJ_FUNDO_CLASSE", "CNPJ_FUNDO"], digits));
+
+  const months = Math.min(Math.max(args.months ?? 1, 1), DAILY_MONTHS_MAX);
+  const resolved = await resolveYearMonth(args, DAILY_LISTING_URL, "inf_diario_fi_");
+  if ("error" in resolved) {
+    return errorResult(resolved.error);
+  }
+  const window = lookbackMonths(resolved.year, resolved.month, months);
+  const series: ReturnType<typeof mapDaily>[] = [];
+  const missing: string[] = [];
+  let remaining = limit;
+  for (const stamp of window) {
+    const ym = formatYm(stamp.year, stamp.month);
+    try {
+      const chunk = await dailySeries(digits, stamp.year, stamp.month, remaining);
+      series.push(...chunk);
+      remaining = Math.max(limit - series.length, 0);
+      if (remaining === 0) {
+        break;
+      }
+    } catch (error) {
+      if (error instanceof UpstreamError && error.status === 404) {
+        missing.push(ym);
+        continue;
+      }
+      throw error;
+    }
+  }
   return jsonResult({
     source: "cvm_inf_diario",
-    year,
-    month,
+    year: resolved.year,
+    month: resolved.month,
+    months,
+    from: formatYm(window[0]!.year, window[0]!.month),
+    to: formatYm(resolved.year, resolved.month),
     cnpj: digits,
-    note: "CDA carteira is a separate delayed monthly feed and is not included.",
-    series: rows.map(mapDaily),
+    missing,
+    series,
   });
 }

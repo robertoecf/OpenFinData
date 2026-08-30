@@ -1,4 +1,4 @@
-const USER_AGENT = "openfindata-mcp/0.3.1 (+https://github.com/robertoecf/OpenFinData)";
+const USER_AGENT = "openfindata-mcp/0.3.2 (+https://github.com/robertoecf/OpenFinData)";
 
 export const FETCH_TIMEOUT_MS = 15_000;
 export const MAX_RESPONSE_BYTES = 2_000_000;

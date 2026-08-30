@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { deflateRawSync } from "node:zlib";
 import { afterEach, test } from "node:test";
-import { cvmFund } from "./cvm.ts";
-import { scanZipCsvForNeedles, zipFile } from "../lib/zipCsv.ts";
+import { cvmFund, listCvmZipMonths } from "./cvm.ts";
+import { listZipEntryNames, scanZipCsvForNeedles, zipFile } from "../lib/zipCsv.ts";
 
 function crc32(data: Uint8Array): number {
   let crc = 0xffffffff;
@@ -91,15 +91,38 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
-function mockZip(urlContains: string, zip: Uint8Array) {
+function mockRoutes(routes: Array<{ match: string; body: Uint8Array | string; status?: number }>) {
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
-    if (!url.includes(urlContains)) {
+    const route = routes
+      .filter((item) => url.includes(item.match))
+      .sort((a, b) => b.match.length - a.match.length)[0];
+    if (!route) {
       return new Response("missing", { status: 404 });
     }
-    return new Response(zip, { status: 200 });
+    return new Response(route.body, { status: route.status ?? 200 });
   }) as typeof fetch;
 }
+
+function mockZip(urlContains: string, zip: Uint8Array) {
+  mockRoutes([{ match: urlContains, body: zip }]);
+}
+
+const CDA_HTML =
+  '<a href="cda_fi_202606.zip">cda_fi_202606.zip</a><a href="cda_fi_202607.zip">cda_fi_202607.zip</a>';
+const INF_HTML =
+  '<a href="inf_diario_fi_202607.zip">inf_diario_fi_202607.zip</a><a href="inf_diario_fi_202608.zip">inf_diario_fi_202608.zip</a>';
+
+const CDA_BLC1 =
+  "CNPJ_FUNDO_CLASSE;DENOM_SOCIAL;DT_COMPTC;TP_APLIC;TP_ATIVO;EMISSOR;QT_POS_FINAL;VL_MERC_POS_FINAL;DS_ATIVO\n" +
+  "38.729.027/0001-92;AMW PREV;2026-07-31;Titulos Publicos;LFT;TESOURO;10;1000;LFT 2027\n" +
+  "21.494.444/0001-09;OUTRO;2026-07-31;Titulos Publicos;LFT;TESOURO;1;10;LFT 2027\n";
+const CDA_BLC2 =
+  "CNPJ_FUNDO_CLASSE;DENOM_SOCIAL;DT_COMPTC;TP_APLIC;TP_ATIVO;EMISSOR;QT_POS_FINAL;VL_MERC_POS_FINAL;DS_ATIVO\n" +
+  "38.729.027/0001-92;AMW PREV;2026-07-31;Cotas de Fundos;Cota;OUTRO FUNDO;5;500;Fundo X\n";
+const CDA_CONFID =
+  "CNPJ_FUNDO_CLASSE;DENOM_SOCIAL;DT_COMPTC;TP_APLIC\n" +
+  "38.729.027/0001-92;AMW PREV;2026-07-31;Sigilo\n";
 
 test("zipFile reads stored CSV", async () => {
   const zip = storeZip({ "registro_fundo.csv": FUNDO_CSV });
@@ -177,4 +200,143 @@ test("cvm_fund daily matches digit CNPJ to punctuated INF_DIARIO", async () => {
   assert.equal(body.series.length, 1);
   assert.equal(body.series[0]?.cnpj, "38.729.027/0001-92");
   assert.equal(body.series[0]?.vl_quota, 2.94);
+});
+
+test("listCvmZipMonths reads only matching monthly zips", () => {
+  const months = listCvmZipMonths(
+    `${CDA_HTML}<a href="cda_fie_202607.zip">skip</a><a href="readme.txt">no</a>`,
+    "cda_fi_",
+  );
+  assert.deepEqual(months, ["202606", "202607"]);
+});
+
+test("listZipEntryNames walks every local header", () => {
+  const zip = storeZip({ "a.csv": "x\n", "b.csv": "y\n" });
+  assert.deepEqual(listZipEntryNames(zip), ["a.csv", "b.csv"]);
+});
+
+test("cvm_fund periods lists CDA stamps and latest", async () => {
+  mockRoutes([{ match: "/CDA/DADOS/", body: CDA_HTML }]);
+  const result = await cvmFund({ dataset: "periods" });
+  assert.equal(result.isError, undefined);
+  const body = JSON.parse(result.content[0].text) as { latest: string; periods: string[] };
+  assert.equal(body.latest, "202607");
+  assert.deepEqual(body.periods, ["202606", "202607"]);
+});
+
+test("cvm_fund holdings requires cnpj", async () => {
+  const result = await cvmFund({ dataset: "holdings", year: 2026, month: 7 });
+  assert.equal(result.isError, true);
+});
+
+test("cvm_fund holdings scans every CDA block for one CNPJ", async () => {
+  mockRoutes([
+    {
+      match: "cda_fi_202607.zip",
+      body: storeZip({
+        "cda_fi_BLC_1_202607.csv": CDA_BLC1,
+        "cda_fi_BLC_2_202607.csv": CDA_BLC2,
+        "cda_fi_CONFID_202607.csv": CDA_CONFID,
+      }),
+    },
+  ]);
+  const result = await cvmFund({
+    dataset: "holdings",
+    cnpj: "38729027000192",
+    year: 2026,
+    month: 7,
+  });
+  assert.equal(result.isError, undefined);
+  const body = JSON.parse(result.content[0].text) as {
+    holdings: Array<{ bloco: string; valor_mercado: number | null }>;
+  };
+  assert.equal(body.holdings.length, 3);
+  assert.deepEqual(
+    body.holdings.map((row) => row.bloco),
+    ["BLC_1", "BLC_2", "CONFID"],
+  );
+  assert.equal(body.holdings[0]?.valor_mercado, 1000);
+});
+
+test("cvm_fund holdings omits year/month and uses the latest CDA stamp", async () => {
+  mockRoutes([
+    { match: "/CDA/DADOS/", body: CDA_HTML },
+    {
+      match: "cda_fi_202607.zip",
+      body: storeZip({ "cda_fi_BLC_1_202607.csv": CDA_BLC1 }),
+    },
+  ]);
+  const result = await cvmFund({ dataset: "holdings", cnpj: "38.729.027/0001-92" });
+  assert.equal(result.isError, undefined);
+  const body = JSON.parse(result.content[0].text) as { year: number; month: number; holdings: unknown[] };
+  assert.equal(body.year, 2026);
+  assert.equal(body.month, 7);
+  assert.equal(body.holdings.length, 1);
+});
+
+test("cvm_fund holdings honors a block whitelist", async () => {
+  mockRoutes([
+    {
+      match: "cda_fi_202607.zip",
+      body: storeZip({
+        "cda_fi_BLC_1_202607.csv": CDA_BLC1,
+        "cda_fi_BLC_2_202607.csv": CDA_BLC2,
+      }),
+    },
+  ]);
+  const result = await cvmFund({
+    dataset: "holdings",
+    cnpj: "38729027000192",
+    year: 2026,
+    month: 7,
+    blocks: "BLC_2",
+  });
+  assert.equal(result.isError, undefined);
+  const body = JSON.parse(result.content[0].text) as { holdings: Array<{ bloco: string }> };
+  assert.equal(body.holdings.length, 1);
+  assert.equal(body.holdings[0]?.bloco, "BLC_2");
+});
+
+test("cvm_fund daily months=2 concatenates two INF_DIARIO months", async () => {
+  const july =
+    "TP_FUNDO_CLASSE;CNPJ_FUNDO_CLASSE;ID_SUBCLASSE;DT_COMPTC;VL_TOTAL;VL_QUOTA;VL_PATRIM_LIQ;CAPTC_DIA;RESG_DIA;NR_COTST\n" +
+    "CLASSES - FIF;38.729.027/0001-92;;2026-07-31;1;2.90;100;0;0;1\n";
+  mockRoutes([
+    { match: "inf_diario_fi_202607.zip", body: storeZip({ "inf_diario_fi_202607.csv": july }) },
+    { match: "inf_diario_fi_202608.zip", body: storeZip({ "inf_diario_fi_202608.csv": DAILY_CSV }) },
+  ]);
+  const result = await cvmFund({
+    dataset: "daily",
+    cnpj: "38729027000192",
+    year: 2026,
+    month: 8,
+    months: 2,
+  });
+  assert.equal(result.isError, undefined);
+  const body = JSON.parse(result.content[0].text) as {
+    from: string;
+    to: string;
+    series: Array<{ dt_comptc: string; vl_quota: number }>;
+  };
+  assert.equal(body.from, "202607");
+  assert.equal(body.to, "202608");
+  assert.equal(body.series.length, 2);
+  assert.equal(body.series[0]?.vl_quota, 2.9);
+  assert.equal(body.series[1]?.vl_quota, 2.94);
+});
+
+test("cvm_fund daily without year/month uses the latest INF_DIARIO stamp", async () => {
+  mockRoutes([
+    { match: "/INF_DIARIO/DADOS/", body: INF_HTML },
+    {
+      match: "inf_diario_fi_202608.zip",
+      body: storeZip({ "inf_diario_fi_202608.csv": DAILY_CSV }),
+    },
+  ]);
+  const result = await cvmFund({ dataset: "daily", cnpj: "38729027000192" });
+  assert.equal(result.isError, undefined);
+  const body = JSON.parse(result.content[0].text) as { year: number; month: number; series: unknown[] };
+  assert.equal(body.year, 2026);
+  assert.equal(body.month, 8);
+  assert.equal(body.series.length, 1);
 });
