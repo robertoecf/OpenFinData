@@ -309,6 +309,23 @@ def related_quote_cnpjs(funds: list[FundCadastro], requested_digits: str) -> lis
     return out
 
 
+def continuation_class_cnpj(funds: list[FundCadastro], requested_digits: str) -> str | None:
+    """Canonical class CNPJ for a single-class 555→175 stitch, else None."""
+    requested = cnpj_digits(requested_digits)
+    for fund in funds:
+        class_digits = list(
+            dict.fromkeys(
+                cnpj_digits(classe.cnpj_classe)
+                for classe in fund.classes
+                if cnpj_digits(classe.cnpj_classe)
+            )
+        )
+        matched = requested == cnpj_digits(fund.cnpj) or requested in class_digits
+        if matched and len(class_digits) == 1:
+            return class_digits[0]
+    return None
+
+
 def quote_served_label(funds: list[FundCadastro], cnpj: str, id_subclasse: str) -> dict[str, str]:
     """Nicename / CVM / ANBIMA class for the series actually returned."""
     digits = cnpj_digits(cnpj)

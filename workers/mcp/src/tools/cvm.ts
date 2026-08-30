@@ -258,6 +258,20 @@ type CatalogFund = {
   classes: CatalogClasse[];
 };
 
+export function continuationClassCnpj(funds: CatalogFund[], requestedDigits: string): string | null {
+  const requested = cnpjDigits(requestedDigits);
+  for (const fund of funds) {
+    const classDigits = [
+      ...new Set(fund.classes.map((classe) => cnpjDigits(classe.cnpj_classe)).filter(Boolean)),
+    ];
+    const matched = requested === cnpjDigits(fund.cnpj) || classDigits.includes(requested);
+    if (matched && classDigits.length === 1) {
+      return classDigits[0] ?? null;
+    }
+  }
+  return null;
+}
+
 export function relatedQuoteCnpjs(funds: CatalogFund[], requestedDigits: string): string[] {
   const requested = cnpjDigits(requestedDigits);
   const out: string[] = [];
@@ -326,17 +340,47 @@ function quoteServedLabel(funds: CatalogFund[], cnpj: string, idSubclasse: strin
   };
 }
 
-function parseIsoMonth(value: string): { year: number; month: number } | { error: string } {
+function parseIsoDate(value: string): { year: number; month: number; day: string } | { error: string } {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) {
     return { error: "start/end must be YYYY-MM-DD" };
   }
   const year = Number(match[1]);
   const month = Number(match[2]);
-  if (month < 1 || month > 12) {
-    return { error: "start/end month must be 1-12" };
+  const day = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return { error: "start/end must be a real calendar date" };
   }
-  return { year, month };
+  return { year, month, day: value };
+}
+
+function inDateRange(dtComptc: string, start: string | undefined, end: string | undefined): boolean {
+  if (start && dtComptc < start) {
+    return false;
+  }
+  return !(end && dtComptc > end);
+}
+
+function dedupeDailyRows(
+  series: ReturnType<typeof mapDaily>[],
+  preferCnpj: string,
+): ReturnType<typeof mapDaily>[] {
+  const chosen = new Map<string, ReturnType<typeof mapDaily>>();
+  for (const row of series) {
+    const key = `${row.dt_comptc}|${row.id_subclasse}`;
+    const prev = chosen.get(key);
+    if (!prev || cnpjDigits(row.cnpj) === preferCnpj) {
+      chosen.set(key, row);
+    }
+  }
+  return [...chosen.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([, row]) => row);
 }
 
 function stampsInclusive(
@@ -481,10 +525,6 @@ async function dailySeries(
   return rows.map(mapDaily);
 }
 
-function continuationTarget(cadastro: CatalogFund[], requested: string, needles: string[]): string | null {
-  return cadastro.length > 0 && needles.length === 2 ? requested : null;
-}
-
 function groupDailySeries(
   series: ReturnType<typeof mapDaily>[],
   cadastro: CatalogFund[],
@@ -492,7 +532,7 @@ function groupDailySeries(
   requested: string,
   needles: string[],
 ) {
-  const target = continuationTarget(cadastro, requested, needles);
+  const target = continuationClassCnpj(cadastro, requested);
   const groups = new Map<string, ReturnType<typeof mapDaily>[]>();
   for (const row of series) {
     const rowDigits = cnpjDigits(row.cnpj);
@@ -642,8 +682,8 @@ export async function cvmFund(args: {
     if (!args.start || !args.end) {
       return errorResult("pass both `start` and `end`, or omit both");
     }
-    const start = parseIsoMonth(args.start);
-    const end = parseIsoMonth(args.end);
+    const start = parseIsoDate(args.start);
+    const end = parseIsoDate(args.end);
     if ("error" in start) {
       return errorResult(start.error);
     }
@@ -664,14 +704,21 @@ export async function cvmFund(args: {
   }
   const cadastro = await loadCatalogBestEffort(digits);
   const needles = relatedQuoteCnpjs(cadastro, digits);
+  const prefer = continuationClassCnpj(cadastro, digits) ?? digits;
+  const dateStart = args.start && args.end ? args.start : undefined;
+  const dateEnd = args.start && args.end ? args.end : undefined;
   const series: ReturnType<typeof mapDaily>[] = [];
   const missing: string[] = [];
   let remaining = limit;
   for (const stamp of window) {
     const ym = formatYm(stamp.year, stamp.month);
     try {
-      const chunk = await dailySeries(needles, stamp.year, stamp.month, remaining);
-      series.push(...chunk);
+      const chunk = (await dailySeries(needles, stamp.year, stamp.month, DAILY_SCAN_CAP)).filter(
+        (row) =>
+          (!args.id_subclasse || row.id_subclasse === args.id_subclasse) &&
+          inDateRange(row.dt_comptc, dateStart, dateEnd),
+      );
+      series.push(...chunk.slice(0, remaining));
       remaining = Math.max(limit - series.length, 0);
       if (remaining === 0) {
         break;
@@ -684,9 +731,7 @@ export async function cvmFund(args: {
       throw error;
     }
   }
-  const filtered = args.id_subclasse
-    ? series.filter((row) => row.id_subclasse === args.id_subclasse)
-    : series;
+  const filtered = dedupeDailyRows(series, prefer);
   const grouped = groupDailySeries(filtered, cadastro, Boolean(args.compact), digits, needles);
   const last = window.at(-1);
   return jsonResult({
@@ -696,9 +741,12 @@ export async function cvmFund(args: {
     months: window.length,
     from: window[0] ? formatYm(window[0].year, window[0].month) : null,
     to: last ? formatYm(last.year, last.month) : null,
+    start: dateStart ?? null,
+    end: dateEnd ?? null,
     cnpj: digits,
     needles,
     missing,
+    truncated: remaining === 0,
     ...grouped,
     ...(args.compact ? {} : { series: filtered }),
   });

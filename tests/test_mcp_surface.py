@@ -216,7 +216,8 @@ def test_cvm_fund_daily_months_lookback() -> None:
     )
     assert r.status_code == 200
     body = r.json()
-    assert len(body["series"]) == 4
+    assert len(body["series"]) == 2
+    assert {row["dt_comptc"] for row in body["series"]} == {"2026-08-03", "2026-08-04"}
     assert body["from"] == "202607"
     assert body["to"] == "202608"
 
@@ -248,8 +249,29 @@ def test_cvm_fund_daily_start_end_and_cnpj_required() -> None:
     assert r.status_code == 200
     body = r.json()
     assert "series" not in body
-    assert body["served"][0]["points"] == 4
+    assert body["served"][0]["points"] == 2
     assert body["served"][0]["nicename"].startswith("AMW")
+    one_day = TestClient(mcp_app).get(
+        "/cvm/fund",
+        params={
+            "dataset": "daily",
+            "cnpj": "38729027000192",
+            "start": "2026-08-04",
+            "end": "2026-08-04",
+        },
+    )
+    assert one_day.status_code == 200
+    assert [row["dt_comptc"] for row in one_day.json()["series"]] == ["2026-08-04"]
+    bad_day = TestClient(mcp_app).get(
+        "/cvm/fund",
+        params={
+            "dataset": "daily",
+            "cnpj": "38729027000192",
+            "start": "2026-02-31",
+            "end": "2026-03-01",
+        },
+    )
+    assert bad_day.status_code == 400
     too_long = TestClient(mcp_app).get(
         "/cvm/fund",
         params={

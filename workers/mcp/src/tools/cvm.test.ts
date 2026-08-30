@@ -444,6 +444,76 @@ test("cvm_fund daily start/end stitches 555 fund CNPJ onto a single class", asyn
   assert.equal(body.served[0]?.points, 2);
 });
 
+test("cvm_fund daily start/end keeps only the requested calendar days", async () => {
+  mockRoutes([
+    {
+      match: "registro_fundo_classe.zip",
+      body: storeZip({
+        "registro_fundo.csv": FUNDO_CSV,
+        "registro_classe.csv": CLASSE_CSV,
+        "registro_subclasse.csv": SUB_CSV,
+      }),
+    },
+    { match: "inf_diario_fi_202608.zip", body: storeZip({ "inf_diario_fi_202608.csv": DAILY_CSV }) },
+  ]);
+  const result = await cvmFund({
+    dataset: "daily",
+    cnpj: "38729027000192",
+    start: "2026-08-03",
+    end: "2026-08-03",
+  });
+  assert.equal(result.isError, undefined);
+  const body = JSON.parse(result.content[0].text) as { series: Array<{ dt_comptc: string }> };
+  assert.deepEqual(
+    body.series.map((row) => row.dt_comptc),
+    ["2026-08-03"],
+  );
+});
+
+test("cvm_fund daily rejects an impossible calendar date", async () => {
+  const result = await cvmFund({
+    dataset: "daily",
+    cnpj: "38729027000192",
+    start: "2026-02-31",
+    end: "2026-03-01",
+  });
+  assert.equal(result.isError, true);
+});
+
+test("cvm_fund daily applies id_subclasse before the point limit", async () => {
+  const daily =
+    "TP_FUNDO_CLASSE;CNPJ_FUNDO_CLASSE;ID_SUBCLASSE;DT_COMPTC;VL_TOTAL;VL_QUOTA;VL_PATRIM_LIQ;CAPTC_DIA;RESG_DIA;NR_COTST\n" +
+    "CLASSES - FIF;38.729.027/0001-92;S1;2026-08-03;1;1.00;100;0;0;1\n" +
+    "CLASSES - FIF;38.729.027/0001-92;S1;2026-08-04;1;1.01;101;0;0;1\n" +
+    "CLASSES - FIF;38.729.027/0001-92;S2;2026-08-03;1;2.00;200;0;0;10\n";
+  mockRoutes([
+    {
+      match: "registro_fundo_classe.zip",
+      body: storeZip({
+        "registro_fundo.csv": FUNDO_CSV,
+        "registro_classe.csv": CLASSE_CSV,
+        "registro_subclasse.csv": SUB_CSV,
+      }),
+    },
+    { match: "inf_diario_fi_202608.zip", body: storeZip({ "inf_diario_fi_202608.csv": daily }) },
+  ]);
+  const result = await cvmFund({
+    dataset: "daily",
+    cnpj: "38729027000192",
+    year: 2026,
+    month: 8,
+    id_subclasse: "S2",
+    limit: 1,
+  });
+  assert.equal(result.isError, undefined);
+  const body = JSON.parse(result.content[0].text) as {
+    series: Array<{ id_subclasse: string; vl_quota: number }>;
+  };
+  assert.equal(body.series.length, 1);
+  assert.equal(body.series[0]?.id_subclasse, "S2");
+  assert.equal(body.series[0]?.vl_quota, 2);
+});
+
 test("cvm_fund daily does not collapse two subclasses", async () => {
   const daily =
     "TP_FUNDO_CLASSE;CNPJ_FUNDO_CLASSE;ID_SUBCLASSE;DT_COMPTC;VL_TOTAL;VL_QUOTA;VL_PATRIM_LIQ;CAPTC_DIA;RESG_DIA;NR_COTST\n" +

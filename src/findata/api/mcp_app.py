@@ -50,6 +50,7 @@ from findata.sources.basedosdados import catalog
 from findata.sources.bcb import focus, ptax, sgs
 from findata.sources.cvm import (
     companies,
+    continuation_class_cnpj,
     fca,
     fidc,
     fii,
@@ -150,6 +151,26 @@ async def _daily_month_stamps(
     return _lookback_months(resolved_year, resolved_month, months)
 
 
+def _row_field(row: Any, name: str, default: Any = "") -> Any:
+    return getattr(row, name, default) if not isinstance(row, dict) else row.get(name, default)
+
+
+def _dedupe_daily_rows(series: list[Any], prefer_cnpj: str) -> list[Any]:
+    chosen: dict[tuple[str, str], Any] = {}
+    for row in series:
+        key = (str(_row_field(row, "dt_comptc")), str(_row_field(row, "id_subclasse")))
+        prev = chosen.get(key)
+        if prev is None or cnpj_digits(str(_row_field(row, "cnpj"))) == prefer_cnpj:
+            chosen[key] = row
+    return [chosen[key] for key in sorted(chosen)]
+
+
+def _in_date_range(dt_comptc: str, start: str | None, end: str | None) -> bool:
+    if start and dt_comptc < start:
+        return False
+    return not (end and dt_comptc > end)
+
+
 def _group_daily_series(
     series: list[Any],
     cadastro: list[Any],
@@ -157,19 +178,15 @@ def _group_daily_series(
     requested: str,
     needles: list[str],
 ) -> dict[str, Any]:
-    target = requested if cadastro and len(needles) == _STITCH_SIBLING_CNPJS else ""
+    target = continuation_class_cnpj(cadastro, requested) or ""
+    if not target and cadastro and len(needles) == _STITCH_SIBLING_CNPJS:
+        target = requested
     groups: dict[tuple[str, str], list[Any]] = {}
     for row in series:
-        cnpj = getattr(row, "cnpj", "") if not isinstance(row, dict) else row.get("cnpj", "")
-        sub = (
-            getattr(row, "id_subclasse", "")
-            if not isinstance(row, dict)
-            else row.get("id_subclasse", "")
-        )
-        row_digits = cnpj_digits(str(cnpj))
+        row_digits = cnpj_digits(str(_row_field(row, "cnpj")))
+        sub = str(_row_field(row, "id_subclasse"))
         group_cnpj = target if target and row_digits in needles else row_digits
-        key = (group_cnpj, str(sub or ""))
-        groups.setdefault(key, []).append(row)
+        groups.setdefault((group_cnpj, sub), []).append(row)
     served: list[dict[str, Any]] = []
     for (cnpj, sub), rows in groups.items():
         label = quote_served_label(cadastro, cnpj, sub)
@@ -180,16 +197,8 @@ def _group_daily_series(
             "points": len(rows),
         }
         if compact:
-            item["dates"] = [
-                getattr(row, "dt_comptc", "")
-                if not isinstance(row, dict)
-                else row.get("dt_comptc", "")
-                for row in rows
-            ]
-            item["vl_quota"] = [
-                getattr(row, "vl_quota", 0) if not isinstance(row, dict) else row.get("vl_quota", 0)
-                for row in rows
-            ]
+            item["dates"] = [str(_row_field(row, "dt_comptc")) for row in rows]
+            item["vl_quota"] = [_row_field(row, "vl_quota", 0) for row in rows]
         served.append(item)
     pick_required = len(served) > 1
     note = (
@@ -226,8 +235,10 @@ async def _cvm_fund_quotes(
     except httpx.HTTPError:
         cadastro = []
     needles = related_quote_cnpjs(cadastro, cnpj) if cadastro else [cnpj]
+    prefer = continuation_class_cnpj(cadastro, cnpj) or cnpj_digits(cnpj)
     series: list[Any] = []
     missing: list[str] = []
+    truncated = False
     for stamp_year, stamp_month in stamps:
         try:
             chunk = await funds.get_fund_daily(stamp_year, stamp_month, ",".join(needles))
@@ -236,30 +247,30 @@ async def _cvm_fund_quotes(
                 missing.append(f"{stamp_year}{stamp_month:02d}")
                 continue
             raise
-        series.extend(chunk)
+        kept = [
+            row
+            for row in chunk
+            if (not id_subclasse or str(_row_field(row, "id_subclasse")) == id_subclasse)
+            and _in_date_range(str(_row_field(row, "dt_comptc")), start, end)
+        ]
+        series.extend(kept)
         if len(series) >= limit:
             series = series[:limit]
+            truncated = True
             break
-    if id_subclasse:
-        series = [
-            row
-            for row in series
-            if (
-                getattr(row, "id_subclasse", "")
-                if not isinstance(row, dict)
-                else row.get("id_subclasse", "")
-            )
-            == id_subclasse
-        ]
+    series = _dedupe_daily_rows(series, prefer)
     payload = _group_daily_series(series, cadastro, compact, cnpj_digits(cnpj), needles)
     payload.update(
         {
             "cnpj": cnpj_digits(cnpj),
             "from": f"{stamps[0][0]}{stamps[0][1]:02d}" if stamps else None,
             "to": f"{stamps[-1][0]}{stamps[-1][1]:02d}" if stamps else None,
+            "start": start,
+            "end": end,
             "months": len(stamps),
             "needles": needles,
             "missing": missing,
+            "truncated": truncated,
         }
     )
     return payload
