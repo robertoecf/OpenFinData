@@ -24,7 +24,7 @@ function wrap<T>(run: (args: T) => Promise<ToolResult>) {
 export function createServer() {
   const server = new McpServer({
     name: "openfindata",
-    version: "0.3.1",
+    version: "0.3.2",
     websiteUrl: "https://openfindata.com.br",
   });
 
@@ -141,13 +141,19 @@ export function createServer() {
     "cvm_fund",
     {
       description:
-        "CVM fund registry + open-fund cota series. catalog: RCVM 175 cadastro by CNPJ or name (any registered type; forma_condominio says Aberto/Fechado). daily: INF_DIARIO cota/PL/cotistas for one month (fundos abertos). Not CDA carteira. Not Mais Retorno.",
+        "CVM open-fund raw layer. catalog: RCVM 175 cadastro by CNPJ or name. daily: INF_DIARIO cota/PL/cotistas (omit year/month for latest published month; months=1..3 lookback). periods: available CDA or INF_DIARIO YYYYMM stamps. holdings: CDA carteira for one month (omit year/month for latest; CONFID is sigilo, not a complete open book). Not Mais Retorno.",
       inputSchema: {
-        dataset: z.enum(["catalog", "daily"]).default("catalog"),
+        dataset: z.enum(["catalog", "daily", "holdings", "periods"]).default("catalog"),
         cnpj: z.string().optional().describe("Fund CNPJ, punctuated or digits"),
         q: z.string().optional().describe("catalog: name fragment when CNPJ is unknown"),
-        year: z.number().int().min(2021).optional(),
+        year: z.number().int().min(2018).optional(),
         month: z.number().int().min(1).max(12).optional(),
+        months: z.number().int().min(1).max(3).optional().describe("daily: lookback months including the end month"),
+        product: z.enum(["CDA", "INF_DIARIO"]).optional().describe("periods: which directory to list"),
+        blocks: z
+          .string()
+          .optional()
+          .describe("holdings: comma list such as BLC_1,BLC_4 (BLC_1..8, CONFID, PL, FIE)"),
         limit: z.number().int().min(1).max(2000).optional(),
       },
     },

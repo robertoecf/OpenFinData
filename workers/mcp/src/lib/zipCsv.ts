@@ -53,6 +53,27 @@ function findZipEntry(zip: Uint8Array, name: string): ZipEntry {
   throw new Error(`zip entry not found: ${name}`);
 }
 
+export function listZipEntryNames(zip: Uint8Array): string[] {
+  const names: string[] = [];
+  let offset = 0;
+  while (offset + 30 <= zip.length) {
+    const sig = u32(zip, offset);
+    if (sig === CENTRAL_SIG) {
+      break;
+    }
+    if (sig !== LOCAL_SIG) {
+      throw new Error("invalid zip local header");
+    }
+    const compSize = u32(zip, offset + 18);
+    const nameLen = u16(zip, offset + 26);
+    const extraLen = u16(zip, offset + 28);
+    const nameStart = offset + 30;
+    names.push(LATIN1.decode(zip.subarray(nameStart, nameStart + nameLen)));
+    offset = nameStart + nameLen + extraLen + compSize;
+  }
+  return names;
+}
+
 function inflateRawStream(data: Uint8Array): ReadableStream<Uint8Array> {
   return new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
 }

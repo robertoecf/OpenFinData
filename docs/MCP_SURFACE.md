@@ -6,8 +6,8 @@
 > and [`docs/DEPLOY_WORKERS_MCP.md`](DEPLOY_WORKERS_MCP.md). Public `/mcp` is
 > 60 req/60s per IP with a 20/10s burst; overflow is 429 + Retry-After (no queue,
 > no code mode, no API key). Worker tools: the 9 JSON macro sources plus
-> `cvm_fund` (RCVM 175 cadastro + INF_DIARIO). CDA/lâmina/perfil stay on
-> the internal FastAPI catalog below.
+> `cvm_fund` (RCVM 175 cadastro + INF_DIARIO + CDA holdings/periods).
+> Lâmina/perfil stay on the internal FastAPI catalog below.
 
 ## Problem
 
@@ -86,7 +86,7 @@ findata_run_code                                         (code mode, opt-in)
 | `bcb_ptax` | `/ptax/usd`, `/ptax/usd/period`, `/ptax/{currency}` | `start`+`end` → period |
 | `bcb_focus` | `/focus/{indicators,annual,monthly,selic,top5}` | `horizon`, `panel`, `indicator` |
 | `cvm_company` | companies search/list, `fca/*`, `ipe` | `dataset=search\|list\|fca_*\|filings` |
-| `cvm_fund` | `funds`, `funds/cadastro`, `funds/{daily,holdings,lamina,profile,periods}`, returns | `dataset`; `cnpj`/`q` → RCVM 175 |
+| `cvm_fund` | `funds`, `funds/cadastro`, `funds/{daily,holdings,lamina,profile,periods}`, returns | `dataset`; `cnpj`/`q` → RCVM 175; omit year/month → latest CDA/INF_DIARIO |
 | `cvm_structured_fund` | `funds/{fii,fidc,fip}/*` | `kind` + `dataset` |
 | `b3_index` | index portfolio + monthly + list | `dataset`, omit `symbol` to list |
 | `tesouro_bonds` | bonds list/search/history | `dataset` |
@@ -101,7 +101,7 @@ findata_run_code                                         (code mode, opt-in)
   deliverable, not an afterthought.
 - **Consolidation can hide endpoint-specific params behind an enum.** Mitigated
   by documenting each `dataset`/`kind` value and validating bad combinations with
-  a `400` (e.g. `cvm_fund dataset=holdings` requires `cnpj`+`month`), matching the
+  a `400` (e.g. `cvm_fund dataset=holdings` requires `cnpj`; month defaults to latest), matching the
   REST API's `ValueError → 400` behaviour.
 - **Discoverability of rare endpoints.** A handful of niche REST routes are not
   individually surfaced as tools. They remain fully reachable over REST and via
@@ -122,4 +122,6 @@ local/agent use. A production deployment should run it in a real sandbox
 - `bcb_ptax(start=2024-01-02, end=2024-01-05)` → daily PTAX USD series (the handoff's headline flow).
 - `cvm_fund(dataset=catalog, cnpj="38.729.027/0001-92")` → cadastro RCVM 175 (classe, condomínio, PL).
 - `cvm_fund(dataset=daily, cnpj="38729027000192", year=2026, month=8)` → INF_DIARIO (cota/PL/cotistas).
+- `cvm_fund(dataset=periods, product="CDA")` → YYYYMM stamps + `latest`.
+- `cvm_fund(dataset=holdings, cnpj="38729027000192")` → latest CDA carteira (CONFID = sigilo).
 - `findata_run_code("import findata; ...")` → runs in the sandbox, returns captured stdout.

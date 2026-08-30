@@ -12,12 +12,19 @@ All assertions are offline, no live gov-API calls.
 from __future__ import annotations
 
 import importlib
+import re
 
+import httpx
 import pytest
+import respx
 from fastapi.testclient import TestClient
 
 from findata.api.app import app
 from findata.api.mcp_app import mcp_app
+from findata.http_client import clear_cache
+from findata.sources.cvm._directory import _listing_cache
+from tests.test_cvm_fund_cadastro import _daily_zip
+from tests.test_cvm_funds import _LISTING_HTML, _make_cda_zip
 
 EXPECTED_TOOLS = 25  # curated tools with code mode OFF (the default)
 EXPECTED_REST_OPERATIONS = 97  # all REST routes (unconditional); bump when the surface changes
@@ -103,10 +110,19 @@ def test_consolidated_tool_validates_missing_selector_args() -> None:
     assert "year" in r.json()["detail"]
 
 
-def test_cvm_fund_holdings_requires_cnpj_and_month() -> None:
-    r = TestClient(mcp_app).get("/cvm/fund", params={"dataset": "holdings", "year": 2024})
+def test_cvm_fund_holdings_requires_cnpj() -> None:
+    r = TestClient(mcp_app).get("/cvm/fund", params={"dataset": "holdings"})
     assert r.status_code == 400
     assert "cnpj" in r.json()["detail"]
+
+
+def test_cvm_fund_holdings_year_without_month_is_400() -> None:
+    r = TestClient(mcp_app).get(
+        "/cvm/fund",
+        params={"dataset": "holdings", "cnpj": "12.345.678/0001-99", "year": 2024},
+    )
+    assert r.status_code == 400
+    assert "year" in r.json()["detail"] or "month" in r.json()["detail"]
 
 
 # ── code-mode gating ───────────────────────────────────────────────
@@ -154,3 +170,46 @@ def test_structured_fund_fip_rejects_dataset() -> None:
         "/cvm/structured-fund", params={"kind": "fip", "year": 2024, "dataset": "geral"}
     )
     assert r.status_code == 400
+
+
+@respx.mock
+def test_cvm_fund_holdings_defaults_to_latest_cda() -> None:
+    clear_cache()
+    _listing_cache.invalidate()
+    respx.get("https://dados.cvm.gov.br/dados/FI/DOC/CDA/DADOS/").mock(
+        return_value=httpx.Response(200, text=_LISTING_HTML)
+    )
+    respx.get(re.compile(r"https://.*cda_fi_202603\.zip")).mock(
+        return_value=httpx.Response(200, content=_make_cda_zip())
+    )
+    r = TestClient(mcp_app).get(
+        "/cvm/fund", params={"dataset": "holdings", "cnpj": "12.345.678/0001-99"}
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body) == 3
+    assert {row["bloco"] for row in body} == {"BLC_4", "BLC_8"}
+
+
+@respx.mock
+def test_cvm_fund_daily_months_lookback() -> None:
+    clear_cache()
+    payload = _daily_zip()
+    respx.get(re.compile(r"https://.*inf_diario_fi_202607\.zip")).mock(
+        return_value=httpx.Response(200, content=payload)
+    )
+    respx.get(re.compile(r"https://.*inf_diario_fi_202608\.zip")).mock(
+        return_value=httpx.Response(200, content=payload)
+    )
+    r = TestClient(mcp_app).get(
+        "/cvm/fund",
+        params={
+            "dataset": "daily",
+            "cnpj": "38729027000192",
+            "year": 2026,
+            "month": 8,
+            "months": 2,
+        },
+    )
+    assert r.status_code == 200
+    assert len(r.json()) == 4
