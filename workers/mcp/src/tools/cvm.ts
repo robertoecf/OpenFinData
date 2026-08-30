@@ -19,7 +19,7 @@ const CVM_LISTING_MAX_BYTES = 2_000_000;
 const CATALOG_CLASS_CAP = 2_000;
 const DAILY_SCAN_CAP = 2_000;
 const HOLDINGS_SCAN_CAP = 5_000;
-const DAILY_MONTHS_MAX = 3;
+const DAILY_MONTHS_MAX = 12;
 
 export type CvmDataset = "catalog" | "daily" | "holdings" | "periods";
 export type CvmPeriodProduct = "CDA" | "INF_DIARIO";
@@ -150,14 +150,11 @@ async function catalogByCnpj(zip: Uint8Array, digits: string, limit: number) {
   return fundos.slice(0, limit).map((row) => mapFundo(row, classesByFundo.get(row.ID_Registro_Fundo ?? "") ?? []));
 }
 
-async function catalogByName(zip: Uint8Array, q: string, limit: number) {
-  const needle = q.toLowerCase();
-  const fundos = await scanZipCsv(
-    zip,
-    "registro_fundo.csv",
-    (row) => (row.Denominacao_Social ?? "").toLowerCase().includes(needle),
-    limit,
-  );
+async function assembleCatalog(
+  zip: Uint8Array,
+  fundos: Record<string, string>[],
+  limit: number,
+) {
   if (fundos.length === 0) {
     return [];
   }
@@ -189,7 +186,40 @@ async function catalogByName(zip: Uint8Array, q: string, limit: number) {
     list.push(mapClasse(row, subclassesByClasse.get(row.ID_Registro_Classe ?? "") ?? []));
     classesByFundo.set(key, list);
   }
-  return fundos.map((row) => mapFundo(row, classesByFundo.get(row.ID_Registro_Fundo ?? "") ?? []));
+  return fundos.slice(0, limit).map((row) => mapFundo(row, classesByFundo.get(row.ID_Registro_Fundo ?? "") ?? []));
+}
+
+async function catalogByName(zip: Uint8Array, q: string, limit: number) {
+  const needle = q.toLowerCase();
+  const nameHit = (row: Record<string, string>) =>
+    (row.Denominacao_Social ?? "").toLowerCase().includes(needle);
+  const fundosByName = await scanZipCsv(zip, "registro_fundo.csv", nameHit, limit);
+  const classesByName = await scanZipCsv(zip, "registro_classe.csv", nameHit, CATALOG_CLASS_CAP);
+  const subsByName = await scanZipCsv(zip, "registro_subclasse.csv", nameHit, CATALOG_CLASS_CAP);
+  const extraFundoIds = new Set(classesByName.map((row) => row.ID_Registro_Fundo ?? ""));
+  const subClassIds = new Set(subsByName.map((row) => row.ID_Registro_Classe ?? ""));
+  if (subClassIds.size > 0) {
+    const parentClasses = await scanZipCsv(
+      zip,
+      "registro_classe.csv",
+      (row) => subClassIds.has(row.ID_Registro_Classe ?? ""),
+      CATALOG_CLASS_CAP,
+    );
+    for (const row of parentClasses) {
+      extraFundoIds.add(row.ID_Registro_Fundo ?? "");
+    }
+  }
+  const already = new Set(fundosByName.map((row) => row.ID_Registro_Fundo ?? ""));
+  const extraFundos =
+    extraFundoIds.size === 0
+      ? []
+      : await scanZipCsv(
+          zip,
+          "registro_fundo.csv",
+          (row) => extraFundoIds.has(row.ID_Registro_Fundo ?? "") && !already.has(row.ID_Registro_Fundo ?? ""),
+          limit,
+        );
+  return assembleCatalog(zip, [...fundosByName, ...extraFundos], limit);
 }
 
 function formatYm(year: number, month: number): string {
@@ -209,6 +239,165 @@ function lookbackMonths(
   const out: { year: number; month: number }[] = [];
   for (let i = count - 1; i >= 0; i -= 1) {
     out.push(addMonths(endYear, endMonth, -i));
+  }
+  return out;
+}
+
+type CatalogClasse = {
+  cnpj_classe: string;
+  nome: string;
+  tipo_classe: string;
+  classificacao: string;
+  classe_anbima: string;
+  subclasses: Array<{ id_subclasse: string; nome: string }>;
+};
+
+type CatalogFund = {
+  cnpj: string;
+  nome: string;
+  classes: CatalogClasse[];
+};
+
+export function continuationClassCnpj(funds: CatalogFund[], requestedDigits: string): string | null {
+  const requested = cnpjDigits(requestedDigits);
+  for (const fund of funds) {
+    const classDigits = [
+      ...new Set(fund.classes.map((classe) => cnpjDigits(classe.cnpj_classe)).filter(Boolean)),
+    ];
+    const matched = requested === cnpjDigits(fund.cnpj) || classDigits.includes(requested);
+    if (matched && classDigits.length === 1) {
+      return classDigits[0] ?? null;
+    }
+  }
+  return null;
+}
+
+export function relatedQuoteCnpjs(funds: CatalogFund[], requestedDigits: string): string[] {
+  const requested = cnpjDigits(requestedDigits);
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const add = (raw: string) => {
+    const digits = cnpjDigits(raw);
+    if (digits && !seen.has(digits)) {
+      seen.add(digits);
+      out.push(digits);
+    }
+  };
+  add(requested);
+  for (const fund of funds) {
+    const fundDigits = cnpjDigits(fund.cnpj);
+    const classDigits = [
+      ...new Set(fund.classes.map((classe) => cnpjDigits(classe.cnpj_classe)).filter(Boolean)),
+    ];
+    const matchedFund = fundDigits === requested;
+    const matchedClass = fund.classes.some((classe) => cnpjDigits(classe.cnpj_classe) === requested);
+    if (matchedFund) {
+      for (const digits of classDigits) {
+        add(digits);
+      }
+    } else if (matchedClass && classDigits.length === 1) {
+      add(fundDigits);
+    }
+  }
+  return out;
+}
+
+function quoteServedLabel(funds: CatalogFund[], cnpj: string, idSubclasse: string) {
+  const digits = cnpjDigits(cnpj);
+  let nicename = "";
+  let tipoClasse = "";
+  let classificacao = "";
+  let classeAnbima = "";
+  let subclassName = "";
+  for (const fund of funds) {
+    if (cnpjDigits(fund.cnpj) === digits && !nicename) {
+      nicename = fund.nome;
+    }
+    for (const classe of fund.classes) {
+      if (cnpjDigits(classe.cnpj_classe) !== digits) {
+        continue;
+      }
+      nicename = classe.nome || nicename;
+      tipoClasse = classe.tipo_classe;
+      classificacao = classe.classificacao;
+      classeAnbima = classe.classe_anbima;
+      for (const sub of classe.subclasses) {
+        if (idSubclasse && sub.id_subclasse === idSubclasse) {
+          subclassName = sub.nome;
+          if (sub.nome) {
+            nicename = sub.nome;
+          }
+        }
+      }
+    }
+  }
+  return {
+    nicename,
+    tipo_classe: tipoClasse,
+    classificacao,
+    classe_anbima: classeAnbima,
+    subclass_name: subclassName,
+  };
+}
+
+function parseIsoDate(value: string): { year: number; month: number; day: string } | { error: string } {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) {
+    return { error: "start/end must be YYYY-MM-DD" };
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return { error: "start/end must be a real calendar date" };
+  }
+  return { year, month, day: value };
+}
+
+function inDateRange(dtComptc: string, start: string | undefined, end: string | undefined): boolean {
+  if (start && dtComptc < start) {
+    return false;
+  }
+  return !(end && dtComptc > end);
+}
+
+function dedupeDailyRows(
+  series: ReturnType<typeof mapDaily>[],
+  preferCnpj: string,
+): ReturnType<typeof mapDaily>[] {
+  const chosen = new Map<string, ReturnType<typeof mapDaily>>();
+  for (const row of series) {
+    const key = `${row.dt_comptc}|${row.id_subclasse}`;
+    const prev = chosen.get(key);
+    if (!prev || cnpjDigits(row.cnpj) === preferCnpj) {
+      chosen.set(key, row);
+    }
+  }
+  return [...chosen.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([, row]) => row);
+}
+
+function stampsInclusive(
+  start: { year: number; month: number },
+  end: { year: number; month: number },
+): { year: number; month: number }[] | { error: string } {
+  if (start.year > end.year || (start.year === end.year && start.month > end.month)) {
+    return { error: "`start` must be on or before `end`" };
+  }
+  const out: { year: number; month: number }[] = [];
+  let cursor = start;
+  while (cursor.year < end.year || (cursor.year === end.year && cursor.month <= end.month)) {
+    out.push(cursor);
+    if (out.length > DAILY_MONTHS_MAX) {
+      return { error: `daily window exceeds ${DAILY_MONTHS_MAX} months; page start/end` };
+    }
+    cursor = addMonths(cursor.year, cursor.month, 1);
   }
   return out;
 }
@@ -318,7 +507,7 @@ function parseBlocks(raw: string | undefined): Set<string> | null {
 }
 
 async function dailySeries(
-  digits: string,
+  digitsList: string[],
   year: number,
   month: number,
   limit: number,
@@ -326,10 +515,65 @@ async function dailySeries(
   const ym = formatYm(year, month);
   const zip = await fetchCvmZip(DAILY_URL.replace("{ym}", ym));
   const csvName = `inf_diario_fi_${ym}.csv`;
+  const needles = digitsList.flatMap((digits) => cnpjNeedles(digits));
+  const allowed = new Set(digitsList);
   const rows = (
-    await scanZipCsvForNeedles(zip, csvName, cnpjNeedles(digits), Math.min(limit, DAILY_SCAN_CAP))
-  ).filter((row) => fieldCnpjEquals(row, ["CNPJ_FUNDO_CLASSE", "CNPJ_FUNDO"], digits));
+    await scanZipCsvForNeedles(zip, csvName, needles, Math.min(limit, DAILY_SCAN_CAP))
+  ).filter((row) =>
+    ["CNPJ_FUNDO_CLASSE", "CNPJ_FUNDO"].some((field) => allowed.has(cnpjDigits(row[field]))),
+  );
   return rows.map(mapDaily);
+}
+
+function groupDailySeries(
+  series: ReturnType<typeof mapDaily>[],
+  cadastro: CatalogFund[],
+  compact: boolean,
+  requested: string,
+  needles: string[],
+) {
+  const target = continuationClassCnpj(cadastro, requested);
+  const groups = new Map<string, ReturnType<typeof mapDaily>[]>();
+  for (const row of series) {
+    const rowDigits = cnpjDigits(row.cnpj);
+    const groupCnpj = target && needles.includes(rowDigits) ? target : rowDigits;
+    const key = `${groupCnpj}|${row.id_subclasse}`;
+    const list = groups.get(key) ?? [];
+    list.push(row);
+    groups.set(key, list);
+  }
+  const served = [...groups.entries()].map(([key, rows]) => {
+    const [cnpj, idSubclasse] = key.split("|") as [string, string];
+    const label = quoteServedLabel(cadastro, cnpj, idSubclasse);
+    const item: Record<string, unknown> = {
+      cnpj,
+      id_subclasse: idSubclasse,
+      ...label,
+      points: rows.length,
+    };
+    if (compact) {
+      item.dates = rows.map((row) => row.dt_comptc);
+      item.vl_quota = rows.map((row) => row.vl_quota);
+    }
+    return item;
+  });
+  const pickRequired = served.length > 1;
+  return {
+    pick_required: pickRequired,
+    served,
+    note: pickRequired
+      ? "Multiple INF_DIARIO series for this CNPJ (classes/subclasses). They are different investments — pass id_subclasse or the class CNPJ; do not pick."
+      : "Report served[].nicename / class / subclass actually returned.",
+  };
+}
+
+async function loadCatalogBestEffort(digits: string): Promise<CatalogFund[]> {
+  try {
+    const zip = await fetchCvmZip(REGISTRO_URL);
+    return (await catalogByCnpj(zip, digits, 20)) as CatalogFund[];
+  } catch {
+    return [];
+  }
 }
 
 async function holdingsFromZip(
@@ -368,6 +612,10 @@ export async function cvmFund(args: {
   year?: number;
   month?: number;
   months?: number;
+  start?: string;
+  end?: string;
+  id_subclasse?: string;
+  compact?: boolean;
   product?: CvmPeriodProduct;
   blocks?: string;
   limit?: number;
@@ -429,19 +677,48 @@ export async function cvmFund(args: {
   }
 
   const months = Math.min(Math.max(args.months ?? 1, 1), DAILY_MONTHS_MAX);
-  const resolved = await resolveYearMonth(args, DAILY_LISTING_URL, "inf_diario_fi_");
-  if ("error" in resolved) {
-    return errorResult(resolved.error);
+  let window: { year: number; month: number }[];
+  if (args.start || args.end) {
+    if (!args.start || !args.end) {
+      return errorResult("pass both `start` and `end`, or omit both");
+    }
+    const start = parseIsoDate(args.start);
+    const end = parseIsoDate(args.end);
+    if ("error" in start) {
+      return errorResult(start.error);
+    }
+    if ("error" in end) {
+      return errorResult(end.error);
+    }
+    const ranged = stampsInclusive(start, end);
+    if ("error" in ranged) {
+      return errorResult(ranged.error);
+    }
+    window = ranged;
+  } else {
+    const resolved = await resolveYearMonth(args, DAILY_LISTING_URL, "inf_diario_fi_");
+    if ("error" in resolved) {
+      return errorResult(resolved.error);
+    }
+    window = lookbackMonths(resolved.year, resolved.month, months);
   }
-  const window = lookbackMonths(resolved.year, resolved.month, months);
+  const cadastro = await loadCatalogBestEffort(digits);
+  const needles = relatedQuoteCnpjs(cadastro, digits);
+  const prefer = continuationClassCnpj(cadastro, digits) ?? digits;
+  const dateStart = args.start && args.end ? args.start : undefined;
+  const dateEnd = args.start && args.end ? args.end : undefined;
   const series: ReturnType<typeof mapDaily>[] = [];
   const missing: string[] = [];
   let remaining = limit;
   for (const stamp of window) {
     const ym = formatYm(stamp.year, stamp.month);
     try {
-      const chunk = await dailySeries(digits, stamp.year, stamp.month, remaining);
-      series.push(...chunk);
+      const chunk = (await dailySeries(needles, stamp.year, stamp.month, DAILY_SCAN_CAP)).filter(
+        (row) =>
+          (!args.id_subclasse || row.id_subclasse === args.id_subclasse) &&
+          inDateRange(row.dt_comptc, dateStart, dateEnd),
+      );
+      series.push(...chunk.slice(0, remaining));
       remaining = Math.max(limit - series.length, 0);
       if (remaining === 0) {
         break;
@@ -454,15 +731,23 @@ export async function cvmFund(args: {
       throw error;
     }
   }
+  const filtered = dedupeDailyRows(series, prefer);
+  const grouped = groupDailySeries(filtered, cadastro, Boolean(args.compact), digits, needles);
+  const last = window.at(-1);
   return jsonResult({
     source: "cvm_inf_diario",
-    year: resolved.year,
-    month: resolved.month,
-    months,
-    from: formatYm(window[0]!.year, window[0]!.month),
-    to: formatYm(resolved.year, resolved.month),
+    year: last?.year,
+    month: last?.month,
+    months: window.length,
+    from: window[0] ? formatYm(window[0].year, window[0].month) : null,
+    to: last ? formatYm(last.year, last.month) : null,
+    start: dateStart ?? null,
+    end: dateEnd ?? null,
     cnpj: digits,
+    needles,
     missing,
-    series,
+    truncated: remaining === 0,
+    ...grouped,
+    ...(args.compact ? {} : { series: filtered }),
   });
 }

@@ -24,7 +24,7 @@ mortos, fronteira atual, openfindata, findata.
 | Rede nos unit tests? | Proibido. `respx` nos unitários; live só `@pytest.mark.integration` | `AGENTS.md`, CI nightly |
 | Credenciais no repo? | Nunca. Fontes públicas preferidas; BdD usa billing project do operador via env | `AGENTS.md`, `docs/SOURCES_WITH_AUTH.md` |
 | MCP: 1:1 com REST ou curado? | Catálogo curado em `mcp_app` (~25 tools); REST intacto | `docs/MCP_SURFACE.md` |
-| MCP público vs interno? | Worker `openfindata.com.br/mcp` (macro JSON + `cvm_fund` catalog/daily/holdings/periods); FastAPI/Tailscale tem o catálogo completo | `docs/DEPLOY_WORKERS_MCP.md` |
+| MCP público vs interno? | Worker `openfindata.com.br/mcp` (macro JSON + `cvm_fund` catalog/daily≤12m/holdings/periods); FastAPI/Tailscale tem o catálogo completo | `docs/DEPLOY_WORKERS_MCP.md` |
 | Code mode no MCP? | Opt-in via `FINDATA_MCP_CODE_MODE=1`; off por default | `docs/MCP_SURFACE.md`, `mcp_app.py` |
 | Charts: quais deps de plot? | Não adicionar matplotlib/pandas/plotly etc. só para gráfico | `AGENTS.md`, `docs/CHART_STANDARDS.md` |
 | Publicar no PyPI? | Só com aprovação humana explícita | `AGENTS.md` |

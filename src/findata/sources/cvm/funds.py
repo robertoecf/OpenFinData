@@ -122,17 +122,18 @@ async def get_fund_daily(
     Args:
         year: Year (2021+).
         month: Month (1-12).
-        cnpj_filter: Filter by fund CNPJ (highly recommended to reduce memory).
-            Punctuated and digit-only forms both match.
+        cnpj_filter: Filter by fund/class CNPJ (highly recommended). Punctuated
+            and digit-only forms both match. Comma-separated digits stitch a
+            single-class 555→175 continuation.
     """
     ym = f"{year}{month:02d}"
     url = FUND_DAILY_URL.format(ym=ym)
     rows = await fetch_csv_from_zip(url)
-    needle = cnpj_digits(cnpj_filter) if cnpj_filter else ""
+    needles = {cnpj_digits(part) for part in (cnpj_filter or "").split(",") if cnpj_digits(part)}
     results: list[FundDaily] = []
     for row in rows:
         cnpj = row.get("CNPJ_FUNDO_CLASSE") or row.get("CNPJ_FUNDO", "")
-        if needle and cnpj_digits(cnpj) != needle:
+        if needles and cnpj_digits(cnpj) not in needles:
             continue
         parsed = _parse_daily_row(row)
         if parsed is not None:

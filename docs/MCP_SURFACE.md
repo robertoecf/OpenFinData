@@ -6,7 +6,7 @@
 > and [`docs/DEPLOY_WORKERS_MCP.md`](DEPLOY_WORKERS_MCP.md). Public `/mcp` is
 > 60 req/60s per IP with a 20/10s burst; overflow is 429 + Retry-After (no queue,
 > no code mode, no API key). Worker tools: the 9 JSON macro sources plus
-> `cvm_fund` (RCVM 175 cadastro + INF_DIARIO + CDA holdings/periods).
+> `cvm_fund` (RCVM 175 cadastro + INF_DIARIO history ≤12 months + CDA holdings/periods).
 > Lâmina/perfil stay on the internal FastAPI catalog below.
 
 ## Problem
@@ -86,7 +86,7 @@ findata_run_code                                         (code mode, opt-in)
 | `bcb_ptax` | `/ptax/usd`, `/ptax/usd/period`, `/ptax/{currency}` | `start`+`end` → period |
 | `bcb_focus` | `/focus/{indicators,annual,monthly,selic,top5}` | `horizon`, `panel`, `indicator` |
 | `cvm_company` | companies search/list, `fca/*`, `ipe` | `dataset=search\|list\|fca_*\|filings` |
-| `cvm_fund` | `funds`, `funds/cadastro`, `funds/{daily,holdings,lamina,profile,periods}`, returns | `dataset`; `cnpj`/`q` → RCVM 175; omit year/month → latest CDA/INF_DIARIO |
+| `cvm_fund` | `funds`, `funds/cadastro`, `funds/{daily,holdings,lamina,profile,periods}`, returns | `dataset`; `cnpj`/`q` → RCVM 175 (classe/subclasse names too); `daily` `start`/`end` or `months`≤12; omit year/month → latest CDA/INF_DIARIO |
 | `cvm_structured_fund` | `funds/{fii,fidc,fip}/*` | `kind` + `dataset` |
 | `b3_index` | index portfolio + monthly + list | `dataset`, omit `symbol` to list |
 | `tesouro_bonds` | bonds list/search/history | `dataset` |
@@ -120,8 +120,18 @@ local/agent use. A production deployment should run it in a real sandbox
 
 - `registry_lookup(q="PETR4")` → PETROBRAS, CNPJ `33.000.167/0001-01`, `[PETR3, PETR4]` (offline).
 - `bcb_ptax(start=2024-01-02, end=2024-01-05)` → daily PTAX USD series (the handoff's headline flow).
-- `cvm_fund(dataset=catalog, cnpj="38.729.027/0001-92")` → cadastro RCVM 175 (classe, condomínio, PL).
-- `cvm_fund(dataset=daily, cnpj="38729027000192", year=2026, month=8)` → INF_DIARIO (cota/PL/cotistas).
+- `cvm_fund(dataset=catalog, cnpj="38.729.027/0001-92")` → cadastro RCVM 175 (classe, condomínio, PL, subclasses).
+- `cvm_fund(dataset=daily, cnpj="38729027000192", start="2025-09-01", end="2026-08-31")` → INF_DIARIO history (`served[].nicename`).
 - `cvm_fund(dataset=periods, product="CDA")` → YYYYMM stamps + `latest`.
 - `cvm_fund(dataset=holdings, cnpj="38729027000192")` → latest CDA carteira (CONFID = sigilo).
+
+Mais Retorno **data** tools (CVM/official only; calc tools are out of scope):
+
+| Mais Retorno | `cvm_fund` |
+|---|---|
+| `search_assets` / `get_asset_info` / `get_fund_class_subclass` | `dataset=catalog` (`q` or `cnpj`) |
+| `list_fund_structure` | `catalog.classes[].subclasses[]` — do not pick a FIDC série |
+| `get_quotes` | `dataset=daily` (`start`/`end` or `months`≤12; report `served[]`) |
+| `get_available_wallets` | `dataset=periods` `product=CDA` |
+| `get_wallet_detail` | `dataset=holdings` |
 - `findata_run_code("import findata; ...")` → runs in the sandbox, returns captured stdout.

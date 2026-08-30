@@ -20,14 +20,26 @@ registry FTS5, code mode): `pip install openfindata` ou FastAPI interno.
 `cvm_fund` no Worker:
 
 - `dataset=catalog` + `cnpj` ou `q` — cadastro oficial RCVM 175
-  (`registro_fundo_classe.zip`: fundo + classe + subclasse). `cad_fi.csv`
-  não lista fundos já adaptados à Resolução 175.
+  (`registro_fundo_classe.zip`: fundo + classe + subclasse). `q` casa
+  nome de fundo, classe e subclasse. `cad_fi.csv` não lista fundos já
+  adaptados à Resolução 175.
 - `dataset=daily` + `cnpj` — série de cotas INF_DIARIO. Sem `year`/`month`
-  usa o mês mais recente no diretório CVM; `months` (1–3) olha para trás.
+  usa o mês mais recente; `months` (1–12) ou `start`/`end` (YYYY-MM-DD,
+  no máximo 12 meses; janelas maiores pedem nova chamada). Classe única
+  adaptada da 555 costura o CNPJ legado quando o arquivo CVM permite.
+  `served[]` traz `nicename` / classe / subclasse efetivamente devolvidos;
+  várias séries no mesmo CNPJ vêm agrupadas (`pick_required`) — não
+  escolher FIDC sênior vs subordinada pelo usuário. ZIP anual HIST da CVM
+  passa de 32 MB e não entra no isolate.
 - `dataset=periods` — stamps YYYYMM publicados (`product=CDA` ou `INF_DIARIO`).
 - `dataset=holdings` + `cnpj` — CDA (carteira). Sem `year`/`month` usa o
   CDA mais recente. Scan em stream por CNPJ; linhas `CONFID` são sigilo,
   não carteira aberta completa. Não usa Mais Retorno.
+
+Mapeamento das tools de **dados** da Mais Retorno (cálculo/analytics fora):
+`search_assets` / `get_asset_info` / `list_fund_structure` /
+`get_fund_class_subclass` → `catalog`; `get_quotes` → `daily`;
+`get_available_wallets` → `periods`; `get_wallet_detail` → `holdings`.
 
 ## Deploy
 

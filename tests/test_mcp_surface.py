@@ -23,7 +23,8 @@ from findata.api.app import app
 from findata.api.mcp_app import mcp_app
 from findata.http_client import clear_cache
 from findata.sources.cvm._directory import _listing_cache
-from tests.test_cvm_fund_cadastro import _daily_zip
+from findata.sources.cvm.cadastro import REGISTRO_URL, _registro_cache
+from tests.test_cvm_fund_cadastro import _daily_zip, _registro_zip
 from tests.test_cvm_funds import _LISTING_HTML, _make_cda_zip
 
 EXPECTED_TOOLS = 25  # curated tools with code mode OFF (the default)
@@ -194,7 +195,9 @@ def test_cvm_fund_holdings_defaults_to_latest_cda() -> None:
 @respx.mock
 def test_cvm_fund_daily_months_lookback() -> None:
     clear_cache()
+    _registro_cache.invalidate()
     payload = _daily_zip()
+    respx.get(REGISTRO_URL).mock(return_value=httpx.Response(200, content=_registro_zip()))
     respx.get(re.compile(r"https://.*inf_diario_fi_202607\.zip")).mock(
         return_value=httpx.Response(200, content=payload)
     )
@@ -212,4 +215,70 @@ def test_cvm_fund_daily_months_lookback() -> None:
         },
     )
     assert r.status_code == 200
-    assert len(r.json()) == 4
+    body = r.json()
+    assert len(body["series"]) == 2
+    assert {row["dt_comptc"] for row in body["series"]} == {"2026-08-03", "2026-08-04"}
+    assert body["from"] == "202607"
+    assert body["to"] == "202608"
+
+
+@respx.mock
+def test_cvm_fund_daily_start_end_and_cnpj_required() -> None:
+    clear_cache()
+    _registro_cache.invalidate()
+    missing = TestClient(mcp_app).get("/cvm/fund", params={"dataset": "daily"})
+    assert missing.status_code == 400
+    payload = _daily_zip()
+    respx.get(REGISTRO_URL).mock(return_value=httpx.Response(200, content=_registro_zip()))
+    respx.get(re.compile(r"https://.*inf_diario_fi_202607\.zip")).mock(
+        return_value=httpx.Response(200, content=payload)
+    )
+    respx.get(re.compile(r"https://.*inf_diario_fi_202608\.zip")).mock(
+        return_value=httpx.Response(200, content=payload)
+    )
+    r = TestClient(mcp_app).get(
+        "/cvm/fund",
+        params={
+            "dataset": "daily",
+            "cnpj": "38729027000192",
+            "start": "2026-07-01",
+            "end": "2026-08-31",
+            "compact": True,
+        },
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert "series" not in body
+    assert body["served"][0]["points"] == 2
+    assert body["served"][0]["nicename"].startswith("AMW")
+    one_day = TestClient(mcp_app).get(
+        "/cvm/fund",
+        params={
+            "dataset": "daily",
+            "cnpj": "38729027000192",
+            "start": "2026-08-04",
+            "end": "2026-08-04",
+        },
+    )
+    assert one_day.status_code == 200
+    assert [row["dt_comptc"] for row in one_day.json()["series"]] == ["2026-08-04"]
+    bad_day = TestClient(mcp_app).get(
+        "/cvm/fund",
+        params={
+            "dataset": "daily",
+            "cnpj": "38729027000192",
+            "start": "2026-02-31",
+            "end": "2026-03-01",
+        },
+    )
+    assert bad_day.status_code == 400
+    too_long = TestClient(mcp_app).get(
+        "/cvm/fund",
+        params={
+            "dataset": "daily",
+            "cnpj": "38729027000192",
+            "start": "2024-01-01",
+            "end": "2026-08-31",
+        },
+    )
+    assert too_long.status_code == 400
