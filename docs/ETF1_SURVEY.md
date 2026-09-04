@@ -74,8 +74,8 @@ histórico reconstruído, não só a série própria do ETF.
 ## Stack visível no HTML/headers
 
 Next.js (Turbopack, `x-nextjs-cache`), Cloudflare, Sentry, PostHog, Google
-Ads (`AW-18214739642`), fonte Geist / JetBrains Mono, tema e escala de UI no
-`localStorage`. Host de telemetria `e.etf1.com.br`. JSON-LD de `WebSite`,
+Ads, fonte Geist / JetBrains Mono, tema e escala de UI no `localStorage`.
+Host de telemetria `e.etf1.com.br`. JSON-LD de `WebSite`,
 `Organization` (parent Stop Loss Club) e `WebApplication` gratuita.
 
 `robots.txt` (Cloudflare managed): `search=yes`, `ai-train=no`,
