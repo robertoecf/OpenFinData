@@ -32,6 +32,10 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **OpenBB adjacent-project note.** `ROADMAP.md` no longer treats
+  AGPLv3 + hosted Hub as a stable dual-license business. It cites the
+  2026-08-25 wind-down / permissive-relicense commitment and records
+  that the source drop has not landed as of 2026-09-04.
 - **Resolver docs: Mais Retorno Free limits.** `docs/RESOLVER.md` now
   states that the optional cascade step uses the operator's own account and
   documents the public Free tier (500 credits/month shared by REST+MCP,

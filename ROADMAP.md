@@ -82,6 +82,18 @@ FastAPI REST server, an MCP server for AI agents, Excel, and the OpenBB
 Workspace UI. That is precisely our thesis (lib + REST + CLI + MCP over a single
 normalized core), validated at scale.
 
+Consulta 2026-09-04. On 2026-08-25 Didier Lopes announced the company
+did not find product-market fit and is winding down. With OSS Capital they
+committed to release Workspace, ODP, Copilot and the Excel add-in under a
+*permissive* license
+([OpenBB belongs to everyone](https://openbb.co/blog/openbb-belongs-to-everyone/)).
+Order and timing TBD; hosted customers were told they would hear separately.
+As of this check the drop has not landed: `OpenBB-finance/OpenBB` is still
+AGPLv3; there is no public Workspace repo; [pricing](https://openbb.co/pricing/)
+still lists Community / Lite ($2,400/yr) / Pro / Snowflake; ToS
+(2026-07-08) still defines Paid Service Tiers. The blog post is a
+commitment, not a license grant.
+
 Evaluation:
 
 - ✅ **Single normalized core, many surfaces.** Our `sources/<source>/` feeding
@@ -100,9 +112,12 @@ Evaluation:
 - 🟡 **Spreadsheet surface.** Their Excel add-in is a reminder that many BR
   analysts live in spreadsheets; a thin `=FINDATA(...)` bridge over the REST API
   is a cheap, high-leverage future surface.
-- ❌ **AGPLv3 + enterprise Workspace/Hub.** OpenBB is AGPLv3 with a hosted
-  pro tier. We are deliberately MIT and self-host-first — do not import the
-  account/Hub/proprietary-provider machinery; it cuts against the manifesto.
+- 🟡 **Watch the promised source drop.** Workspace, Copilot and the Excel
+  add-in are the product surfaces. Revisit when a repo and LICENSE exist.
+  Do not treat the 2026-08-25 post as permission to copy those products.
+- ❌ **Do not copy the commercial layer they are walking away from.**
+  Account/Hub/Lite/Pro, dual AGPL+commercial licensing, and
+  paid-provider marketplace machinery. Stay MIT and self-host-first.
 - ❌ **Global/paid-provider breadth (FMP, Polygon, etc.).** Our scope is BR
   public sources with no API keys; chasing global paid providers would dilute
   the "if the data is public, the infra should be too" thesis.
