@@ -12,9 +12,10 @@ Consulta desta revisão: 2026-09-04.
 
 | Field | Meaning |
 |---|---|
-| Fit | What this repo can learn without becoming the other product |
-| Adapter | Whether a `findata.sources.*` module is justified |
+| Role | What the product is, in one clause |
+| UX ref | How useful the public UI is as a packaging lesson |
 | Agent | Machine-readable surface a local operator can bring |
+| Adapter | Whether a `findata.sources.*` module is justified |
 
 Scores are 1–5, qualitative. Re-score when the public surface changes.
 
