@@ -30,11 +30,6 @@ adheres to [Semantic Versioning](https://semver.org/).
   CNPJ matching. Rate limits on `/mcp` are unchanged. The Worker scans the
   deflated CSV in stream so INF_DIARIO does not materialize ~48 MB in RAM.
 
-### Removed
-
-- **`docs/AWESOME.md`.** This repo cites adjacent open and closed projects
-  in `ROADMAP.md` (Lessons). It is not an awesome-list.
-
 ### Changed
 
 - **Resolver docs: Mais Retorno Free limits.** `docs/RESOLVER.md` now
