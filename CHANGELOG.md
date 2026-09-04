@@ -8,6 +8,10 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **ETF1 as a closed adjacent project.** `ROADMAP.md` cites
+  [etf1.com.br](https://etf1.com.br) next to the open-source peers. Survey and
+  product-ref notes in `docs/ETF1_SURVEY.md` and `docs/ETF1_PRODUCT_REF.md`.
+  Not a source adapter. OnePro MCP stays out of the resolver cascade.
 - **Public MCP `cvm_fund` quotes/structure parity (CVM only).** `dataset=daily`
   accepts `start`/`end` or `months` up to 12, stitches a single-class RCVM 175
   continuation onto legacy 555 INF_DIARIO when the files share sibling CNPJs,
@@ -28,6 +32,10 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **OpenBB adjacent-project note.** `ROADMAP.md` no longer treats
+  AGPLv3 + hosted Hub as a stable dual-license business. It cites the
+  2026-08-25 wind-down / permissive-relicense commitment and records
+  that the source drop has not landed as of 2026-09-04.
 - **Resolver docs: Mais Retorno Free limits.** `docs/RESOLVER.md` now
   states that the optional cascade step uses the operator's own account and
   documents the public Free tier (500 credits/month shared by REST+MCP,

@@ -70,6 +70,9 @@ Status: **v0.3.1 — alpha.** CI live at [`.github/workflows/ci.yml`](.github/wo
 
 ## 📚 Lessons from adjacent projects
 
+Open-source peers and closed products we study as refs. Not a catalog, not
+endorsements, not source adapters unless the note says so.
+
 ### From [OpenBB-finance/OpenBB](https://github.com/OpenBB-finance/OpenBB) (Python, global) — the reference 🐐
 
 The closest large-scale analogue to what we're building, and the bar to measure
@@ -78,6 +81,18 @@ layer that exposes the same standardized data across a Python SDK, a CLI, a
 FastAPI REST server, an MCP server for AI agents, Excel, and the OpenBB
 Workspace UI. That is precisely our thesis (lib + REST + CLI + MCP over a single
 normalized core), validated at scale.
+
+Consulta 2026-09-04. On 2026-08-25 Didier Lopes announced the company
+did not find product-market fit and is winding down. With OSS Capital they
+committed to release Workspace, ODP, Copilot and the Excel add-in under a
+*permissive* license
+([OpenBB belongs to everyone](https://openbb.co/blog/openbb-belongs-to-everyone/)).
+Order and timing TBD; hosted customers were told they would hear separately.
+As of this check the drop has not landed: `OpenBB-finance/OpenBB` is still
+AGPLv3; there is no public Workspace repo; [pricing](https://openbb.co/pricing/)
+still lists Community / Lite ($2,400/yr) / Pro / Snowflake; ToS
+(2026-07-08) still defines Paid Service Tiers. The blog post is a
+commitment, not a license grant.
 
 Evaluation:
 
@@ -97,9 +112,12 @@ Evaluation:
 - 🟡 **Spreadsheet surface.** Their Excel add-in is a reminder that many BR
   analysts live in spreadsheets; a thin `=FINDATA(...)` bridge over the REST API
   is a cheap, high-leverage future surface.
-- ❌ **AGPLv3 + enterprise Workspace/Hub.** OpenBB is AGPLv3 with a hosted
-  pro tier. We are deliberately MIT and self-host-first — do not import the
-  account/Hub/proprietary-provider machinery; it cuts against the manifesto.
+- 🟡 **Watch the promised source drop.** Workspace, Copilot and the Excel
+  add-in are the product surfaces. Revisit when a repo and LICENSE exist.
+  Do not treat the 2026-08-25 post as permission to copy those products.
+- ❌ **Do not copy the commercial layer they are walking away from.**
+  Account/Hub/Lite/Pro, dual AGPL+commercial licensing, and
+  paid-provider marketplace machinery. Stay MIT and self-host-first.
 - ❌ **Global/paid-provider breadth (FMP, Polygon, etc.).** Our scope is BR
   public sources with no API keys; chasing global paid providers would dilute
   the "if the data is public, the infra should be too" thesis.
@@ -132,6 +150,30 @@ ideas are worth copying:
   scheduler or a broker; let callers (cron, Airflow, GH Actions) drive it.
 - ❌ **yfinance fork.** They fork to fix non-US tickers; we already use
   mainline yfinance for B3 without modification.
+
+### From [ETF1](https://etf1.com.br) (closed, BR) — ETF terminal + OnePro
+
+Consulta 2026-09-04. Stop Loss Club / IBEE. Free Next.js ficha for B3, US and
+Irish ETFs (plus stocks, BDRs, FIIs, funds, Tesouro). Paid OnePro is
+allocation / Monte Carlo / GBI, not a data API. Notes:
+[`docs/ETF1_SURVEY.md`](docs/ETF1_SURVEY.md),
+[`docs/ETF1_PRODUCT_REF.md`](docs/ETF1_PRODUCT_REF.md).
+
+Evaluation:
+
+- ✅ **ETF ficha as a field set, not a scrape.** Identity, legal, TER, index,
+  holdings, style box. Implement from CVM cadastro + CDA + B3 + registry.
+- ✅ **Index complement + fee, stamped reconstructed.** Short ETF series
+  spliced onto the official index. Useful helper; never silent.
+- ✅ **`llms.txt` as the agent door.** What the product is, which URLs to
+  open, what it does not do (no real-time quotes, no recommendation).
+- 🟡 **Analysis contract.** Percentiles, Ulcer, max DD, monthly heatmap —
+  Chart Lab only after a normalized return series exists.
+- ❌ **No `src/findata/sources/etf1/`.** No anonymous REST. OnePro MCP is
+  paid (`onepro:read`). Terms §09 forbid systematic extract and unauthorized
+  crawlers. Not a resolver cascade step.
+- ❌ **OnePro modules.** Allocation, Monte Carlo and GBI are a planning
+  product. Out of scope here.
 
 ## 🧪 Known caveats
 

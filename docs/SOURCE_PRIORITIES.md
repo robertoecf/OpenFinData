@@ -78,3 +78,16 @@ but it is unofficial HTML, partly Cloudflare-gated, and the old public gist is
 stale and not directly reusable. Keep it documented in
 `docs/source-notes/advfn.md`; do not implement a source adapter until official
 CVM/B3 coverage gaps justify it.
+
+## ETF1 — product reference, not an adapter
+
+ETF1 (https://etf1.com.br) is the strongest public BR ETF analysis UI in the
+2026-09-04 sweep: ficha, holdings, rolling-window analysis, index complement,
+and a paid OnePro MCP. There is no anonymous data API. Do not add
+`src/findata/sources/etf1/`. Citation lives in `ROADMAP.md` (adjacent
+projects). Notes: `docs/ETF1_SURVEY.md`, `docs/ETF1_PRODUCT_REF.md`.
+
+The packaging gap (ETF ficha, holdings rollup, reconstructed pre-inception
+history) is not a numbered item on this list. P2 here remains Tesouro
+Transparente CKAN. If that packaging becomes source work, give it its own
+priority and implement it from CVM/B3/ANBIMA, not from ETF1.
