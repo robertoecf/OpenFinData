@@ -17,8 +17,12 @@ Independently implementable patterns:
 
 Do not copy proprietary code, visual identity, theme packs, copy, icons,
 assets, private API responses, or authenticated MCP payloads. Do not register
-an OAuth client against their MCP from this repo. `robots.txt` allows public
-pages and forbids AI training; this note is reference, not training scrape.
+an OAuth client against their MCP from this repo. Terms
+(https://etf1.com.br/termos-de-uso, 6 Aug 2026) §09 forbid systematic
+extract/scrape, unauthorized crawlers, commercial reuse, and reverse
+engineering. `robots.txt` `use=reference` does not override that. This note
+is a human-readable product reference from targeted public pages, not a
+license to automate their site.
 
 ## Public product anatomy
 
@@ -72,7 +76,7 @@ that copies this view must label reconstructed history as reconstructed.
 
 `/portfolio`: composition, 1995–2026, BRL/USD, process button.
 `/comparador`: up to 10 assets or portfolios, shared window, same process
-step. Same pattern as OBM’s `/comparar-ativos`, deeper metrics.
+step. Deeper metrics than a simple rebase-from-date table.
 
 ### OnePro (paid; sales page only)
 
@@ -98,8 +102,9 @@ demo, no index-complement helper.
 Keep Python-first. No JS app as the first move.
 
 1. **ETF ficha as API fields, not a page.** Resolve ticker → CNPJ, ISIN,
-   gestor/admin, TER, index name, inception. Seed + CVM cadastro. This is
-   the same P2 “ETF and BDR official coverage” already on the OBM backlog.
+   gestor/admin, TER, index name, inception. Seed + CVM cadastro. Not a
+   numbered item in `SOURCE_PRIORITIES.md` today (P2 there is Tesouro
+   CKAN). Do not file it under an OBM backlog.
 2. **Holdings view.** Latest CDA for ETFs, top-N + sector rollup. Public
    MCP already grew CDA; productize a stable response shape.
 3. **Index complement helper.** Given ETF fee + official index series,
