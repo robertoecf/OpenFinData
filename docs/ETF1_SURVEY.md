@@ -4,6 +4,7 @@ Consulta: 2026-09-04
 Site: https://etf1.com.br
 `llms.txt`: https://etf1.com.br/llms.txt
 Privacidade: https://etf1.com.br/privacidade
+Termos: https://etf1.com.br/termos-de-uso
 
 ## O que é
 
@@ -42,13 +43,17 @@ anunciado só para assinante OnePro.
 | `https://etf1.com.br/mcp` | 405 em GET/HEAD | Compatível com MCP que só aceita POST. Não exercitado. |
 | `GET /api`, `/docs`, `/developers`, `/faq`, `/sobre`, `/status`, `/metodologia` | 404 | Sem portal de desenvolvedor e sem FAQ/metodologia. |
 | `GET /api/og` | 200 PNG | Gerador de Open Graph. Não é API de dados. |
-| `GET /sitemap.xml` | 500 neste probe | `llms.txt` aponta o sitemap; a superfície de busca/IA está incompleta. |
+| `GET /sitemap.xml` | 200 (500 num probe anterior do mesmo dia) | Sitemapindex. Tratar 500 como falha transitória, não como fato permanente. |
 | `GET /privacidade` | 200 | Controlador, PostHog, Google Ads, OnePro AI. |
-| `GET /termos` | 404 | Linkado na privacidade; rota ausente. |
+| `GET /termos` | 404 | Path errado. O documento vive em `/termos-de-uso`. |
+| `GET /termos-de-uso` | 200 | Atualizado 6 ago 2026. §09: licença pessoal/não comercial; veda extração/ raspa sistemática, crawler sem autorização expressa, comercialização e engenharia reversa. §08: MCP/OnePro AI só para assinante, read-only. |
 | HTML das páginas de produto | 200 | Next.js + Cloudflare. Cookie de interface `etf1_itk` (HttpOnly, 6h). |
 
-Não registrar cliente OAuth, não chamar `/mcp/authorize` e não tratar o MCP
-como fonte core. O operador que quiser o degrau pago usa a própria conta.
+Esta nota é referência humana a páginas públicas pontuais (landing, legal,
+`llms.txt`, OAuth discovery, rotas 404/200). Não é licença para crawler,
+scrape ou redistribuição do corpus. §09 dos Termos veta isso sem autorização
+expressa. Não registrar cliente OAuth, não chamar `/mcp/authorize` e não
+tratar o MCP como fonte core.
 
 ## Anatomia de produto (rotas públicas)
 
@@ -92,10 +97,11 @@ Host de telemetria `e.etf1.com.br`. JSON-LD de `WebSite`,
 | Fonte oficial | Declara órgãos públicos + snapshot mensal | Fonte oficial é o contrato |
 | Self-host / MIT | Não | Sim |
 
-Decisão: **não** criar `src/findata/sources/etf1/`. Tratar OnePro MCP como
-possível degrau opcional no mesmo espírito da Mais Retorno (conta do
-operador, nunca credencial no repo) só se um caso real exigir. Até lá, o
-valor é referência de produto.
+Decisão: **não** criar `src/findata/sources/etf1/`. Não colocar OnePro MCP
+na cascata do resolver. Não há portal de desenvolvedor, não há cota anônima
+e o ToS reserva automação ao fluxo de assinante. Se um operador quiser o
+MCP, usa a conta paga dele fora deste repo. Sem licença escrita, isso não
+vira adapter nem degrau.
 
 ## Fosso
 

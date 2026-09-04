@@ -85,5 +85,9 @@ ETF1 (https://etf1.com.br) is the strongest public BR ETF analysis UI in the
 2026-09-04 sweep: ficha, holdings, rolling-window analysis, index complement,
 and a paid OnePro MCP. There is no anonymous data API. Do not add
 `src/findata/sources/etf1/`. Notes live in `docs/ETF1_SURVEY.md` and
-`docs/ETF1_PRODUCT_REF.md`; the row is in `docs/AWESOME.md`. The official-data
-gap it highlights is the same P2 ETF/BDR packaging already on the OBM backlog.
+`docs/ETF1_PRODUCT_REF.md`; the row is in `docs/AWESOME.md`.
+
+The packaging gap (ETF ficha, holdings rollup, reconstructed pre-inception
+history) is not a numbered item on this list. P2 here remains Tesouro
+Transparente CKAN. If that packaging becomes source work, give it its own
+priority and implement it from CVM/B3/ANBIMA, not from ETF1.
