@@ -70,6 +70,9 @@ Status: **v0.3.1 — alpha.** CI live at [`.github/workflows/ci.yml`](.github/wo
 
 ## 📚 Lessons from adjacent projects
 
+Open-source peers and closed products we study as refs. Not a catalog, not
+endorsements, not source adapters unless the note says so.
+
 ### From [OpenBB-finance/OpenBB](https://github.com/OpenBB-finance/OpenBB) (Python, global) — the reference 🐐
 
 The closest large-scale analogue to what we're building, and the bar to measure
@@ -132,6 +135,30 @@ ideas are worth copying:
   scheduler or a broker; let callers (cron, Airflow, GH Actions) drive it.
 - ❌ **yfinance fork.** They fork to fix non-US tickers; we already use
   mainline yfinance for B3 without modification.
+
+### From [ETF1](https://etf1.com.br) (closed, BR) — ETF terminal + OnePro
+
+Consulta 2026-09-04. Stop Loss Club / IBEE. Free Next.js ficha for B3, US and
+Irish ETFs (plus stocks, BDRs, FIIs, funds, Tesouro). Paid OnePro is
+allocation / Monte Carlo / GBI, not a data API. Notes:
+[`docs/ETF1_SURVEY.md`](docs/ETF1_SURVEY.md),
+[`docs/ETF1_PRODUCT_REF.md`](docs/ETF1_PRODUCT_REF.md).
+
+Evaluation:
+
+- ✅ **ETF ficha as a field set, not a scrape.** Identity, legal, TER, index,
+  holdings, style box. Implement from CVM cadastro + CDA + B3 + registry.
+- ✅ **Index complement + fee, stamped reconstructed.** Short ETF series
+  spliced onto the official index. Useful helper; never silent.
+- ✅ **`llms.txt` as the agent door.** What the product is, which URLs to
+  open, what it does not do (no real-time quotes, no recommendation).
+- 🟡 **Analysis contract.** Percentiles, Ulcer, max DD, monthly heatmap —
+  Chart Lab only after a normalized return series exists.
+- ❌ **No `src/findata/sources/etf1/`.** No anonymous REST. OnePro MCP is
+  paid (`onepro:read`). Terms §09 forbid systematic extract and unauthorized
+  crawlers. Not a resolver cascade step.
+- ❌ **OnePro modules.** Allocation, Monte Carlo and GBI are a planning
+  product. Out of scope here.
 
 ## 🧪 Known caveats
 

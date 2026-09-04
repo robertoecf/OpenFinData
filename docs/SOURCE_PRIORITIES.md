@@ -84,8 +84,8 @@ CVM/B3 coverage gaps justify it.
 ETF1 (https://etf1.com.br) is the strongest public BR ETF analysis UI in the
 2026-09-04 sweep: ficha, holdings, rolling-window analysis, index complement,
 and a paid OnePro MCP. There is no anonymous data API. Do not add
-`src/findata/sources/etf1/`. Notes live in `docs/ETF1_SURVEY.md` and
-`docs/ETF1_PRODUCT_REF.md`; the row is in `docs/AWESOME.md`.
+`src/findata/sources/etf1/`. Citation lives in `ROADMAP.md` (adjacent
+projects). Notes: `docs/ETF1_SURVEY.md`, `docs/ETF1_PRODUCT_REF.md`.
 
 The packaging gap (ETF ficha, holdings rollup, reconstructed pre-inception
 history) is not a numbered item on this list. P2 here remains Tesouro

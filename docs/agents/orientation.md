@@ -14,7 +14,8 @@ mortos, fronteira atual, openfindata, findata.
 - Contribuição humana: [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
 - Superfície MCP curada: [`docs/MCP_SURFACE.md`](../MCP_SURFACE.md).
 - Padrões de gráfico: [`docs/CHART_STANDARDS.md`](../CHART_STANDARDS.md).
-- Plataformas adjacentes (ref, não fonte): [`docs/AWESOME.md`](../AWESOME.md).
+- Projetos adjacentes (abertos e fechados): [`ROADMAP.md`](../../ROADMAP.md)
+  (seção Lessons).
 
 ## Decisões assentadas (leia antes de reabrir)
 

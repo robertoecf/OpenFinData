@@ -8,6 +8,10 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **ETF1 as a closed adjacent project.** `ROADMAP.md` cites
+  [etf1.com.br](https://etf1.com.br) next to the open-source peers. Survey and
+  product-ref notes in `docs/ETF1_SURVEY.md` and `docs/ETF1_PRODUCT_REF.md`.
+  Not a source adapter. OnePro MCP stays out of the resolver cascade.
 - **Public MCP `cvm_fund` quotes/structure parity (CVM only).** `dataset=daily`
   accepts `start`/`end` or `months` up to 12, stitches a single-class RCVM 175
   continuation onto legacy 555 INF_DIARIO when the files share sibling CNPJs,
@@ -25,6 +29,11 @@ adheres to [Semantic Versioning](https://semver.org/).
   `findata cvm cadastro`, `findata cvm daily`, and digit-normalized INF_DIARIO
   CNPJ matching. Rate limits on `/mcp` are unchanged. The Worker scans the
   deflated CSV in stream so INF_DIARIO does not materialize ~48 MB in RAM.
+
+### Removed
+
+- **`docs/AWESOME.md`.** This repo cites adjacent open and closed projects
+  in `ROADMAP.md` (Lessons). It is not an awesome-list.
 
 ### Changed
 

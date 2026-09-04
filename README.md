@@ -108,7 +108,6 @@ SUSEP e o registro offline CNPJ/ticker/nome.
 - [Open Finance público](docs/OPENFINANCE_PUBLIC.md)
 - [Fontes com autenticação](docs/SOURCES_WITH_AUTH.md)
 - [Prioridades de fontes](docs/SOURCE_PRIORITIES.md)
-- [Awesome adjacent platforms](docs/AWESOME.md)
 - [Manifesto](MANIFESTO.txt)
 - [Contribuição](CONTRIBUTING.md)
 
