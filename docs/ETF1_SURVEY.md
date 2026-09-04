@@ -5,6 +5,8 @@ Site: https://etf1.com.br
 `llms.txt`: https://etf1.com.br/llms.txt
 Privacidade: https://etf1.com.br/privacidade
 Termos: https://etf1.com.br/termos-de-uso
+Citação no repo: [`ROADMAP.md`](../ROADMAP.md) → Lessons from adjacent
+projects (produto fechado). Não é fonte.
 
 ## O que é
 

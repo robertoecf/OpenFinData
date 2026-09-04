@@ -2,6 +2,8 @@
 
 Consulta: 2026-09-04
 Referência pública: https://etf1.com.br
+Citação no repo: [`ROADMAP.md`](../ROADMAP.md) → Lessons from adjacent
+projects (produto fechado).
 
 ## Boundary
 
