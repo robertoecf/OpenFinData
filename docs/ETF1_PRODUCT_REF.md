@@ -53,7 +53,7 @@ already know in pieces:
 10. Market-maker contracts (spread, size, hours).
 
 Openfindata fit: identity and legal are CVM/B3/registry work. Holdings are
-CDA. Returns need a normalized time-series adapter (already the OBM lesson).
+CDA. Returns need a normalized time-series adapter.
 Style box and factors are derived views, not a new source.
 
 ### Analysis page (example: `/etf/LVOL11/analise`)
@@ -106,7 +106,7 @@ Keep Python-first. No JS app as the first move.
 1. **ETF ficha as API fields, not a page.** Resolve ticker → CNPJ, ISIN,
    gestor/admin, TER, index name, inception. Seed + CVM cadastro. Not a
    numbered item in `SOURCE_PRIORITIES.md` today (P2 there is Tesouro
-   CKAN). Do not file it under an OBM backlog.
+   CKAN).
 2. **Holdings view.** Latest CDA for ETFs, top-N + sector rollup. Public
    MCP already grew CDA; productize a stable response shape.
 3. **Index complement helper.** Given ETF fee + official index series,
