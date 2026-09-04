@@ -78,3 +78,12 @@ but it is unofficial HTML, partly Cloudflare-gated, and the old public gist is
 stale and not directly reusable. Keep it documented in
 `docs/source-notes/advfn.md`; do not implement a source adapter until official
 CVM/B3 coverage gaps justify it.
+
+## ETF1 — product reference, not an adapter
+
+ETF1 (https://etf1.com.br) is the strongest public BR ETF analysis UI in the
+2026-09-04 sweep: ficha, holdings, rolling-window analysis, index complement,
+and a paid OnePro MCP. There is no anonymous data API. Do not add
+`src/findata/sources/etf1/`. Notes live in `docs/ETF1_SURVEY.md` and
+`docs/ETF1_PRODUCT_REF.md`; the row is in `docs/AWESOME.md`. The official-data
+gap it highlights is the same P2 ETF/BDR packaging already on the OBM backlog.
