@@ -59,6 +59,12 @@ _EQUITY_ETFS = {
     "XINA11": ("China (MSCI)", "Internacional"),
     "NASD11": ("Nasdaq-100", "Internacional"),
     "SPXI11": ("S&P 500", "Internacional"),
+    "SPXB11": ("S&P 500", "Internacional"),
+    # Synthetic quanto: same equity index, FX-neutral. CDA is mostly Tesouro +
+    # cash + a futures overlay — that collateral is not the asset class.
+    "SPBZ11": ("S&P 500 Futures Quanto", "Internacional"),
+    "SPXR11": ("S&P 500 Futures Quanto", "Internacional"),
+    "SPXH11": ("S&P 500 Futures Quanto", "Internacional"),
     "EURP11": ("Europa", "Internacional"),
     "ACWI11": ("Global (ACWI)", "Internacional"),
 }

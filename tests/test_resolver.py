@@ -77,6 +77,25 @@ def test_ivvb11_sp500_etf_is_renda_variavel_exposure_internacional():
     assert r.underlying_nature == "acoes"
 
 
+@pytest.mark.parametrize("ticker", ["SPBZ11", "SPXR11", "SPXH11"])
+def test_sp500_quanto_etf_is_rv_not_renda_fixa_or_fii(ticker):
+    # Same index family (S&P 500 Futures Quanto). CDA looks like Tesouro +
+    # cash; economic exposure is US equity. Ticker-only must not fall to FII.
+    r = _resolve(ticker=ticker)
+    assert r.kind == "etf"
+    assert r.macro_class == "Renda Variável"
+    assert r.macro_class != "Renda Fixa"
+    assert r.exposure == "Internacional"
+    assert r.underlying_nature == "acoes"
+
+
+def test_fundo_de_indice_name_without_seeded_ticker_is_etf():
+    r = _resolve(name="BTG PACTUAL S&P 500 FUTURES QUANTO BRL FUNDO DE INDICE")
+    assert r.kind == "etf"
+    assert r.macro_class == "Renda Variável"
+    assert r.exposure == "Internacional"
+
+
 @pytest.mark.parametrize("ticker", ["HGLG11", "MXRF11"])
 def test_fiis_are_renda_variavel_subclasse_fii(ticker):
     r = _resolve(ticker=ticker)
