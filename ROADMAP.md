@@ -163,6 +163,8 @@ Evaluation:
 
 - ✅ **ETF ficha as a field set, not a scrape.** Identity, legal, TER, index,
   holdings, style box. Implement from CVM cadastro + CDA + B3 + registry.
+  Do not trust a third-party class: SPBZ11 ≡ SPXR11 (S&P 500 Quanto) is
+  RV, even when the CDA looks like renda fixa.
 - ✅ **Index complement + fee, stamped reconstructed.** Short ETF series
   spliced onto the official index. Useful helper; never silent.
 - ✅ **`llms.txt` as the agent door.** What the product is, which URLs to

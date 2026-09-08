@@ -149,6 +149,7 @@ segundo não.
 | COE | Estruturados | (n/a) | `kind=coe`, **nunca** ETF |
 | "Crédito Estruturado" (Warren/AMW) | Renda Fixa | Brasil | name-trap: é crédito, não Estruturados |
 | IVVB11 | Renda Variável | Internacional | ETF de ações S&P 500 |
+| SPBZ11 / SPXR11 / SPXH11 | Renda Variável | Internacional | S&P 500 Futures Quanto; CDA de Tesouro+caixa ≠ RF |
 | HGLG11 / MXRF11 | Renda Variável | Brasil | subclasse FII |
 
 ## Não-funcionais
@@ -167,3 +168,4 @@ segundo não.
 - Confirmação ISIN-level da incentivada (12.431) via ANBIMA/debentures.com.br no
   degrau de cascata — hoje fica `candidate`.
 - Ampliar o seed curado de ETFs conforme novos ETFs forem listados na B3.
+  Synthetic/quanto: classifique pelo índice, não pelo colateral do CDA.
