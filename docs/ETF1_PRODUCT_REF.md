@@ -17,6 +17,11 @@ Independently implementable patterns:
 - dual-currency (BRL/USD) and declared as-of dates;
 - `llms.txt` as an agent entry point.
 
+Do not copy their taxonomy. SPBZ11 / SPXR11 / SPXH11 share the S&P 500
+Futures Quanto index (B3 class: ações). A CDA full of Tesouro + cash is
+the futures overlay collateral, not renda fixa. Classify by economic
+exposure / official index, not by holdings weights.
+
 Do not copy proprietary code, visual identity, theme packs, copy, icons,
 assets, private API responses, or authenticated MCP payloads. Do not register
 an OAuth client against their MCP from this repo. Terms

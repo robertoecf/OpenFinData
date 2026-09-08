@@ -32,6 +32,10 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Resolver: S&P 500 Quanto ETFs are RV.** `SPBZ11` / `SPXR11` /
+  `SPXH11` (same Futures Quanto index) and `SPXB11` seed as equity,
+  not FII. `FUNDO DE INDICE` is an ETF name signal. CDA collateral
+  of a synthetic ETF is not the asset class.
 - **OpenBB adjacent-project note.** `ROADMAP.md` no longer treats
   AGPLv3 + hosted Hub as a stable dual-license business. It cites the
   2026-08-25 wind-down / permissive-relicense commitment and records
