@@ -27,6 +27,7 @@ from findata.sources.b3.listed_funds import ListedFund, lookup_listed_fund
 
 _BR_TZ = ZoneInfo("America/Sao_Paulo")
 _CATALOG_CONFIDENCE = 0.91
+_MISS_CONFIDENCE = 0.4
 _INTL_NAME_MARKERS = (
     "S&P",
     "SP500",
@@ -170,7 +171,61 @@ _TYPE_HINTS: dict[str, dict[str, Any]] = {
         "exposure": "Brasil",
         "notes": "Catálogo B3: FIDC listado.",
     },
+    "FIA": {
+        "kind": "fundo",
+        "macro_class": "Renda Variável",
+        "subclasse": "Ações",
+        "underlying_nature": "acoes",
+        "estrutura": "FIA",
+        "exposure": "Brasil",
+        "notes": "Catálogo B3: FIA listado.",
+    },
+    "FI-RF": {
+        "kind": "fundo",
+        "macro_class": "Renda Fixa",
+        "subclasse": "Renda Fixa",
+        "underlying_nature": "credito",
+        "estrutura": "FI-RF",
+        "exposure": "Brasil",
+        "notes": "Catálogo B3: fundo de renda fixa listado.",
+    },
+    "FI-MOEDA": {
+        "kind": "fundo",
+        "macro_class": "Alternativos",
+        "subclasse": "Moeda",
+        "underlying_nature": "cambio",
+        "estrutura": "FI-MOEDA",
+        "exposure": None,
+        "notes": "Catálogo B3: fundo de moeda listado.",
+    },
+    "SETORIAL": {
+        "kind": "fundo",
+        "macro_class": "Alternativos",
+        "subclasse": "Setorial",
+        "underlying_nature": "outro",
+        "estrutura": "SETORIAL",
+        "exposure": "Brasil",
+        "notes": "Catálogo B3: fundo setorial listado.",
+    },
 }
+
+_FIM_HINT: dict[str, Any] = {
+    "kind": "fundo",
+    "macro_class": "Multimercado",
+    "subclasse": "Multimercado",
+    "underlying_nature": "multiativos",
+    "estrutura": "FIM",
+    "exposure": "Brasil",
+    "notes": "Catálogo B3: FIM listado.",
+}
+for _fim_type in (
+    "FIM-INFRA",
+    "FIM-RF-C-REND",
+    "FIM-RF-S-REND",
+    "FIM-RV-C-REND",
+    "FIM-RV-S-REND",
+):
+    _TYPE_HINTS[_fim_type] = _FIM_HINT
 
 
 def _name_signals_internacional(fund_name: str) -> bool:
@@ -237,14 +292,46 @@ def classification_from_listed_fund(norm: NormalizedInput, fund: ListedFund) -> 
     )
 
 
+def _not_listed_classification(norm: NormalizedInput) -> AssetClassification:
+    """Suffix-11 heuristic is not a listing. Catalog miss → not FII."""
+    return AssetClassification(
+        identifier_resolved=IdentifierResolved(
+            cnpj=norm.cnpj, ticker=norm.ticker, isin=norm.isin, name=norm.name_raw
+        ),
+        kind="outro",
+        cvm=CvmInfo(),
+        macro_class="Indefinido",
+        source="b3",
+        confidence=_MISS_CONFIDENCE,
+        as_of=datetime.now(_BR_TZ).date().isoformat(),
+        cascade=["b3:listed-funds"],
+        signals=[
+            Signal(
+                rule="b3_listed_funds",
+                evidence=f"ticker={norm.ticker}",
+                detail="not_listed",
+            )
+        ],
+        notes=(
+            "Catálogo B3: ticker *11 não listado em ETF/FII/FI-Infra/FIAGRO/FIP/FIDC/"
+            "FIM. Não assumir FII pelo sufixo."
+        ),
+    )
+
+
+def _is_suffix_11_heuristic(current: AssetClassification) -> bool:
+    return any(signal.rule == "ticker_suffix_11" for signal in current.signals)
+
+
 async def b3_listed_provider(
     norm: NormalizedInput, current: AssetClassification
 ) -> AssetClassification | None:
     """Cascade step: official B3 catalog for ``*11`` tickers."""
-    del current
     if not norm.ticker or norm.ticker_digits_suffix != "11":
         return None
     fund = await lookup_listed_fund(norm.ticker)
-    if fund is None:
-        return None
-    return classification_from_listed_fund(norm, fund)
+    if fund is not None:
+        return classification_from_listed_fund(norm, fund)
+    if _is_suffix_11_heuristic(current):
+        return _not_listed_classification(norm)
+    return None

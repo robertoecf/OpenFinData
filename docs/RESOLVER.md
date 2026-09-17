@@ -96,7 +96,8 @@ Quando `confidence < ~0.9` ou status `candidate`, é gancho de revisão humana.
    opcional via API de dados / MCP; ver limites Free abaixo.
 3. **B3 listed-funds catalog** (oficial, `fundsListedProxy`) — distingue
    `ETF` / `ETF-RF` / `FII` / `FI-INFRA` para ticker `*11`. Ligado em REST,
-   MCP e `findata resolve`. O `resolve_asset()` de biblioteca continua
+   MCP e `findata resolve`. Miss no catálogo **não** mantém o chute FII do
+   sufixo 11 (`Indefinido`). O `resolve_asset()` de biblioteca continua
    offline até o caller passar `providers=[b3_listed_provider]`.
 4. **outro provider** (CVM dados abertos / outros).
 5. **web_search restrito** a `maisretorno.com`, `b3.com.br`,

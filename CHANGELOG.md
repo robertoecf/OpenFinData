@@ -14,9 +14,10 @@ adheres to [Semantic Versioning](https://semver.org/).
   `GET /b3/listed-funds`, `findata b3 listed`, and `findata resolve` expose it.
   REST/MCP `resolve_asset` injects the catalog for unknown `*11` tickers so
   `SPBZ11`/`SPXR11` classify as ETF de renda variável instead of the suffix-11
-  FII heuristic. The library `resolve_asset()` stays offline unless the caller
-  passes `providers=[b3_listed_provider]`. `IFRA11` is `FI-INFRA` on B3, not
-  `ETF-RF`. Source note: `docs/source-notes/b3-listed-funds.md`.
+  FII heuristic. A catalog miss no longer keeps that FII guess (`Indefinido`).
+  The library `resolve_asset()` stays offline unless the caller passes
+  `providers=[b3_listed_provider]`. `IFRA11` is `FI-INFRA` on B3, not `ETF-RF`.
+  Source note: `docs/source-notes/b3-listed-funds.md`.
 - **Public MCP `cvm_fund` quotes/structure parity (CVM only).** `dataset=daily`
   accepts `start`/`end` or `months` up to 12, stitches a single-class RCVM 175
   continuation onto legacy 555 INF_DIARIO when the files share sibling CNPJs,
