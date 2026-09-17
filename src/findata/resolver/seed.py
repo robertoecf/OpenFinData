@@ -3,11 +3,12 @@ identifier alone.
 
 Two honest cases need a curated table, and only these:
 
-1. **ETFs** — an ETF's macro follows its *underlying*, and the ticker carries no
-   underlying signal. ``IVVB11`` (S&P 500 equities → RV) and ``IFRA11``
-   (infra debentures → RF) both end in ``11``; nothing in the symbol separates
-   them. The B3 ETF universe is small (~100 listed) and stable, so a curated
-   ticker→underlying map is the deterministic, auditable answer.
+1. **ETFs** — listing *type* now comes from the official B3 catalog
+   (``ETF`` vs ``ETF-RF`` vs ``FII`` vs ``FI-INFRA``). The seed remains for
+   facts the listing type does not carry: underlying (Tesouro vs debênture)
+   and geography (``IVVB11`` is RV + Internacional). ``IVVB11`` and
+   ``IFRA11`` both end in ``11``; the catalog splits the vehicle, the seed
+   splits the economic nature.
 2. **Global-mandate funds with no structural tell** — ``ARBOR FIC FIA`` is an
    equities wrapper (FIA → RV) whose mandate is global, but the name has no
    ``IE`` and no "global"/"world" keyword. Only fund-level knowledge sets its

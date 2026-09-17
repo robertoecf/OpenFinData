@@ -42,7 +42,7 @@ from pydantic import BaseModel, Field
 
 from findata.api._b3_common import MAX_TICKERS, resolve_quotes
 from findata.registry import lookup
-from findata.resolver import resolve_asset
+from findata.resolver import b3_listed_provider, resolve_asset
 from findata.sources.anbima import indices as anbima_src
 from findata.sources.aneel import leiloes
 from findata.sources.b3 import cotahist, indices
@@ -327,10 +327,18 @@ async def resolve_asset_tool(
     a confirmed/candidate certainty status), ``source``, ``confidence``, the
     ``cascade`` walked, and structured ``signals`` (which rule fired on what
     evidence) — deterministic and cacheable. Pass any subset of identifiers; a
-    bare ticker/CNPJ given as ``name`` is auto-detected. Use this (not
+    bare ticker/CNPJ given as ``name`` is auto-detected. Unknown ``*11`` tickers
+    are checked against the official B3 listed-funds catalog (ETF vs ETF-RF vs
+    FII vs FI-Infra) before the suffix-11 FII heuristic is kept. Use this (not
     ``registry_lookup``) when you need the asset's class, not its registry entity.
     """
-    return await resolve_asset(name=name, ticker=ticker, cnpj=cnpj, isin=isin)
+    return await resolve_asset(
+        name=name,
+        ticker=ticker,
+        cnpj=cnpj,
+        isin=isin,
+        providers=[b3_listed_provider],
+    )
 
 
 # ── BCB: Banco Central ────────────────────────────────────────────

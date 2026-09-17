@@ -2,9 +2,10 @@
 
 | Module        | Source                                  | Cadence              |
 |---------------|-----------------------------------------|----------------------|
-| `quotes.py`   | Yahoo Finance (via yfinance)            | live + intraday      |
-| `cotahist.py` | B3 SerHist fixed-width archive (1986+)  | annual / month / day |
-| `indices.py`  | B3 indexProxy/indexStatisticsProxy JSON | portfolios + monthly |
+| `quotes.py`       | Yahoo Finance (via yfinance)            | live + intraday      |
+| `cotahist.py`     | B3 SerHist fixed-width archive (1986+)  | annual / month / day |
+| `indices.py`      | B3 indexProxy/indexStatisticsProxy JSON | portfolios + monthly |
+| `listed_funds.py` | B3 fundsListedProxy JSON                | ETF / FII / FI-Infra |
 
 The optional ``[b3]`` extra installs ``yfinance`` for live quotes.
 ``cotahist`` and ``indices`` use only stdlib + httpx (already in core).
@@ -25,6 +26,13 @@ from findata.sources.b3.indices import (
     get_index_portfolio,
     list_known_indices,
 )
+from findata.sources.b3.listed_funds import (
+    FUND_TYPES,
+    ListedFund,
+    get_listed_funds,
+    list_fund_types,
+    lookup_listed_fund,
+)
 from findata.sources.b3.quotes import (
     StockHistoryPoint,
     StockQuote,
@@ -34,11 +42,13 @@ from findata.sources.b3.quotes import (
 )
 
 __all__ = [
+    "FUND_TYPES",
     "KNOWN_INDICES",
     "CotahistTrade",
     "IndexConstituent",
     "IndexMonthlyPoint",
     "IndexPortfolio",
+    "ListedFund",
     "StockHistoryPoint",
     "StockQuote",
     "get_cotahist_day",
@@ -47,7 +57,10 @@ __all__ = [
     "get_history",
     "get_index_monthly_evolution",
     "get_index_portfolio",
+    "get_listed_funds",
     "get_multiple_quotes",
     "get_quote",
+    "list_fund_types",
     "list_known_indices",
+    "lookup_listed_fund",
 ]
