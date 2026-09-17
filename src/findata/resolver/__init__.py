@@ -13,6 +13,7 @@ Deterministic, cacheable, auditable, no PII. See ``openfindata-mcp-spec.md``.
 
 from __future__ import annotations
 
+from findata.resolver.b3_catalog import b3_listed_provider
 from findata.resolver.engine import AssetProvider, classify, resolve_asset
 from findata.resolver.models import (
     AssetClassification,
@@ -31,6 +32,7 @@ __all__ = [
     "IdentifierResolved",
     "NormalizedInput",
     "TaxInfo",
+    "b3_listed_provider",
     "classify",
     "normalize",
     "resolve_asset",

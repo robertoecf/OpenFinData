@@ -94,16 +94,20 @@ Quando `confidence < ~0.9` ou status `candidate`, é gancho de revisão humana.
    o test set sem rede.
 2. **Mais Retorno** (dados BR de fundo/CNPJ/classe CVM) — provider externo
    opcional via API de dados / MCP; ver limites Free abaixo.
-3. **outro provider** (CVM dados abertos / B3).
-4. **web_search restrito** a `maisretorno.com`, `b3.com.br`,
+3. **B3 listed-funds catalog** (oficial, `fundsListedProxy`) — distingue
+   `ETF` / `ETF-RF` / `FII` / `FI-INFRA` para ticker `*11`. Ligado em REST,
+   MCP e `findata resolve`. O `resolve_asset()` de biblioteca continua
+   offline até o caller passar `providers=[b3_listed_provider]`.
+4. **outro provider** (CVM dados abertos / outros).
+5. **web_search restrito** a `maisretorno.com`, `b3.com.br`,
    `yahoofinance.com.br`, `debentures.com.br`.
 
 Cada degrau que retorna resultado **substitui** a classificação atual (o
 provider controla campos, `source` e `confidence`); o resolver só antepõe o
-`cascade` anterior ao `cascade` devolvido. Os degraus 2 a 4 são um ponto de
-extensão injetável (`AssetProvider`), consultado só quando o resultado do
-núcleo está fraco. Hoje **só o degrau 1 está ligado** (os externos são stubs a
-conectar no deploy).
+`cascade` anterior ao `cascade` devolvido. Os degraus 2 e 4–5 são pontos de
+extensão injetáveis (`AssetProvider`), consultados só quando o resultado do
+núcleo está fraco. O degrau 3 (catálogo B3) está ligado nas superfícies
+HTTP/CLI; o núcleo offline (degrau 1) não muda.
 
 ### Mais Retorno: plano Free e cotas
 
@@ -167,5 +171,7 @@ segundo não.
   web search restrito).
 - Confirmação ISIN-level da incentivada (12.431) via ANBIMA/debentures.com.br no
   degrau de cascata — hoje fica `candidate`.
-- Ampliar o seed curado de ETFs conforme novos ETFs forem listados na B3.
-  Synthetic/quanto: classifique pelo índice, não pelo colateral do CDA.
+- Ampliar o seed curado só para underlying/exposição que o tipo B3 não
+  carrega (Tesouro vs debênture; S&P 500 vs Ibovespa). Quanto/sintético
+  classifica pelo índice, não pelo colateral do CDA. O veículo
+  (ETF vs FII vs FI-Infra) vem do catálogo oficial.

@@ -28,7 +28,7 @@ from tests.test_cvm_fund_cadastro import _daily_zip, _registro_zip
 from tests.test_cvm_funds import _LISTING_HTML, _make_cda_zip
 
 EXPECTED_TOOLS = 25  # curated tools with code mode OFF (the default)
-EXPECTED_REST_OPERATIONS = 97  # all REST routes (unconditional); bump when the surface changes
+EXPECTED_REST_OPERATIONS = 98  # all REST routes (unconditional); bump when the surface changes
 
 _HTTP_METHODS = {"get", "post", "put", "delete", "patch"}
 

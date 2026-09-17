@@ -62,7 +62,8 @@ Status: **v0.3.1 — alpha.** CI live at [`.github/workflows/ci.yml`](.github/wo
 - **Redis cache** — drop-in replacement for the in-memory LRU for multi-replica
   deploys.
 - **ANBIMA indexes** — IMA, IMA-B, IDkA, IHFA.
-- **B3 native** — scrape official CSVs/COTAHIST to remove the `yfinance` dep.
+- **B3 native** — COTAHIST + listed-funds catalog already official JSON/fixed-width;
+  remaining work is dropping the `yfinance` live-quote extra.
 - **IBGE expansion** — PNAD Contínua, produção industrial, comércio varejista.
 - **TypeScript SDK** — generate from the OpenAPI spec.
 - **Webhooks / streaming** — SSE for "give me the new PTAX the moment BCB
