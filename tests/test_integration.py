@@ -112,3 +112,14 @@ class TestB3:
         data = await quotes.get_history("VALE3", period="5d")
         assert len(data) > 0
         assert all(p.close > 0 for p in data)
+
+    async def test_listed_funds_etf_includes_spxr(self) -> None:
+        from findata.sources.b3.listed_funds import get_listed_funds, lookup_listed_fund
+
+        funds = await get_listed_funds("ETF")
+        tickers = {fund.ticker for fund in funds}
+        assert "SPXR11" in tickers
+        assert "SPBZ11" in tickers
+        found = await lookup_listed_fund("SPXR11", "ETF")
+        assert found is not None
+        assert found.type_fund == "ETF"

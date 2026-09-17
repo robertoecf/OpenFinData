@@ -334,6 +334,84 @@ def b3_index_monthly(
         rprint(f"[dim](showing last {max_shown} of {len(rows)} monthly points)[/dim]")
 
 
+@b3_app.command("listed")
+def b3_listed(
+    ticker: str | None = typer.Argument(
+        None, help="Ticker or acronym (SPXR11, SPBZ). Omit to list a type."
+    ),
+    type_fund: str | None = typer.Option(
+        None, "--type", "-t", help="Official B3 typeFund: ETF, ETF-RF, FII, FI-INFRA, …"
+    ),
+) -> None:
+    """Official B3 listed-funds catalog (fundsListedProxy JSON, not HTML)."""
+    from findata.sources.b3.listed_funds import (
+        get_listed_funds,
+        list_fund_types,
+        lookup_listed_fund,
+    )
+
+    if ticker:
+        fund = _run(lookup_listed_fund(ticker, type_fund))
+        if fund is None:
+            rprint(f"[yellow]Not in B3 listed-funds catalog: {ticker}[/yellow]")
+            return
+        rprint(f"[bold]{fund.ticker}[/bold]  {fund.type_fund}  ·  {fund.fund_name}")
+        rprint(f"  acronym: {fund.acronym}")
+        rprint(f"  trading: {fund.trading_name}")
+        if fund.description:
+            rprint(f"  tipo B3: {fund.description}")
+        return
+
+    if type_fund is None:
+        table = Table(title="B3 listed-funds types")
+        table.add_column("typeFund", style="cyan")
+        table.add_column("Descrição")
+        for key, label in _run(list_fund_types()).items():
+            table.add_row(key, label)
+        rprint(table)
+        return
+
+    rows = _run(get_listed_funds(type_fund))
+    if not rows:
+        rprint(f"[yellow]No B3 listed funds for type {type_fund}.[/yellow]")
+        return
+    table = Table(title=f"B3 listed funds — {type_fund} ({len(rows)})")
+    table.add_column("Ticker", style="cyan")
+    table.add_column("Nome")
+    table.add_column("Pregão")
+    max_shown = 80
+    for fund in rows[:max_shown]:
+        table.add_row(fund.ticker, fund.fund_name, fund.trading_name)
+    rprint(table)
+    if len(rows) > max_shown:
+        rprint(f"[dim](showing {max_shown} of {len(rows)} funds)[/dim]")
+
+
+@app.command("resolve")
+def resolve_cmd(
+    query: str = typer.Argument(help="Ticker or name (SPBZ11, IFRA11, FI ITAUINFRA)"),
+    offline: bool = typer.Option(
+        False, "--offline", help="Skip the official B3 listed-funds catalog"
+    ),
+) -> None:
+    """Classify an asset. Uses the B3 catalog for unknown *11 tickers unless --offline."""
+    from findata.resolver import b3_listed_provider, resolve_asset
+
+    providers = [] if offline else [b3_listed_provider]
+    result = _run(resolve_asset(name=query, providers=providers))
+    ident = result.identifier_resolved
+    label = ident.ticker or ident.name or query
+    rprint(f"[bold]{label}[/bold]  {result.macro_class}  ·  {result.kind}")
+    if result.subclasse:
+        rprint(f"  subclasse: {result.subclasse}")
+    if result.exposure:
+        rprint(f"  exposure: {result.exposure}")
+    rprint(f"  source: {result.source}  confidence: {result.confidence:.2f}")
+    rprint(f"  cascade: {', '.join(result.cascade)}")
+    if result.notes:
+        rprint(f"  {result.notes}")
+
+
 # ── Tesouro commands ───────────────────────────────────────────────
 
 tesouro_app = typer.Typer(help="Tesouro Direto treasury bonds", no_args_is_help=True)

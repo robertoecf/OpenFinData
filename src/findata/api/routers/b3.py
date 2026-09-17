@@ -13,7 +13,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Path, Query
 
 from findata.api._b3_common import MAX_TICKERS, resolve_quotes
-from findata.sources.b3 import cotahist, indices
+from findata.sources.b3 import cotahist, indices, listed_funds
 
 router = APIRouter(prefix="/b3", tags=["B3 - Bolsa"])
 
@@ -159,3 +159,39 @@ async def index_monthly_evolution(
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+# ── Listed funds — official B3 catalog (ETF / ETF-RF / FII / FI-Infra) ──
+
+
+@router.get("/listed-funds")
+async def listed_funds_catalog(
+    type_fund: str | None = Query(
+        default=None,
+        alias="type",
+        description="Official B3 typeFund (ETF, ETF-RF, FII, FI-INFRA, …)",
+    ),
+    ticker: str | None = Query(
+        default=None,
+        description="Listed-fund ticker or acronym (SPXR11, SPBZ, HGLG11)",
+    ),
+) -> Any:
+    """Official B3 listed-funds catalog via fundsListedProxy JSON.
+
+    Pass ``ticker`` to look up one fund across official types (ETF before FII).
+    Pass ``type`` to list every fund in that B3 page. Omit both to list the
+    known ``typeFund`` values.
+    """
+    try:
+        if ticker:
+            fund = await listed_funds.lookup_listed_fund(ticker, type_fund)
+            if fund is None:
+                raise HTTPException(
+                    status_code=404, detail=f"Not in B3 listed-funds catalog: {ticker}"
+                )
+            return fund
+        if type_fund:
+            return await listed_funds.get_listed_funds(type_fund)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return await listed_funds.list_fund_types()
