@@ -9,6 +9,7 @@ The B3 listed-funds pages (`fundsListedPage/ETF`, `ETF-RF`, `FII`, `FI-INFRA`,
 FI-Infra. A ticker ending in `11` does not encode that split — `SPXR11` and
 `HGLG11` share a suffix. The resolver's offline core still guesses FII for an
 unknown `*11`; REST, MCP and `findata resolve` then consult this catalog.
+A catalog miss does not keep the FII suffix guess (`Indefinido`).
 
 ## Endpoint
 
