@@ -23,8 +23,9 @@ Key traps the ordering encodes (spec §Armadilhas):
   * ``"Crédito Estruturado"`` is RF (credit), **not** Estruturados — checked
     before any COE/Estruturados rule.
   * **COE** is always Estruturados and **never** an ETF.
-  * an ETF/fund is classified by its **underlying** (IFRA11 debêntures → RF;
-    IVVB11 ações → RV).
+  * an ETF/fund is classified by its **underlying / index**, not by CDA
+    collateral (IFRA11 debêntures → RF; IVVB11 / SPBZ11 ações → RV).
+    A quanto S&P 500 ETF holding Tesouro + caixa is still RV.
   * geography is the orthogonal ``exposure`` axis, never a macro class: a
     global-mandate FIA is RV + exposure=Internacional; IVVB11 is RV +
     Internacional; a BDR is RV + Internacional.
@@ -552,7 +553,7 @@ def _rule_payload(norm: NormalizedInput) -> dict[str, Any]:
         }
 
     # 8) ETF by name, no curated hit → infer underlying from name keywords.
-    _etf_phrases = ("ISHARES", "INDEX FUND")
+    _etf_phrases = ("ISHARES", "INDEX FUND", "FUNDO DE INDICE")
     if n.has_token("ETF") or n.name_contains(*_etf_phrases):
         etf_evidence = _first_matching_token(n, ("ETF",)) or _first_matching_phrase(n, _etf_phrases)
         return _etf_payload(n, etf_evidence or "ETF")
