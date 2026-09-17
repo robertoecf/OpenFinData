@@ -83,6 +83,15 @@ LOOKUP_TYPES: tuple[str, ...] = (
     "FIAGRO-FIP",
     "FIP",
     "FIDC",
+    "FIA",
+    "FI-RF",
+    "FI-MOEDA",
+    "SETORIAL",
+    "FIM-INFRA",
+    "FIM-RF-C-REND",
+    "FIM-RF-S-REND",
+    "FIM-RV-C-REND",
+    "FIM-RV-S-REND",
 )
 
 _DEFAULT_PAGE_SIZE = 100

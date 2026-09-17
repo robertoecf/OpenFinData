@@ -167,6 +167,23 @@ async def test_lookup_miss_returns_none() -> None:
     assert await lookup_listed_fund("ZZZZ11") is None
 
 
+@respx.mock
+async def test_catalog_miss_does_not_keep_suffix_11_fii() -> None:
+    respx.get(_LIST_URL).mock(return_value=httpx.Response(200, json=_page()))
+    from findata.resolver import b3_listed_provider
+
+    offline = classify(normalize(ticker="ZZZZ11"))
+    assert offline.kind == "fii"
+    result = await resolve_asset(ticker="ZZZZ11", providers=[b3_listed_provider])
+    assert result.kind == "outro"
+    assert result.macro_class == "Indefinido"
+    assert result.source == "b3"
+    assert result.signals[-1].detail == "not_listed"
+    still_offline = await resolve_asset(ticker="ZZZZ11")
+    assert still_offline.kind == "fii"
+    assert still_offline.source == "openfindata"
+
+
 async def test_unknown_type_is_value_error() -> None:
     with pytest.raises(ValueError, match="unknown B3 listed-fund type"):
         await get_listed_funds("NOT-A-TYPE")
