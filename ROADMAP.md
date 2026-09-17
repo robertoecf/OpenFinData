@@ -70,8 +70,8 @@ Status: **v0.3.1 — alpha.** CI live at [`.github/workflows/ci.yml`](.github/wo
 
 ## 📚 Lessons from adjacent projects
 
-Open-source peers and closed products we study as refs. Not a catalog, not
-endorsements, not source adapters unless the note says so.
+Lista de observação: open-source peers and closed products we study as refs.
+Not endorsements, not source adapters unless the note says so.
 
 ### From [OpenBB-finance/OpenBB](https://github.com/OpenBB-finance/OpenBB) (Python, global) — the reference 🐐
 
