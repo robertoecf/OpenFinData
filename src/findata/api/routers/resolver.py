@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Query
 
-from findata.resolver import AssetClassification, resolve_asset
+from findata.resolver import AssetClassification, b3_listed_provider, resolve_asset
 
 router = APIRouter(prefix="/resolver", tags=["Resolver"])
 
@@ -31,6 +31,13 @@ async def resolve(
     Multimercado, Alternativos, Estruturados) + ``exposure`` (eixo ortogonal de
     geografia: Brasil/Internacional) + subclasse, underlying, debênture/Lei
     12.431, ``source``, ``confidence``, ``signals`` e a cascata percorrida.
-    Determinístico e cacheável.
+    Determinístico no núcleo; tickers ``*11`` sem seed passam pelo catálogo
+    oficial B3 (ETF vs FII vs FI-Infra).
     """
-    return await resolve_asset(name=name, ticker=ticker, cnpj=cnpj, isin=isin)
+    return await resolve_asset(
+        name=name,
+        ticker=ticker,
+        cnpj=cnpj,
+        isin=isin,
+        providers=[b3_listed_provider],
+    )

@@ -18,7 +18,7 @@ Para testar interativamente, rode `findata serve` e abra `/api/docs` ou `/redoc`
 | IBGE | Indicadores econômicos, IPCA e grupos/subitens | `/ibge/indicators`, `/ibge/indicators/{name}`, `/ibge/ipca/breakdown`, `/ibge/ipca/groups` | Não |
 | IPEA Data | Catálogo e séries macroeconômicas OData | `/ipea/catalog`, `/ipea/search`, `/ipea/series/{sercodigo}`, `/ipea/metadata/{sercodigo}` | Não |
 | Open Finance Brasil | Diretório público, participantes, recursos, JWKS e Portal de Dados | `/openfinance/resources`, `/openfinance/participants`, `/openfinance/endpoints`, `/openfinance/directory/api-resources`, `/openfinance/portal/datasets` | Não para dados públicos |
-| B3 | Cotações, COTAHIST oficial, composição teórica e evolução mensal de índices | `/b3/quote/{ticker}`, `/b3/history/{ticker}`, `/b3/quotes`, `/b3/cotahist/year/{year}`, `/b3/indices`, `/b3/indices/{symbol}`, `/b3/indices/{symbol}/monthly` | Não |
+| B3 | Cotações, COTAHIST oficial, composição teórica e evolução mensal de índices, catálogo oficial de fundos listados (ETF / ETF-RF / FII / FI-Infra) | `/b3/quote/{ticker}`, `/b3/history/{ticker}`, `/b3/quotes`, `/b3/cotahist/year/{year}`, `/b3/indices`, `/b3/indices/{symbol}`, `/b3/indices/{symbol}/monthly`, `/b3/listed-funds` | Não |
 | Yahoo Finance | Endpoint experimental de gráfico de preços | `/yahoo/chart/{symbol}` | Não; fonte não oficial |
 | ANBIMA | IMA, ETTJ, debêntures e TPF via arquivos públicos | `/anbima/ima`, `/anbima/ettj`, `/anbima/debentures`, `/anbima/tpf` | Não para os arquivos usados |
 | Receita Federal | Arrecadação por período, UF e tributo | `/receita/arrecadacao`, `/receita/tributos` | Não |
@@ -38,6 +38,8 @@ curl 'http://localhost:8000/cvm/funds/daily?cnpj=38729027000192&year=2026&month=
 curl 'http://localhost:8000/b3/quote/PETR4'
 curl 'http://localhost:8000/b3/indices/IBOV/monthly?start=2026-01-01&end=2026-05-11'
 curl 'http://localhost:8000/b3/cotahist/year/2025?limit=5'
+curl 'http://localhost:8000/b3/listed-funds?ticker=SPXR11'
+curl 'http://localhost:8000/b3/listed-funds?type=ETF-RF'
 curl 'http://localhost:8000/openfinance/participants?role=DADOS&limit=20'
 curl 'http://localhost:8000/registry/lookup?q=PETR4'
 ```
@@ -57,6 +59,9 @@ findata cvm cadastro --cnpj 38.729.027/0001-92
 findata cvm daily 38729027000192 -y 2026 -m 8
 findata b3 quote PETR4
 findata b3 index-monthly IBOV --start 2026-01-01 --end 2026-05-11
+findata b3 listed --type ETF
+findata b3 listed SPBZ11
+findata resolve SPBZ11
 findata anbima ima -i IMA-B
 findata registry lookup "33.000.167/0001-01"
 ```

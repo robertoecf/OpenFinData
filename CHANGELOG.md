@@ -12,6 +12,16 @@ adheres to [Semantic Versioning](https://semver.org/).
   [etf1.com.br](https://etf1.com.br) next to the open-source peers. Survey and
   product-ref notes in `docs/ETF1_SURVEY.md` and `docs/ETF1_PRODUCT_REF.md`.
   Not a source adapter. OnePro MCP stays out of the resolver cascade.
+- **Official B3 listed-funds catalog.** `fundsListedProxy/Search/GetListFunds`
+  (same base64-JSON family as `indexProxy`, not an HTML scrape) lists ETF,
+  ETF-RF, ETF-FII, ETF-CRIPTO, FII, FI-Infra and related B3 pages.
+  `GET /b3/listed-funds`, `findata b3 listed`, and `findata resolve` expose it.
+  REST/MCP `resolve_asset` consults the catalog for `*11` tickers the curated
+  seed did not settle, instead of keeping the suffix-11 FII heuristic. A
+  catalog miss is `Indefinido`. The library `resolve_asset()` stays offline
+  unless the caller passes `providers=[b3_listed_provider]`. `IFRA11` is
+  `FI-INFRA` on B3, not `ETF-RF`. Source note:
+  `docs/source-notes/b3-listed-funds.md`.
 - **Public MCP `cvm_fund` quotes/structure parity (CVM only).** `dataset=daily`
   accepts `start`/`end` or `months` up to 12, stitches a single-class RCVM 175
   continuation onto legacy 555 INF_DIARIO when the files share sibling CNPJs,

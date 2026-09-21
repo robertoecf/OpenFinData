@@ -7,9 +7,11 @@ Classification is decided in this order, most-specific signal first:
 2. **Structural rules** (this module) — name/ticker patterns that *are*
    derivable: COE, debenture, CRA/CRI, bank paper, Tesouro, IE/global,
    FII, FIA/Ações, Multimercado, FIDC/FIP, plain tickers.
-3. **External providers** (optional, injected) — Mais Retorno, CVM/B3,
-   restricted web search. Not bundled here (they are client-side / networked);
-   the resolver takes a chain of async callbacks so a deployment can wire them.
+3. **External providers** (optional, injected) — official B3 listed-funds
+   catalog (:mod:`findata.resolver.b3_catalog`), Mais Retorno, other CVM/B3
+   steps, restricted web search. The library ``resolve_asset`` stays offline
+   unless the caller passes ``providers``. REST, MCP and ``findata resolve``
+   inject the B3 catalog so an unknown ``*11`` is not guessed as FII.
    Mais Retorno uses the operator's own account/quota (see
    ``docs/RESOLVER.md``). A non-``None`` provider result replaces the current
    classification (provider owns fields/``source``/``confidence``); the
@@ -337,7 +339,8 @@ def _etf_payload(n: NormalizedInput, etf_evidence: str) -> dict[str, Any]:
 def _ticker_payload(n: NormalizedInput) -> dict[str, Any]:
     """Classify a bare ticker by its digit suffix (no name signal won)."""
     suffix = n.ticker_digits_suffix
-    # 11 not in any curated ETF/RF list → overwhelmingly a FII.
+    # 11 not in the curated ETF/RF seed → FII heuristic. REST/MCP/CLI then
+    # consult the official B3 listed-funds catalog before keeping this guess.
     if suffix == "11":
         return {
             "kind": "fii",
