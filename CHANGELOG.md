@@ -16,7 +16,7 @@ adheres to [Semantic Versioning](https://semver.org/).
   (same base64-JSON family as `indexProxy`, not an HTML scrape) lists ETF,
   ETF-RF, ETF-FII, ETF-CRIPTO, FII, FI-Infra and related B3 pages.
   `GET /b3/listed-funds`, `findata b3 listed`, and `findata resolve` expose it.
-  REST/MCP `resolve_asset` consult the catalog for `*11` tickers the curated
+  REST/MCP `resolve_asset` consults the catalog for `*11` tickers the curated
   seed did not settle, instead of keeping the suffix-11 FII heuristic. A
   catalog miss is `Indefinido`. The library `resolve_asset()` stays offline
   unless the caller passes `providers=[b3_listed_provider]`. `IFRA11` is

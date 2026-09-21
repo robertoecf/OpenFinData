@@ -189,23 +189,24 @@ async def test_unknown_type_is_value_error() -> None:
         await get_listed_funds("NOT-A-TYPE")
 
 
-def test_spbz11_offline_core_is_still_the_fii_heuristic() -> None:
+def test_seeded_quanto_stays_offline_equity() -> None:
     result = classify(normalize(ticker="SPBZ11"))
-    assert result.kind == "fii"
+    assert result.kind == "etf"
+    assert result.macro_class == "Renda Variável"
     assert result.source == "openfindata"
 
 
 @respx.mock
-async def test_spbz11_with_b3_provider_is_etf_rv_internacional() -> None:
+async def test_unseeded_11_with_b3_provider_is_etf_rv_internacional() -> None:
     def _handler(request: httpx.Request) -> httpx.Response:
         query = _decode_request(request)
-        if query["typeFund"] == "ETF" and query["keyword"] == "SPBZ":
+        if query["typeFund"] == "ETF" and query["keyword"] == "QQQQ":
             return httpx.Response(
                 200,
                 json=_page(
                     {
                         "id": 23167,
-                        "acronym": "SPBZ",
+                        "acronym": "QQQQ",
                         "fundName": "BTG PACTUAL S&P 500 FUTURES QUANTO BRL FUNDO DE ÍNDICE",
                         "tradingName": "BTG SPHEDGE",
                     }
@@ -216,7 +217,7 @@ async def test_spbz11_with_b3_provider_is_etf_rv_internacional() -> None:
     respx.get(_LIST_URL).mock(side_effect=_handler)
     from findata.resolver import b3_listed_provider
 
-    result = await resolve_asset(ticker="SPBZ11", providers=[b3_listed_provider])
+    result = await resolve_asset(ticker="QQQQ11", providers=[b3_listed_provider])
     assert result.kind == "etf"
     assert result.macro_class == "Renda Variável"
     assert result.exposure == "Internacional"
@@ -300,13 +301,13 @@ def test_listed_funds_route_list_and_lookup() -> None:
 def test_resolver_route_uses_b3_catalog_for_unknown_11() -> None:
     def _handler(request: httpx.Request) -> httpx.Response:
         query = _decode_request(request)
-        if query["typeFund"] == "ETF" and query["keyword"] == "SPXR":
+        if query["typeFund"] == "ETF" and query["keyword"] == "QQQQ":
             return httpx.Response(
                 200,
                 json=_page(
                     {
                         "id": 16037,
-                        "acronym": "SPXR",
+                        "acronym": "QQQQ",
                         "fundName": "IT NOW S&P 500 FUTURES QUANTO BRL FUNDO DE ÍNDICE",
                         "tradingName": "IT NOW SP BR",
                     }
@@ -316,7 +317,7 @@ def test_resolver_route_uses_b3_catalog_for_unknown_11() -> None:
 
     respx.get(_LIST_URL).mock(side_effect=_handler)
     client = TestClient(app)
-    response = client.get("/resolver/resolve", params={"ticker": "SPXR11"})
+    response = client.get("/resolver/resolve", params={"ticker": "QQQQ11"})
     assert response.status_code == 200
     body = response.json()
     assert body["kind"] == "etf"
@@ -328,13 +329,14 @@ def test_resolver_route_uses_b3_catalog_for_unknown_11() -> None:
 def test_cli_listed_and_resolve() -> None:
     def _handler(request: httpx.Request) -> httpx.Response:
         query = _decode_request(request)
-        if query["typeFund"] == "ETF" and query["keyword"] == "SPBZ":
+        if query["typeFund"] == "ETF" and query["keyword"] in {"SPBZ", "QQQQ"}:
+            acronym = str(query["keyword"])
             return httpx.Response(
                 200,
                 json=_page(
                     {
                         "id": 23167,
-                        "acronym": "SPBZ",
+                        "acronym": acronym,
                         "fundName": "BTG PACTUAL S&P 500 FUTURES QUANTO BRL FUNDO DE ÍNDICE",
                         "tradingName": "BTG SPHEDGE",
                     }
@@ -352,7 +354,12 @@ def test_cli_listed_and_resolve() -> None:
     assert types.exit_code == 0
     assert "ETF-RF" in types.stdout
 
-    resolved = runner.invoke(cli_app, ["resolve", "SPBZ11"])
+    seeded = runner.invoke(cli_app, ["resolve", "SPBZ11"])
+    assert seeded.exit_code == 0
+    assert "Renda Variável" in seeded.stdout
+    assert "source: openfindata" in seeded.stdout
+
+    resolved = runner.invoke(cli_app, ["resolve", "QQQQ11"])
     assert resolved.exit_code == 0
     assert "Renda Variável" in resolved.stdout
-    assert "etf" in resolved.stdout
+    assert "source: b3" in resolved.stdout
