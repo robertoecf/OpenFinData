@@ -10,7 +10,7 @@ mortos, fronteira atual, openfindata, findata.
 
 - Produto e escopo: [`README.md`](../../README.md), [`MANIFESTO.txt`](../../MANIFESTO.txt).
 - Convenções universais de código e gates: [`AGENTS.md`](../../AGENTS.md).
-- Harness Claude (worktrees, ship): [`CLAUDE.md`](../../CLAUDE.md).
+- Harness (worktrees, ship): [`AGENTS.md`](../../AGENTS.md#harness-ship-worktrees-commands).
 - Contribuição humana: [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
 - Superfície MCP curada: [`docs/MCP_SURFACE.md`](../MCP_SURFACE.md).
 - Padrões de gráfico: [`docs/CHART_STANDARDS.md`](../CHART_STANDARDS.md).
@@ -30,7 +30,7 @@ mortos, fronteira atual, openfindata, findata.
 | Code mode no MCP? | Opt-in via `FINDATA_MCP_CODE_MODE=1`; off por default | `docs/MCP_SURFACE.md`, `mcp_app.py` |
 | Charts: quais deps de plot? | Não adicionar matplotlib/pandas/plotly etc. só para gráfico | `AGENTS.md`, `docs/CHART_STANDARDS.md` |
 | Publicar no PyPI? | Só com aprovação humana explícita | `AGENTS.md` |
-| Onde agentes implementam? | Worktree dedicada; root/`main` são inspect-only | `CLAUDE.md`, `docs/agents/openfindata-ship/` |
+| Onde agentes implementam? | Worktree dedicada; root/`main` são inspect-only | `AGENTS.md`, `docs/agents/openfindata-ship/` |
 
 ## O que morreu e por quê
 

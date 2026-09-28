@@ -13,7 +13,6 @@ antes de explorar ou alterar o código.
 - **[`docs/RESOLVER.md`](../RESOLVER.md)** — registry/resolver para lookups de agente.
 - **[`docs/CHART_STANDARDS.md`](../CHART_STANDARDS.md)** — contrato informacional de gráficos.
 - **`docs/source-notes/`** — notas por fonte (`basedosdados`, `yahoo`, `advfn`, …).
-- **[`CLAUDE.md`](../../CLAUDE.md)** — worktrees e roteamento de ship (Claude/Cursor).
 
 Se um documento **obrigatório de política/segurança** estiver ausente
 (`SOURCES_WITH_AUTH.md`, `MCP_SURFACE.md`, `AGENTS.md`), pare com
@@ -26,7 +25,6 @@ canônica mais próxima em silêncio. Não invente glossário paralelo.
 ```text
 /
 ├── AGENTS.md
-├── CLAUDE.md
 ├── CONTRIBUTING.md
 ├── src/findata/
 │   ├── sources/<source>/
