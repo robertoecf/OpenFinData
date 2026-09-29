@@ -169,6 +169,12 @@ exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
 module = ["yfinance", "yfinance.*", "fastapi_mcp", "fastapi_mcp.*"]
 ignore_missing_imports = true
 
+# deprecated 3.x ships Python 3.12 `type` statements, which mypy cannot parse
+# under python_version = "3.11"; treat it as untyped instead of analysing it.
+[[tool.mypy.overrides]]
+module = ["deprecated", "deprecated.*"]
+follow_imports = "skip"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
