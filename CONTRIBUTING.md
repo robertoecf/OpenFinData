@@ -37,7 +37,7 @@ permitidas.
 | Claude / Cursor | `claude/<slug>` ou `cursor/<slug>` | `.claude/worktrees/*` ou `$HOME/.cursor/worktrees/*` |
 | Codex | `codex/<slug>` | `.worktrees/codex-*` |
 
-Ver [`CLAUDE.md`](CLAUDE.md) e [`docs/agents/openfindata-ship/`](docs/agents/openfindata-ship/).
+Ver [`AGENTS.md`](AGENTS.md#harness-ship-worktrees-commands) e [`docs/agents/openfindata-ship/`](docs/agents/openfindata-ship/).
 
 Gate local canônico antes de publicar:
 

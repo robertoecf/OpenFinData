@@ -13,7 +13,7 @@ bash scripts/ship/preflight.sh
 
 Equivalente expandido (mesmo conjunto que o preflight `--push`). Interpretador:
 worktree `.venv`, senão `.venv` na raiz do repo comum, senão `python3` — ver
-`CLAUDE.md` § Python / `.venv`.
+`AGENTS.md` § Python / `.venv`.
 
 ```bash
 # Prefer: bash scripts/ship/preflight.sh
