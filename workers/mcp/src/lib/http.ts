@@ -21,6 +21,13 @@ export class UpstreamLimitError extends Error {
   }
 }
 
+export class UpstreamFormatError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "UpstreamFormatError";
+  }
+}
+
 export type GetJsonOptions = {
   maxBytes?: number;
   timeoutMs?: number;
@@ -103,10 +110,11 @@ export async function getJson(
 export function parseJsonBody(body: string, url: string): unknown {
   try {
     return JSON.parse(body) as unknown;
-  } catch {
+  } catch (cause) {
     const head = body.trimStart().slice(0, 120).replace(/\s+/g, " ");
-    throw new UpstreamLimitError(
+    throw new UpstreamFormatError(
       `upstream returned a non-JSON body for ${url} (likely an error page or an outage); first bytes: ${head}`,
+      { cause },
     );
   }
 }

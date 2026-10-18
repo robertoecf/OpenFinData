@@ -109,15 +109,31 @@ yet, which is the divergence noted at the top.
   argument fails loudly instead of being dropped. Guessing `n` for `last_n`
   used to return a silently different result.
 - **Long results are bounded and say so.** `tesouro_siconfi` returns
-  `{total_matched, returned, limit, truncated, entes|rows}`. `truncated: true`
-  means the caller did not see everything. `entes` defaults to `limit=100` and
-  narrows with `uf`, `esfera` and `q` (accent-insensitive); reports default to
-  2000. Unbounded `report=entes` used to return about 500 KB in one response.
+  `{total_matched, returned, limit, truncated, upstream_complete, entes|rows}`.
+  `truncated: true` means the caller did not see everything. `entes` defaults to
+  `limit=100` and narrows with `uf`, `esfera` and `q` (accent-insensitive);
+  reports default to 2000, and `limit` is capped at 2000 so a large `limit`
+  cannot rebuild the old payload. Unbounded `report=entes` used to return about
+  500 KB in one response.
+- **Completeness is never assumed.** Two different things hide rows, and the
+  envelope separates them. `truncated` says this response was cut;
+  `upstream_complete: false` says SICONFI still had pages when the page cap
+  stopped the fetch, so `total_matched` counts only the rows fetched and is not
+  a global total. `truncated` is true whenever either happened.
 - **An empty result explains itself.** `bcb_ptax` returns
   `{currency, date|start+end, count, cotacoes}`, and when `count` is 0 it adds
-  `reason` (`non_business_day`, `not_published_yet`, `future_date`,
-  `no_quote_for_date`) plus a human-readable `note`. An empty list is not an
-  error, and the caller should not retry blindly.
+  `reason` plus a human-readable `note`. A single day resolves to
+  `non_business_day`, `not_published_yet`, `future_date` or `no_quote_for_date`;
+  a range resolves to `no_quotes_in_range`, because one day's diagnosis would be
+  wrong across many dates. An empty list is not an error, and the caller should
+  not retry blindly.
+- **A non-JSON upstream is named, not leaked.** BCB's SGS gateway answers HTTP
+  200 with an HTML error page when it is degraded. `parseJsonBody` raises
+  `UpstreamFormatError` naming the URL and quoting the first bytes, instead of
+  surfacing `Unexpected token '<'`.
+- **OData query options keep literal spaces.** `URLSearchParams` form-encodes a
+  space as `+`, and Olinda answers 400 for `$orderby=Data+desc`. `buildUrl`
+  re-encodes those as `%20`. This broke every `bcb_focus` path in production.
 
 ## Tradeoffs
 

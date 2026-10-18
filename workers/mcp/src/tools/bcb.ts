@@ -95,7 +95,19 @@ export async function bcbPtax(args: {
       },
     );
     const cotacoes = odataValue(raw);
-    return jsonResult({ currency, start: args.start, end: args.end, count: cotacoes.length, cotacoes });
+    if (cotacoes.length > 0) {
+      return jsonResult({ currency, start: args.start, end: args.end, count: cotacoes.length, cotacoes });
+    }
+    // A range spans many dates, so a single day's diagnosis would be wrong here.
+    return jsonResult({
+      currency,
+      start: args.start,
+      end: args.end,
+      count: 0,
+      cotacoes,
+      reason: "no_quotes_in_range",
+      note: `no PTAX between ${args.start} and ${args.end}; the range may hold only weekends and holidays, or be in the future`,
+    });
   }
   const day = args.date ?? brtNow().date;
   const raw =

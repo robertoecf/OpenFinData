@@ -11,8 +11,9 @@ async function paginate(
   path: string,
   params: Record<string, string | number | undefined>,
   maxPages: number,
-): Promise<Record<string, unknown>[]> {
+): Promise<{ rows: Record<string, unknown>[]; complete: boolean }> {
   const rows: Record<string, unknown>[] = [];
+  let complete = false;
   for (let page = 0; page < maxPages; page += 1) {
     const raw = (await getJson(`${SICONFI}/${path}`, {
       ...params,
@@ -25,32 +26,57 @@ async function paginate(
         rows.push(item as Record<string, unknown>);
       }
     }
-    if (!raw.hasMore) break;
+    if (!raw.hasMore) {
+      complete = true;
+      break;
+    }
   }
-  return rows;
+  return { rows, complete };
 }
 
-/** Bounded payload plus the counters an agent needs to know it saw everything. */
+/** Bounded payload plus the counters an agent needs to know it saw everything.
+ *
+ * Two different things can hide rows, and an agent has to tell them apart:
+ * this response was cut to `limit`, or SICONFI still had pages left when the
+ * page cap stopped the fetch. In the second case `total_matched` counts only
+ * what was retrieved, so it is not a global total and `upstream_complete` is
+ * false. `truncated` is true whenever either happened.
+ */
 export function envelopeBody(
   key: string,
   matched: unknown[],
   limit: number,
   hint: string,
+  upstreamComplete = true,
 ): Record<string, unknown> {
   const rows = matched.slice(0, limit);
-  const truncated = matched.length > rows.length;
+  const cutToLimit = matched.length > rows.length;
+  const truncated = cutToLimit || !upstreamComplete;
+  const hints = [
+    ...(cutToLimit ? [hint] : []),
+    ...(upstreamComplete
+      ? []
+      : ["the upstream page cap was reached, so total_matched counts only the rows fetched"]),
+  ];
   return {
     total_matched: matched.length,
     returned: rows.length,
     limit,
     truncated,
-    ...(truncated ? { hint } : {}),
+    upstream_complete: upstreamComplete,
+    ...(hints.length > 0 ? { hint: hints.join("; ") } : {}),
     [key]: rows,
   };
 }
 
-function envelope(key: string, matched: unknown[], limit: number, hint: string) {
-  return jsonResult(envelopeBody(key, matched, limit, hint));
+function envelope(
+  key: string,
+  matched: unknown[],
+  limit: number,
+  hint: string,
+  upstreamComplete = true,
+) {
+  return jsonResult(envelopeBody(key, matched, limit, hint, upstreamComplete));
 }
 
 /** Lowercase and strip accents so "sao paulo" matches "São Paulo". */
@@ -110,13 +136,14 @@ export async function tesouroSiconfi(args: {
 }) {
   const report = args.report ?? "entes";
   if (report === "entes") {
-    const rows = await paginate("entes", {}, MAX_PAGES_ENTES);
-    const matched = filterEntes(rows, args);
+    const page = await paginate("entes", {}, MAX_PAGES_ENTES);
+    const matched = filterEntes(page.rows, args);
     return envelope(
       "entes",
       matched,
       args.limit ?? ENTES_DEFAULT_LIMIT,
-      "narrow with uf (e.g. uf=SP), esfera (M/E/U/D) or q (name fragment), or raise limit",
+      "narrow with uf (e.g. uf=SP), esfera (M/E/U/D) or q (name fragment)",
+      page.complete,
     );
   }
   if (args.year === undefined || args.period === undefined || args.cod_ibge === undefined) {
@@ -126,12 +153,12 @@ export async function tesouroSiconfi(args: {
     );
   }
   const limit = args.limit ?? REPORT_DEFAULT_LIMIT;
-  const hint = "raise limit, or narrow with anexo";
+  const hint = "narrow with anexo, or page through with a higher limit";
   if (report === "rgf") {
     if (args.period < 1 || args.period > 3) {
       return errorResult("RGF period is the quadrimestre 1-3");
     }
-    const rows = await paginate(
+    const page = await paginate(
       "rgf",
       {
         an_exercicio: args.year,
@@ -143,9 +170,9 @@ export async function tesouroSiconfi(args: {
       },
       MAX_PAGES_REPORT,
     );
-    return envelope("rows", rows, limit, hint);
+    return envelope("rows", page.rows, limit, hint, page.complete);
   }
-  const rows = await paginate(
+  const page = await paginate(
     "rreo",
     {
       an_exercicio: args.year,
@@ -156,5 +183,5 @@ export async function tesouroSiconfi(args: {
     },
     MAX_PAGES_REPORT,
   );
-  return envelope("rows", rows, limit, hint);
+  return envelope("rows", page.rows, limit, hint, page.complete);
 }

@@ -130,7 +130,7 @@ export function createServer() {
       description:
         "SICONFI public-finance reports. Start with report=entes to resolve a cod_ibge, " +
         "narrowing with uf/esfera/q instead of pulling all ~5.6k entes. " +
-        "Returns {total_matched, returned, limit, truncated, entes|rows}: when truncated is true you did NOT see everything.",
+        "Returns {total_matched, returned, limit, truncated, upstream_complete, entes|rows}: when truncated is true you did NOT see everything, and when upstream_complete is false total_matched counts only the rows fetched.",
       inputSchema: z.strictObject({
         report: z.enum(["rreo", "rgf", "entes"]).default("entes"),
         year: z.number().int().min(2013).optional(),
@@ -141,7 +141,8 @@ export function createServer() {
         uf: z.string().length(2).optional().describe("entes: filter by state, e.g. SP"),
         esfera: z.string().optional().describe("entes: M municipal, E estadual, U federal, D distrital"),
         q: z.string().optional().describe("entes: accent-insensitive name fragment"),
-        limit: z.number().int().min(1).max(6000).optional().describe("entes default 100, reports default 2000"),
+        limit: z.number().int().min(1).max(2000).optional()
+          .describe("rows in THIS response; entes default 100, reports default 2000, hard cap 2000"),
       }),
     },
     wrap((args) => tesouroSiconfi(args)),

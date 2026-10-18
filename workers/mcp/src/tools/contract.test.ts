@@ -127,3 +127,32 @@ test("parseJsonBody names the real condition when upstream returns HTML", () => 
 test("parseJsonBody passes valid JSON through", () => {
   assert.deepEqual(parseJsonBody('{"a":1}', "https://x/y"), { a: 1 });
 });
+
+test("envelopeBody refuses to certify completeness the page cap cannot know", () => {
+  const body = envelopeBody("rows", [1, 2, 3], 10, "narrow it", false);
+  assert.equal(body.returned, 3);
+  assert.equal(body.upstream_complete, false);
+  assert.equal(body.truncated, true, "an unexhausted upstream must not look complete");
+  assert.match(String(body.hint), /page cap/);
+});
+
+test("envelopeBody reports complete when it was cut only to limit", () => {
+  const body = envelopeBody("rows", [1, 2, 3], 2, "narrow it", true);
+  assert.equal(body.truncated, true);
+  assert.equal(body.upstream_complete, true);
+  assert.equal(body.hint, "narrow it");
+});
+
+test("envelopeBody leaves no hint when nothing was hidden", () => {
+  const body = envelopeBody("rows", [1, 2], 10, "narrow it", true);
+  assert.equal(body.truncated, false);
+  assert.equal(body.upstream_complete, true);
+  assert.ok(!("hint" in body));
+});
+
+test("the pre-13h PTAX note suggests rather than asserts a cause", () => {
+  const { reason, note } = emptyDayReason("2026-10-15", THU_11H_BRT);
+  assert.equal(reason, "not_published_yet");
+  assert.match(note, /may not be out yet/);
+  assert.match(note, /holiday/);
+});

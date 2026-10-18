@@ -35,7 +35,7 @@ export function emptyDayReason(
   if (day === now.date && now.hour < 13) {
     return {
       reason: "not_published_yet",
-      note: `the closing PTAX for ${day} is published around 13h BRT; it is ${String(now.hour).padStart(2, "0")}h now`,
+      note: `it is ${String(now.hour).padStart(2, "0")}h BRT and the closing PTAX for ${day} is normally published around 13h, so it may not be out yet; a holiday would also leave it empty`,
     };
   }
   return { reason: "no_quote_for_date", note: `no PTAX for ${day}; most likely a national holiday` };
