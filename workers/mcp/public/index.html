@@ -234,7 +234,9 @@
 
       <h2>Limites e transparência</h2>
       <ul>
-        <li>Uso justo: cerca de 60 requisições por minuto por IP, com pico de 20 a cada 10 segundos. O excesso recebe HTTP 429 com <code>Retry-After</code>.</li>
+        <li>Não pede API key, cadastro nem cartão. É só apontar o cliente para a URL.</li>
+        <li>Uso justo: <code>60 req/min</code> por IP, com pico de 20 a cada 10 segundos. O excesso recebe HTTP 429 com <code>Retry-After</code>.</li>
+        <li>Sem execução de código: o servidor só lê fontes públicas e devolve dados. Ele não roda snippet, não escreve em lugar nenhum e não guarda o que você perguntou.</li>
         <li>Resposta longa vem paginada, com <code>total_matched</code>, <code>returned</code> e <code>truncated</code>. Se <code>truncated</code> for verdadeiro, você não viu tudo.</li>
         <li>Parâmetro desconhecido é recusado com erro explícito, nunca ignorado em silêncio.</li>
         <li>Lista vazia não é erro: quando cabe, um campo <code>reason</code> explica o motivo, como PTAX ainda não publicado no dia ou fim de semana.</li>
