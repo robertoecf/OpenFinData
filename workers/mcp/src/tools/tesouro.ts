@@ -4,6 +4,8 @@ const SICONFI = "https://apidatalake.tesouro.gov.br/ords/siconfi/tt";
 const PAGE = 2000;
 const MAX_PAGES_ENTES = 3;
 const MAX_PAGES_REPORT = 1;
+const ENTES_DEFAULT_LIMIT = 100;
+const REPORT_DEFAULT_LIMIT = 2000;
 
 async function paginate(
   path: string,
@@ -28,6 +30,28 @@ async function paginate(
   return rows;
 }
 
+/** Bounded payload plus the counters an agent needs to know it saw everything. */
+function envelope(key: string, matched: unknown[], limit: number, hint: string) {
+  const rows = matched.slice(0, limit);
+  const truncated = matched.length > rows.length;
+  return jsonResult({
+    total_matched: matched.length,
+    returned: rows.length,
+    limit,
+    truncated,
+    ...(truncated ? { hint } : {}),
+    [key]: rows,
+  });
+}
+
+/** Lowercase and strip accents so "sao paulo" matches "São Paulo". */
+function fold(value: unknown): string {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
 export async function tesouroSiconfi(args: {
   report?: "rreo" | "rgf" | "entes";
   year?: number;
@@ -35,23 +59,48 @@ export async function tesouroSiconfi(args: {
   cod_ibge?: number;
   poder?: string;
   anexo?: string;
+  uf?: string;
+  q?: string;
+  esfera?: string;
+  limit?: number;
 }) {
   const report = args.report ?? "entes";
   if (report === "entes") {
     const rows = await paginate("entes", {}, MAX_PAGES_ENTES);
-    return jsonResult(
-      rows.map((row) => ({
-        cod_ibge: row.cod_ibge,
-        uf: row.uf,
-        instituicao: row.instituicao ?? row.ente,
-        esfera: row.esfera,
-        populacao: row.populacao ?? null,
-      })),
+    let matched = rows.map((row) => ({
+      cod_ibge: row.cod_ibge,
+      uf: row.uf,
+      instituicao: row.instituicao ?? row.ente,
+      esfera: row.esfera,
+      populacao: row.populacao ?? null,
+    }));
+    if (args.uf) {
+      const uf = fold(args.uf);
+      matched = matched.filter((row) => fold(row.uf) === uf);
+    }
+    if (args.esfera) {
+      const esfera = fold(args.esfera);
+      matched = matched.filter((row) => fold(row.esfera) === esfera);
+    }
+    if (args.q) {
+      const needle = fold(args.q);
+      matched = matched.filter((row) => fold(row.instituicao).includes(needle));
+    }
+    return envelope(
+      "entes",
+      matched,
+      args.limit ?? ENTES_DEFAULT_LIMIT,
+      "narrow with uf (e.g. uf=SP), esfera (M/E/U/D) or q (name fragment), or raise limit",
     );
   }
   if (args.year === undefined || args.period === undefined || args.cod_ibge === undefined) {
-    return errorResult(`report=${report} requires year, period, and cod_ibge`);
+    return errorResult(
+      `report=${report} requires year, period, and cod_ibge ` +
+        "(find cod_ibge with report=entes plus uf/q)",
+    );
   }
+  const limit = args.limit ?? REPORT_DEFAULT_LIMIT;
+  const hint = "raise limit, or narrow with anexo";
   if (report === "rgf") {
     if (args.period < 1 || args.period > 3) {
       return errorResult("RGF period is the quadrimestre 1-3");
@@ -68,7 +117,7 @@ export async function tesouroSiconfi(args: {
       },
       MAX_PAGES_REPORT,
     );
-    return jsonResult(rows.slice(0, 2000));
+    return envelope("rows", rows, limit, hint);
   }
   const rows = await paginate(
     "rreo",
@@ -81,5 +130,5 @@ export async function tesouroSiconfi(args: {
     },
     MAX_PAGES_REPORT,
   );
-  return jsonResult(rows.slice(0, 2000));
+  return envelope("rows", rows, limit, hint);
 }

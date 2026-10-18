@@ -1,0 +1,47 @@
+# OpenFinData
+
+> MCP público e gratuito com dados financeiros e macroeconômicos oficiais do
+> Brasil: Banco Central, IBGE, IPEA, Tesouro Nacional, CVM e Open Finance Brasil.
+> Sem cadastro e sem chave de API. Endpoint: https://openfindata.com.br/mcp
+> (Streamable HTTP, protocolo MCP 2025-06-18).
+
+Serve dado oficial de fonte primária, sem indicador derivado. O servidor não
+calcula Sharpe, CAGR nem drawdown, e não revende dado de terceiros: o que ele
+entrega é o que o órgão publicou, normalizado.
+
+## Como conectar
+
+Qualquer cliente MCP. Configuração mínima:
+
+    { "mcpServers": { "openfindata": { "url": "https://openfindata.com.br/mcp" } } }
+
+## Ferramentas
+
+- bcb_series: séries temporais do BCB (SGS). Selic, IPCA, CDI, câmbio. Omita argumentos para listar o catálogo.
+- bcb_ptax: PTAX oficial. Consulta por dia ou por período (período só em USD). Quando não há cotação, devolve o campo reason explicando o motivo.
+- bcb_focus: Boletim Focus, expectativas de mercado. indicator=list lista os nomes disponíveis.
+- ibge_indicator: indicadores econômicos do IBGE. Omita name para listar o catálogo.
+- ibge_ipca_breakdown: variação mensal do IPCA por grupo, detalhe que não existe no SGS.
+- ipea_series: séries do IPEA Data. Omita sercodigo para o catálogo curado.
+- ipea_search: busca textual em cerca de 8 mil séries do IPEA.
+- tesouro_siconfi: finanças públicas via SICONFI (RREO, RGF e a lista de entes). Comece por report=entes com filtro uf ou q para achar o cod_ibge.
+- cvm_fund: camada oficial de fundos da CVM. Cadastro RCVM 175, cotas diárias (INF_DIARIO) e carteira (CDA).
+- openfinance_directory: diretório público do Open Finance Brasil. Apenas descoberta pública, nunca dado de cliente.
+
+## Contrato de resposta
+
+- Respostas longas vêm paginadas, com total_matched, returned, limit e truncated.
+  Se truncated for true, você não viu tudo: filtre melhor ou aumente limit.
+- Parâmetro desconhecido é rejeitado com erro explícito, nunca ignorado em silêncio.
+- Lista vazia não é erro. Quando couber, um campo reason diz o porquê.
+
+## Limites
+
+- Uso justo de cerca de 60 requisições por minuto por IP, com pico de 20 a cada 10 segundos.
+- Excesso responde HTTP 429 com Retry-After.
+- Sem chave de API e sem execução de código no endpoint público.
+
+## Links
+
+- Código e issues: https://github.com/robertoecf/OpenFinData
+- Licença: MIT
