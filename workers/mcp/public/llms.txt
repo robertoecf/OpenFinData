@@ -13,7 +13,11 @@ entrega é o que o órgão publicou, normalizado.
 
 Qualquer cliente MCP. Configuração mínima:
 
-    { "mcpServers": { "openfindata": { "url": "https://openfindata.com.br/mcp" } } }
+    { "mcpServers": { "openfindata": { "type": "http", "url": "https://openfindata.com.br/mcp" } } }
+
+    O "type": "http" e obrigatorio em clientes que leem esse JSON, como o Claude Code.
+    O Claude Desktop adiciona servidor remoto em Configuracoes > Conectores >
+    Adicionar conector personalizado, colando a mesma URL.
 
 ## Ferramentas
 
@@ -30,10 +34,19 @@ Qualquer cliente MCP. Configuração mínima:
 
 ## Contrato de resposta
 
-- Respostas longas vêm paginadas, com total_matched, returned, limit e truncated.
-  Se truncated for true, você não viu tudo: filtre melhor ou aumente limit.
+- Respostas longas vêm limitadas, não paginadas: não há argumento de página ou
+  offset. Elas trazem total_matched, returned, limit, truncated e
+  upstream_complete.
+- Se truncated for true, você não viu tudo. Estreite a busca com os filtros da
+  ferramenta (em tesouro_siconfi: uf, esfera, q). Aumentar limit ajuda só até o
+  teto de 2000, e não busca páginas que a fonte não chegou a entregar.
+- Se upstream_complete for false, a fonte ainda tinha páginas quando a busca
+  parou: total_matched conta só as linhas buscadas e não é um total geral.
+  Aumentar limit não recupera essas linhas.
 - Parâmetro desconhecido é rejeitado com erro explícito, nunca ignorado em silêncio.
-- Lista vazia não é erro. Quando couber, um campo reason diz o porquê.
+- Lista vazia não é erro. Quando couber, um campo reason diz o porquê. Em
+  bcb_ptax por dia: non_business_day, not_published_yet, future_date ou
+  no_quote_for_date; por período: no_quotes_in_range.
 
 ## Limites
 

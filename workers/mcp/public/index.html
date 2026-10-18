@@ -182,18 +182,28 @@
         externa com segurança. Na prática: você cola um endereço na configuração
         do seu assistente e ele ganha acesso às ferramentas listadas abaixo.
       </p>
-      <h3>Claude Desktop, Claude Code, Cursor e similares</h3>
+      <h3>Claude Code, Cursor e clientes que leem um JSON</h3>
       <pre><code>{
   "mcpServers": {
     "openfindata": {
+      "type": "http",
       "url": "https://openfindata.com.br/mcp"
     }
   }
 }</code></pre>
       <p class="note">
-        Em clientes que pedem só a URL, use
-        <code>https://openfindata.com.br/mcp</code> e escolha o transporte
-        Streamable HTTP. Não há etapa de login.
+        O <code>"type": "http"</code> é obrigatório. Sem ele, o Claude Code trata
+        a entrada como servidor local e ignora a URL.
+      </p>
+      <h3>Claude Desktop</h3>
+      <p>
+        O Desktop não lê esse JSON para servidor remoto. Vá em Configurações,
+        Conectores, Adicionar conector personalizado e cole
+        <code>https://openfindata.com.br/mcp</code>.
+      </p>
+      <p class="note">
+        Em qualquer outro cliente que peça só a URL, use o mesmo endereço e
+        escolha o transporte Streamable HTTP. Não há etapa de login.
       </p>
 
       <h2>As 10 ferramentas</h2>
@@ -237,7 +247,8 @@
         <li>Não pede API key, cadastro nem cartão. É só apontar o cliente para a URL.</li>
         <li>Uso justo: <code>60 req/min</code> por IP, com pico de 20 a cada 10 segundos. O excesso recebe HTTP 429 com <code>Retry-After</code>.</li>
         <li>Sem execução de código: o servidor só lê fontes públicas e devolve dados. Ele não roda snippet, não escreve em lugar nenhum e não guarda o que você perguntou.</li>
-        <li>Resposta longa vem paginada, com <code>total_matched</code>, <code>returned</code> e <code>truncated</code>. Se <code>truncated</code> for verdadeiro, você não viu tudo.</li>
+        <li>Resposta longa vem limitada, não paginada: não existe argumento de página ou offset. Ela traz <code>total_matched</code>, <code>returned</code>, <code>truncated</code> e <code>upstream_complete</code>. Se <code>truncated</code> for verdadeiro, você não viu tudo; estreite a busca com os filtros da ferramenta, como <code>uf</code>, <code>esfera</code> ou <code>q</code> em <code>tesouro_siconfi</code>.</li>
+        <li>Se <code>upstream_complete</code> for falso, a fonte ainda tinha páginas quando a busca parou. Nesse caso <code>total_matched</code> conta só o que foi buscado e não é um total geral.</li>
         <li>Parâmetro desconhecido é recusado com erro explícito, nunca ignorado em silêncio.</li>
         <li>Lista vazia não é erro: quando cabe, um campo <code>reason</code> explica o motivo, como PTAX ainda não publicado no dia ou fim de semana.</li>
         <li>Projeto em alpha. A superfície pode mudar, e o <a href="https://github.com/robertoecf/OpenFinData">repositório</a> é a fonte da verdade.</li>

@@ -50,7 +50,8 @@ export function createServer() {
       description:
         "PTAX official exchange rate. Range queries are USD-only. " +
         "Returns {currency, date|start+end, count, cotacoes}; when count is 0 a reason field says why " +
-        "(non_business_day, not_published_yet, future_date, no_quote_for_date) — an empty list is not an error.",
+        "(single day: non_business_day, not_published_yet, future_date, no_quote_for_date; " +
+        "range: no_quotes_in_range) — an empty list is not an error.",
       inputSchema: z.strictObject({
         currency: z.string().default("USD"),
         date: z.string().optional().describe("YYYY-MM-DD"),
