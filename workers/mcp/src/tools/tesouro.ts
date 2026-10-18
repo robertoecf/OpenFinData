@@ -1,4 +1,4 @@
-import { errorResult, getJson, jsonResult } from "../lib/http";
+import { errorResult, getJson, jsonResult } from "../lib/http.ts";
 
 const SICONFI = "https://apidatalake.tesouro.gov.br/ords/siconfi/tt";
 const PAGE = 2000;
@@ -31,25 +31,69 @@ async function paginate(
 }
 
 /** Bounded payload plus the counters an agent needs to know it saw everything. */
-function envelope(key: string, matched: unknown[], limit: number, hint: string) {
+export function envelopeBody(
+  key: string,
+  matched: unknown[],
+  limit: number,
+  hint: string,
+): Record<string, unknown> {
   const rows = matched.slice(0, limit);
   const truncated = matched.length > rows.length;
-  return jsonResult({
+  return {
     total_matched: matched.length,
     returned: rows.length,
     limit,
     truncated,
     ...(truncated ? { hint } : {}),
     [key]: rows,
-  });
+  };
+}
+
+function envelope(key: string, matched: unknown[], limit: number, hint: string) {
+  return jsonResult(envelopeBody(key, matched, limit, hint));
 }
 
 /** Lowercase and strip accents so "sao paulo" matches "São Paulo". */
-function fold(value: unknown): string {
+export function fold(value: unknown): string {
   return String(value ?? "")
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase();
+}
+
+export type Ente = {
+  cod_ibge: unknown;
+  uf: unknown;
+  instituicao: unknown;
+  esfera: unknown;
+  populacao: unknown;
+};
+
+/** Project SICONFI rows to the agent-facing shape, then narrow them. */
+export function filterEntes(
+  rows: Record<string, unknown>[],
+  args: { uf?: string; esfera?: string; q?: string },
+): Ente[] {
+  let matched: Ente[] = rows.map((row) => ({
+    cod_ibge: row.cod_ibge,
+    uf: row.uf,
+    instituicao: row.instituicao ?? row.ente,
+    esfera: row.esfera,
+    populacao: row.populacao ?? null,
+  }));
+  if (args.uf) {
+    const uf = fold(args.uf);
+    matched = matched.filter((row) => fold(row.uf) === uf);
+  }
+  if (args.esfera) {
+    const esfera = fold(args.esfera);
+    matched = matched.filter((row) => fold(row.esfera) === esfera);
+  }
+  if (args.q) {
+    const needle = fold(args.q);
+    matched = matched.filter((row) => fold(row.instituicao).includes(needle));
+  }
+  return matched;
 }
 
 export async function tesouroSiconfi(args: {
@@ -67,25 +111,7 @@ export async function tesouroSiconfi(args: {
   const report = args.report ?? "entes";
   if (report === "entes") {
     const rows = await paginate("entes", {}, MAX_PAGES_ENTES);
-    let matched = rows.map((row) => ({
-      cod_ibge: row.cod_ibge,
-      uf: row.uf,
-      instituicao: row.instituicao ?? row.ente,
-      esfera: row.esfera,
-      populacao: row.populacao ?? null,
-    }));
-    if (args.uf) {
-      const uf = fold(args.uf);
-      matched = matched.filter((row) => fold(row.uf) === uf);
-    }
-    if (args.esfera) {
-      const esfera = fold(args.esfera);
-      matched = matched.filter((row) => fold(row.esfera) === esfera);
-    }
-    if (args.q) {
-      const needle = fold(args.q);
-      matched = matched.filter((row) => fold(row.instituicao).includes(needle));
-    }
+    const matched = filterEntes(rows, args);
     return envelope(
       "entes",
       matched,

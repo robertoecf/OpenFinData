@@ -45,11 +45,18 @@ export async function getBytes(url: string, options?: GetJsonOptions): Promise<U
   return new Uint8Array(buffer);
 }
 
-export async function getJson(
+/** Build the request URL.
+ *
+ * `URLSearchParams` serialises a space as `+` (form encoding). BCB's Olinda
+ * OData gateway does not decode `+` inside a query option, so `$orderby=Data
+ * desc` reaches it as `Data+desc` and it answers 400. Re-encode those spaces
+ * as `%20`. A literal `+` in a value is already escaped to `%2B`, so every
+ * remaining `+` came from a space.
+ */
+export function buildUrl(
   url: string,
   params?: Record<string, string | number | undefined>,
-  options?: GetJsonOptions,
-): Promise<unknown> {
+): URL {
   const target = new URL(url);
   if (params) {
     for (const [key, value] of Object.entries(params)) {
@@ -58,6 +65,16 @@ export async function getJson(
       }
     }
   }
+  target.search = target.searchParams.toString().replace(/\+/g, "%20");
+  return target;
+}
+
+export async function getJson(
+  url: string,
+  params?: Record<string, string | number | undefined>,
+  options?: GetJsonOptions,
+): Promise<unknown> {
+  const target = buildUrl(url, params);
   const maxBytes = options?.maxBytes ?? MAX_RESPONSE_BYTES;
   const timeoutMs = options?.timeoutMs ?? FETCH_TIMEOUT_MS;
   const response = await fetch(target, {
@@ -73,7 +90,25 @@ export async function getJson(
       `upstream response too large (${buffer.byteLength} bytes, max ${maxBytes})`,
     );
   }
-  return JSON.parse(new TextDecoder().decode(buffer)) as unknown;
+  return parseJsonBody(new TextDecoder().decode(buffer), target.toString());
+}
+
+/** Parse an upstream body that is contractually JSON.
+ *
+ * BCB's SGS gateway answers HTTP 200 with an HTML error page ("Requisicao
+ * invalida!") when it is degraded or rejects the request. Surfacing the raw
+ * parser message ("Unexpected token '<'") tells an agent nothing, so name the
+ * real condition instead.
+ */
+export function parseJsonBody(body: string, url: string): unknown {
+  try {
+    return JSON.parse(body) as unknown;
+  } catch {
+    const head = body.trimStart().slice(0, 120).replace(/\s+/g, " ");
+    throw new UpstreamLimitError(
+      `upstream returned a non-JSON body for ${url} (likely an error page or an outage); first bytes: ${head}`,
+    );
+  }
 }
 
 export function odataValue(raw: unknown): unknown[] {
