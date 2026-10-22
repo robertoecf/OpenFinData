@@ -34,12 +34,14 @@ async function result(response: Response) {
 }
 
 test("concurrent requests with the same RPC ID retain independent transports", async () => {
-  const responses = await Promise.all([post("tools/list", {}), post("tools/list", {})]);
-  for (const response of responses) {
-    const message = await result(response);
-    assert.equal(message.id, 1);
-    assert.ok(message.result.tools.some((tool: { name: string }) => tool.name === "bcb_series"));
-  }
+  const [catalog, ping] = await Promise.all([
+    post("tools/list", {}).then(result),
+    post("ping", {}).then(result),
+  ]);
+  assert.equal(catalog.id, 1);
+  assert.ok(catalog.result.tools.some((tool: { name: string }) => tool.name === "bcb_series"));
+  assert.equal(ping.id, 1);
+  assert.deepEqual(ping.result, {});
 });
 
 test("both protocol lanes reject oversized bodies without Content-Length", async () => {
