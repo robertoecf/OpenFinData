@@ -3,61 +3,291 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>openfindata — MCP público</title>
+    <title>OpenFinData: dados oficiais do Brasil direto no seu assistente de IA</title>
     <meta
       name="description"
-      content="MCP público de dados financeiros abertos do Brasil (BCB, IBGE, IPEA, Tesouro, Open Finance, CVM fundos)."
+      content="MCP público e gratuito com dados financeiros e macroeconômicos oficiais do Brasil: Banco Central, IBGE, IPEA, Tesouro, CVM e Open Finance. Sem cadastro, sem chave de API."
     />
+    <meta property="og:title" content="OpenFinData" />
+    <meta
+      property="og:description"
+      content="Pergunte sobre Selic, IPCA, Focus, fundos da CVM e finanças públicas direto no seu assistente de IA. Dado oficial, de fonte primária."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://openfindata.com.br" />
+    <link rel="alternate" type="text/plain" href="/llms.txt" />
     <style>
-      :root { color-scheme: dark; }
-      body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 0; background: #0b0d10; color: #e8eaed; }
-      main { max-width: 42rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
-      h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.03em; }
-      p, li { line-height: 1.55; color: #c5c9d1; }
-      a { color: #8ab4ff; }
-      code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; }
-      pre { background: #161a20; padding: 0.9rem 1rem; overflow: auto; border-radius: 8px; }
-      .muted { color: #8b919c; font-size: 0.95rem; }
+      :root {
+        color-scheme: dark;
+        --bg: #0b0d10;
+        --surface: #141820;
+        --surface-2: #1b212b;
+        --line: #262d39;
+        --text: #e8eaed;
+        --muted: #949ba8;
+        /* tokens da marca, ajustados para contraste em fundo escuro */
+        --macro: #ff9240;
+        --mercado: #6b9bff;
+        --fonte: #2fc98a;
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+      main { max-width: 54rem; margin: 0 auto; padding: 3.5rem 1rem 5rem; }
+      .eyebrow {
+        color: var(--muted);
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin: 0 0 0.75rem;
+      }
+      h1 {
+        font-size: clamp(1.9rem, 5.5vw, 2.9rem);
+        line-height: 1.12;
+        letter-spacing: -0.035em;
+        font-weight: 680;
+        margin: 0 0 1rem;
+      }
+      h1 .hl {
+        background: linear-gradient(100deg, var(--macro), var(--fonte));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .lede { font-size: 1.12rem; color: #c9cfda; margin: 0 0 1.75rem; max-width: 42rem; }
+      h2 {
+        font-size: 1.22rem;
+        letter-spacing: -0.02em;
+        margin: 3rem 0 0.85rem;
+        padding-top: 1.6rem;
+        border-top: 1px solid var(--line);
+      }
+      h3 { font-size: 0.97rem; margin: 1.5rem 0 0.4rem; }
+      p, li { color: #c3cad4; }
+      a { color: var(--mercado); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.86em;
+        background: var(--surface-2);
+        padding: 0.12em 0.4em;
+        border-radius: 4px;
+        color: #dfe5ee;
+      }
+      pre {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        padding: 1rem;
+        overflow-x: auto;
+        border-radius: 10px;
+        font-size: 0.84rem;
+        line-height: 1.5;
+      }
+      pre code { background: none; padding: 0; }
+      .badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 2rem; }
+      .badge {
+        font-size: 0.78rem;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--muted);
+        padding: 0.3rem 0.65rem;
+        border-radius: 999px;
+      }
+      .badge.on { color: var(--fonte); border-color: rgba(47, 201, 138, 0.4); }
+      .ask {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--macro);
+        border-radius: 0 10px 10px 0;
+        padding: 0.85rem 1.1rem;
+        margin: 0.6rem 0;
+        color: #dfe5ee;
+      }
+      .ask span { color: var(--muted); display: block; font-size: 0.83rem; margin-top: 0.3rem; }
+      .tablewrap { overflow-x: auto; margin-top: 0.5rem; }
+      table { width: 100%; border-collapse: collapse; font-size: 0.89rem; }
+      th, td { text-align: left; padding: 0.6rem 0.7rem 0.6rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+      th { color: var(--muted); font-weight: 560; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+      td:first-child { white-space: nowrap; padding-right: 1.1rem; }
+      .note { color: var(--muted); font-size: 0.92rem; }
+      ul { padding-left: 1.15rem; }
+      li { margin: 0.3rem 0; }
+      footer {
+        margin-top: 3.5rem;
+        padding-top: 1.6rem;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.89rem;
+      }
+      @media (max-width: 34rem) {
+        main { padding-top: 2.25rem; }
+        /* keep cells readable instead of wrapping to one word per line */
+        table { min-width: 31rem; }
+      }
     </style>
   </head>
   <body>
     <main>
-      <p class="muted">Dados Financeiros Abertos · alpha</p>
-      <h1>MCP público no Cloudflare Workers</h1>
+      <p class="eyebrow">Dados Financeiros Abertos · alpha</p>
+      <h1>Dados oficiais do Brasil, <span class="hl">direto no seu assistente de IA</span></h1>
+      <p class="lede">
+        Conecte o ChatGPT, o Claude ou o Cursor a este endereço e pergunte em
+        português sobre Selic, IPCA, Boletim Focus, fundos da CVM e finanças
+        públicas. A resposta vem da fonte primária: Banco Central, IBGE, IPEA,
+        Tesouro Nacional, CVM e Open Finance Brasil.
+      </p>
+      <div class="badges">
+        <span class="badge on">Gratuito</span>
+        <span class="badge on">Sem cadastro</span>
+        <span class="badge on">Sem chave de API</span>
+        <span class="badge">Código aberto, MIT</span>
+        <span class="badge">10 ferramentas</span>
+      </div>
+
+      <h2>O que dá para perguntar</h2>
+      <p class="note">
+        Exemplos reais, respondidos com dado oficial. Você escreve assim mesmo,
+        em linguagem natural, dentro do seu assistente.
+      </p>
+      <div class="ask">
+        "Como a Selic evoluiu nos últimos 12 meses?"
+        <span>bcb_series, série 432 do SGS do Banco Central</span>
+      </div>
+      <div class="ask">
+        "O que o Boletim Focus projeta para o IPCA de 2027?"
+        <span>bcb_focus, expectativas de mercado coletadas pelo BCB</span>
+      </div>
+      <div class="ask">
+        "Qual foi a inflação por grupo no último IPCA? O que puxou para cima?"
+        <span>ibge_ipca_breakdown, abertura que não existe no SGS</span>
+      </div>
+      <div class="ask">
+        "Mostre a carteira mais recente do fundo com CNPJ 21.624.757/0001-26."
+        <span>cvm_fund, informe de composição de carteira (CDA) da CVM</span>
+      </div>
+      <div class="ask">
+        "Quais municípios do Mato Grosso aparecem no SICONFI e qual a população deles?"
+        <span>tesouro_siconfi, dados de finanças públicas do Tesouro Nacional</span>
+      </div>
+
+      <h2>Como conectar em um minuto</h2>
       <p>
-        Superfície pública: <a href="/mcp"><code>/mcp</code></a> (Streamable HTTP).
-        REST/FastAPI, CLI e code mode não ficam na internet — só na rede Tailscale.
+        Este serviço fala <strong>MCP</strong> (Model Context Protocol), o padrão
+        aberto que permite a um assistente de IA consultar uma fonte de dados
+        externa com segurança. Na prática: você cola um endereço na configuração
+        do seu assistente e ele ganha acesso às ferramentas listadas abaixo.
       </p>
-      <p class="muted">
-        Uso justo: cerca de 60 req/min por IP (pico 20 / 10s). Sem API key.
-        Sem execução de código no endpoint público. Excesso em
-        <code>/mcp</code> responde 429 + Retry-After.
-      </p>
-      <p>Tools neste Worker (fontes públicas, sem processar Python):</p>
-      <ul>
-        <li><code>bcb_series</code> <code>bcb_ptax</code> <code>bcb_focus</code></li>
-        <li><code>ibge_indicator</code> <code>ibge_ipca_breakdown</code></li>
-        <li><code>ipea_series</code> <code>ipea_search</code></li>
-        <li><code>tesouro_siconfi</code></li>
-        <li><code>openfinance_directory</code></li>
-        <li><code>cvm_fund</code> — cadastro RCVM 175, cotas INF_DIARIO e carteira CDA</li>
-      </ul>
-      <p class="muted">
-        B3/ANBIMA/registry, lâmina/perfil e a API REST completa continuam no
-        pacote Python (<code>pip install openfindata</code>) e no FastAPI interno.
-      </p>
-      <p>Cliente MCP:</p>
-      <pre>{
+      <h3>Claude Code, Cursor e clientes que leem um JSON</h3>
+      <pre><code>{
   "mcpServers": {
     "openfindata": {
+      "type": "http",
       "url": "https://openfindata.com.br/mcp"
     }
   }
-}</pre>
-      <p>
-        Código:
-        <a href="https://github.com/robertoecf/OpenFinData">github.com/robertoecf/OpenFinData</a>
+}</code></pre>
+      <p class="note">
+        O <code>"type": "http"</code> é obrigatório. Sem ele, o Claude Code trata
+        a entrada como servidor local e ignora a URL.
       </p>
+      <h3>Claude Desktop</h3>
+      <p>
+        O Desktop não lê esse JSON para servidor remoto. Vá em Configurações,
+        Conectores, Adicionar conector personalizado e cole
+        <code>https://openfindata.com.br/mcp</code>.
+      </p>
+      <h3>ChatGPT</h3>
+      <p>
+        O ChatGPT não lê o JSON acima. Conector personalizado lá depende do
+        <strong>Modo desenvolvedor</strong>, que está em beta, só funciona na
+        versão web e <strong>não existe no plano gratuito</strong>. Em conta de
+        trabalho, o administrador precisa liberar. Com o modo ligado, você cria
+        um conector novo e cola
+        <code>https://openfindata.com.br/mcp</code>, sem autenticação.
+      </p>
+      <p class="note">
+        O plano exigido e o caminho exato do menu já mudaram mais de uma vez, e
+        por isso não repetimos aqui: confira o passo atual na
+        <a href="https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt">ajuda
+        oficial da OpenAI</a>.
+      </p>
+      <h3>Qualquer outro cliente MCP</h3>
+      <p class="note">
+        Em cliente que peça só a URL, use o mesmo endereço e escolha o
+        transporte Streamable HTTP. Não há etapa de login.
+      </p>
+
+      <h2>As 10 ferramentas</h2>
+      <div class="tablewrap">
+        <table>
+        <thead>
+          <tr><th>Ferramenta</th><th>O que entrega</th><th>Fonte</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>bcb_series</code></td><td>Séries temporais: Selic, IPCA, CDI, câmbio e o catálogo completo</td><td>BCB / SGS</td></tr>
+          <tr><td><code>bcb_ptax</code></td><td>Câmbio oficial PTAX, por dia ou por período</td><td>BCB / Olinda</td></tr>
+          <tr><td><code>bcb_focus</code></td><td>Boletim Focus: expectativas de mercado para IPCA, Selic, PIB e câmbio</td><td>BCB</td></tr>
+          <tr><td><code>ibge_indicator</code></td><td>Indicadores econômicos do IBGE</td><td>IBGE / SIDRA</td></tr>
+          <tr><td><code>ibge_ipca_breakdown</code></td><td>IPCA mensal aberto por grupo</td><td>IBGE</td></tr>
+          <tr><td><code>ipea_series</code></td><td>Séries macro com histórico longo</td><td>IPEA Data</td></tr>
+          <tr><td><code>ipea_search</code></td><td>Busca textual em cerca de 8 mil séries</td><td>IPEA Data</td></tr>
+          <tr><td><code>tesouro_siconfi</code></td><td>Finanças públicas: RREO, RGF e a lista de entes federativos</td><td>Tesouro / SICONFI</td></tr>
+          <tr><td><code>cvm_fund</code></td><td>Fundos: cadastro RCVM 175, cotas diárias e carteira (CDA)</td><td>CVM</td></tr>
+          <tr><td><code>openfinance_directory</code></td><td>Diretório público de participantes e endpoints</td><td>Open Finance Brasil</td></tr>
+        </tbody>
+        </table>
+      </div>
+
+      <h2>O que este serviço não faz</h2>
+      <ul>
+        <li>
+          Não calcula indicador derivado. Sem Sharpe, sem CAGR, sem drawdown.
+          Ele entrega o número que o órgão publicou, normalizado, e a conta fica
+          com você ou com o seu assistente.
+        </li>
+        <li>
+          Não acessa dado de cliente. O Open Finance aqui é só o diretório
+          público de participantes, nunca informação de conta de ninguém.
+        </li>
+        <li>Não revende dado de terceiros nem executa código no endpoint público.</li>
+        <li>Não é recomendação de investimento.</li>
+      </ul>
+
+      <h2>Limites e transparência</h2>
+      <ul>
+        <li>Não pede API key, cadastro nem cartão. É só apontar o cliente para a URL.</li>
+        <li>Uso justo: <code>60 req/min</code> por IP, com pico de 20 a cada 10 segundos. O excesso recebe HTTP 429 com <code>Retry-After</code>.</li>
+        <li>Sem execução de código: o servidor só lê fontes públicas e devolve dados. Ele não roda snippet, não escreve em lugar nenhum e não guarda o que você perguntou.</li>
+        <li>Resposta longa vem limitada, não paginada: não existe argumento de página ou offset. Ela traz <code>total_matched</code>, <code>returned</code>, <code>truncated</code> e <code>upstream_complete</code>. Se <code>truncated</code> for verdadeiro, você não viu tudo; estreite a busca com os filtros da ferramenta, como <code>uf</code>, <code>esfera</code> ou <code>q</code> em <code>tesouro_siconfi</code>.</li>
+        <li>Se <code>upstream_complete</code> for falso, a fonte ainda tinha páginas quando a busca parou. Nesse caso <code>total_matched</code> conta só o que foi buscado e não é um total geral.</li>
+        <li>Parâmetro desconhecido é recusado com erro explícito, nunca ignorado em silêncio.</li>
+        <li>Lista vazia não é erro: quando cabe, um campo <code>reason</code> explica o motivo, como PTAX ainda não publicado no dia ou fim de semana.</li>
+        <li>Projeto em alpha. A superfície pode mudar, e o <a href="https://github.com/robertoecf/OpenFinData">repositório</a> é a fonte da verdade.</li>
+      </ul>
+
+      <h2>Para quem desenvolve</h2>
+      <p>
+        O endpoint público é só o MCP. A biblioteca Python, a API REST em FastAPI,
+        a CLI e as fontes adicionais (B3, ANBIMA, SUSEP, ANEEL, Receita Federal e
+        o registro de CNPJ e ticker) ficam no repositório e rodam localmente.
+        Instruções de instalação, contribuição e a matriz completa de fontes
+        estão no
+        <a href="https://github.com/robertoecf/OpenFinData">GitHub</a>.
+        Resumo legível por máquina em <a href="/llms.txt">/llms.txt</a>.
+      </p>
+
+      <footer>
+        <p>
+          <a href="https://github.com/robertoecf/OpenFinData">github.com/robertoecf/OpenFinData</a>
+          · Licença MIT · Dados públicos de BCB, IBGE, IPEA, Tesouro Nacional,
+          CVM e Open Finance Brasil, que permanecem de seus órgãos de origem.
+        </p>
+      </footer>
     </main>
   </body>
 </html>
