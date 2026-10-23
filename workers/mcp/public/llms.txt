@@ -18,6 +18,13 @@ Qualquer cliente MCP. Configuração mínima:
     O "type": "http" e obrigatorio em clientes que leem esse JSON, como o Claude Code.
     O Claude Desktop adiciona servidor remoto em Configuracoes > Conectores >
     Adicionar conector personalizado, colando a mesma URL.
+    O ChatGPT nao le esse JSON: conector personalizado la exige o Modo
+    desenvolvedor (beta, so na web, indisponivel no plano gratuito, e liberado
+    pelo administrador em conta de trabalho). O plano exigido e o caminho do
+    menu mudam, entao confira em
+    https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt
+    Em qualquer outro cliente que peca so a URL, escolha o transporte
+    Streamable HTTP. Nao ha etapa de login.
 
 ## Ferramentas
 
