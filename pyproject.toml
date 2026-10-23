@@ -34,7 +34,7 @@ dependencies = [
     "fastapi-mcp>=0.4",
     # fastapi-mcp 0.4 calls mcp.Server(name, description); mcp 2.x dropped the
     # description positional arg — cap below 2 until fastapi-mcp catches up.
-    "mcp>=1.12,<2",
+    "mcp>=1.30.0,<2",
     "typer>=0.15",
     "rich>=13.0",
     "slowapi>=0.1.9",
