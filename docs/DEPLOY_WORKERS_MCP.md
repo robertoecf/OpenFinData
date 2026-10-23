@@ -45,8 +45,8 @@ Mapeamento das tools de **dados** da Mais Retorno (cálculo/analytics fora):
 
 ```bash
 cd workers/mcp
-npm install
-npx wrangler deploy
+npm ci
+npm run deploy
 ```
 
 Custom domain (depois do smoke em `*.workers.dev`):
@@ -80,6 +80,17 @@ intervalo caem em `last_n≤200`. Rate limits de `/mcp` não mudam.
 60s por IP e pico 20 / 10s. Overflow é síncrono: HTTP 429 + `Retry-After`
 e corpo `{ "error": "rate_limited" }`. Landing `/` e `/health` ficam
 fora do limite. Os contadores são por localização Cloudflare.
+
+O build/test do Worker usa Node 24.22.1. O runtime publicado é Cloudflare
+Workers (workerd); a versão de Node do build não comprova a correção do
+runtime gerenciado.
+
+Antes de analisar JSON, `/mcp` limita o corpo a 64 KiB, inclusive no protocolo
+legado e em requisições sem `Content-Length`; excesso retorna HTTP 413.
+Cada chamada de tool permite até 1000 elementos de entrada. O handler mantém
+uma nova instância de servidor/transporte por requisição. A superfície é pública
+e anônima: não recebe bearer tokens, portanto `expectedResource` não se aplica.
+Qualquer futura autenticação deve validar a audience do recurso explicitamente.
 
 ## FastAPI interno (Tailscale)
 

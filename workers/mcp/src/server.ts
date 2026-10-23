@@ -26,7 +26,7 @@ export function createServer() {
     name: "openfindata",
     version: "0.3.3",
     websiteUrl: "https://openfindata.com.br",
-  });
+  }, { maxToolInputElements: 1000 });
 
   server.registerTool(
     "bcb_series",
