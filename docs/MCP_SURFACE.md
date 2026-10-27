@@ -8,6 +8,11 @@
 > no code mode, no API key). Worker tools: the 9 JSON macro sources plus
 > `cvm_fund` (RCVM 175 cadastro + INF_DIARIO history ≤12 months + CDA holdings/periods).
 > Lâmina/perfil stay on the internal FastAPI catalog below.
+>
+> **The two surfaces have diverged.** The Worker enforces the response contract
+> in [Worker response contract](#worker-response-contract); the internal FastAPI
+> catalog does not yet. Tool names are shared, so do not assume a Worker example
+> reproduces verbatim on the internal catalog.
 
 ## Problem
 
@@ -90,9 +95,45 @@ findata_run_code                                         (code mode, opt-in)
 | `cvm_structured_fund` | `funds/{fii,fidc,fip}/*` | `kind` + `dataset` |
 | `b3_index` | index portfolio + monthly + list | `dataset`, omit `symbol` to list |
 | `tesouro_bonds` | bonds list/search/history | `dataset` |
-| `tesouro_siconfi` | `rreo`, `rgf`, `entes` | `report` |
+| `tesouro_siconfi` | `rreo`, `rgf`, `entes` | `report`; Worker also takes `uf`/`esfera`/`q`/`limit` to narrow `entes` |
 | `anbima` | ima, ettj, debentures, tpf | `dataset=ima\|ettj\|debentures\|tpf` |
 | `openfinance_directory` | participants/endpoints/resources/roles | `dataset` |
+
+## Worker response contract
+
+The public Worker holds these invariants. The internal FastAPI catalog does not
+yet, which is the divergence noted at the top.
+
+- **Unknown arguments are rejected.** Every tool schema is a `z.strictObject`,
+  so `tools/list` advertises `additionalProperties: false` and a misspelled
+  argument fails loudly instead of being dropped. Guessing `n` for `last_n`
+  used to return a silently different result.
+- **Long results are bounded and say so.** `tesouro_siconfi` returns
+  `{total_matched, returned, limit, truncated, upstream_complete, entes|rows}`.
+  `truncated: true` means the caller did not see everything. `entes` defaults to
+  `limit=100` and narrows with `uf`, `esfera` and `q` (accent-insensitive);
+  reports default to 2000, and `limit` is capped at 2000 so a large `limit`
+  cannot rebuild the old payload. Unbounded `report=entes` used to return about
+  500 KB in one response.
+- **Completeness is never assumed.** Two different things hide rows, and the
+  envelope separates them. `truncated` says this response was cut;
+  `upstream_complete: false` says SICONFI still had pages when the page cap
+  stopped the fetch, so `total_matched` counts only the rows fetched and is not
+  a global total. `truncated` is true whenever either happened.
+- **An empty result explains itself.** `bcb_ptax` returns
+  `{currency, date|start+end, count, cotacoes}`, and when `count` is 0 it adds
+  `reason` plus a human-readable `note`. A single day resolves to
+  `non_business_day`, `not_published_yet`, `future_date` or `no_quote_for_date`;
+  a range resolves to `no_quotes_in_range`, because one day's diagnosis would be
+  wrong across many dates. An empty list is not an error, and the caller should
+  not retry blindly.
+- **A non-JSON upstream is named, not leaked.** BCB's SGS gateway answers HTTP
+  200 with an HTML error page when it is degraded. `parseJsonBody` raises
+  `UpstreamFormatError` naming the URL and quoting the first bytes, instead of
+  surfacing `Unexpected token '<'`.
+- **OData query options keep literal spaces.** `URLSearchParams` form-encodes a
+  space as `+`, and Olinda answers 400 for `$orderby=Data+desc`. `buildUrl`
+  re-encodes those as `%20`. This broke every `bcb_focus` path in production.
 
 ## Tradeoffs
 
@@ -120,6 +161,7 @@ local/agent use. A production deployment should run it in a real sandbox
 
 - `registry_lookup(q="PETR4")` → PETROBRAS, CNPJ `33.000.167/0001-01`, `[PETR3, PETR4]` (offline).
 - `bcb_ptax(start=2024-01-02, end=2024-01-05)` → daily PTAX USD series (the handoff's headline flow).
+  On the Worker the series is under `cotacoes`, wrapped as described below.
 - `cvm_fund(dataset=catalog, cnpj="38.729.027/0001-92")` → cadastro RCVM 175 (classe, condomínio, PL, subclasses).
 - `cvm_fund(dataset=daily, cnpj="38729027000192", start="2025-09-01", end="2026-08-31")` → INF_DIARIO history (`served[].nicename`).
 - `cvm_fund(dataset=periods, product="CDA")` → YYYYMM stamps + `latest`.

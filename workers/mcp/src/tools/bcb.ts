@@ -1,4 +1,5 @@
 import { errorResult, getJson, jsonResult, odataValue } from "../lib/http";
+import { brtNow, emptyDayReason } from "../lib/ptaxDay";
 import sgsCatalog from "../catalog/sgs.json";
 import focusIndicators from "../catalog/focus.json";
 
@@ -93,22 +94,38 @@ export async function bcbPtax(args: {
         $format: "json",
       },
     );
-    return jsonResult(odataValue(raw));
-  }
-  const day = args.date ?? new Date().toISOString().slice(0, 10);
-  if (currency === "USD") {
-    const raw = await getJson(`${PTAX_URL}/CotacaoDolarDia(dataCotacao=@dataCotacao)`, {
-      "@dataCotacao": `'${fmtPtaxDate(day)}'`,
-      $format: "json",
+    const cotacoes = odataValue(raw);
+    if (cotacoes.length > 0) {
+      return jsonResult({ currency, start: args.start, end: args.end, count: cotacoes.length, cotacoes });
+    }
+    // A range spans many dates, so a single day's diagnosis would be wrong here.
+    return jsonResult({
+      currency,
+      start: args.start,
+      end: args.end,
+      count: 0,
+      cotacoes,
+      reason: "no_quotes_in_range",
+      note: `no PTAX between ${args.start} and ${args.end}; the range may hold only weekends and holidays, or be in the future`,
     });
-    return jsonResult(odataValue(raw));
   }
-  const raw = await getJson(`${PTAX_URL}/CotacaoMoedaDia(moeda=@moeda,dataCotacao=@dataCotacao)`, {
-    "@moeda": `'${currency}'`,
-    "@dataCotacao": `'${fmtPtaxDate(day)}'`,
-    $format: "json",
-  });
-  return jsonResult(odataValue(raw));
+  const day = args.date ?? brtNow().date;
+  const raw =
+    currency === "USD"
+      ? await getJson(`${PTAX_URL}/CotacaoDolarDia(dataCotacao=@dataCotacao)`, {
+          "@dataCotacao": `'${fmtPtaxDate(day)}'`,
+          $format: "json",
+        })
+      : await getJson(`${PTAX_URL}/CotacaoMoedaDia(moeda=@moeda,dataCotacao=@dataCotacao)`, {
+          "@moeda": `'${currency}'`,
+          "@dataCotacao": `'${fmtPtaxDate(day)}'`,
+          $format: "json",
+        });
+  const cotacoes = odataValue(raw);
+  if (cotacoes.length > 0) {
+    return jsonResult({ currency, date: day, count: cotacoes.length, cotacoes });
+  }
+  return jsonResult({ currency, date: day, count: 0, cotacoes, ...emptyDayReason(day) });
 }
 
 function focusIndicator(name: string): string | undefined {
