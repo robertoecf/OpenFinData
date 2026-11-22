@@ -74,7 +74,7 @@ renderer policy, no plotting libraries as project dependencies).
 ## Release guardrails
 
 - Do not publish to PyPI without explicit human approval.
-- Do not tag a release until tests and adversarial review are clean.
+- Do not tag a release until tests and adversarial review are clean, and never without explicit human approval.
 
 ## Harness: ship, worktrees, commands
 
