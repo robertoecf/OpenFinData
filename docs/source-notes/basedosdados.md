@@ -56,6 +56,13 @@ BigQuery can bill by bytes processed. Start with small `LIMIT` queries and avoid
 broad `SELECT *` scans over microdata tables unless the user explicitly accepts
 the cost/quota risk.
 
+- Use the Project ID, not the display name. The code also accepts
+  `BASE_DOS_DADOS_BILLING_PROJECT_ID` and `GOOGLE_CLOUD_PROJECT` as fallbacks.
+- Never embed Google credentials, service-account JSON, refresh tokens or
+  project-specific secrets in code, tests, docs, examples or generated artifacts.
+- In user-facing or PR evidence, name the billing project only when the user
+  already knows it or the task provides it. Keep private credential paths out.
+
 ## What the catalog exposes
 
 The public catalog currently returns:

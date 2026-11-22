@@ -5,7 +5,7 @@ antes de explorar ou alterar o código.
 
 ## Antes de explorar, leia estes
 
-- **[`AGENTS.md`](../../AGENTS.md)** — baseline, gates, integração de fontes, BdD, charts.
+- **[`AGENTS.md`](../../AGENTS.md)**: baseline, gates, integração de fontes e ponteiros para BdD e charts.
 - **[`docs/SOURCES_AND_ENDPOINTS.md`](../SOURCES_AND_ENDPOINTS.md)** — catálogo de endpoints.
 - **[`docs/SOURCE_PRIORITIES.md`](../SOURCE_PRIORITIES.md)** — backlog e prioridade de fontes.
 - **[`docs/SOURCES_WITH_AUTH.md`](../SOURCES_WITH_AUTH.md)** — política de fontes com auth.
