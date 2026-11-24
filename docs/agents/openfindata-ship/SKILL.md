@@ -56,9 +56,13 @@ Antes de publicar ou fazer push material:
    `ggshield secret scan pre-commit` quando o `ggshield` está instalado. Se algum
    commit a publicar não passou pelo hook (`--no-verify` ou feito antes de
    instalar o `ggshield`), varra o range antes do push:
-   `doppler run --project personal --config dev_personal --only-secrets GITGUARDIAN_API_KEY -- ggshield secret scan commit-range origin/main..HEAD < /dev/null`.
-   Sem `ggshield` ou sem a chave, declare "secret-scan não executado" no corpo
-   do PR.
+   `doppler run --project personal --config dev_personal --only-secrets GITGUARDIAN_API_KEY -- ggshield secret scan commit-range origin/main..HEAD < /dev/null`
+   (sem acesso ao Doppler, com o `ggshield` autenticado por `ggshield auth login`:
+   `ggshield secret scan commit-range origin/main..HEAD < /dev/null`). Achado:
+   tire o segredo do commit que o introduziu (amend ou rebase dos commits ainda
+   não publicados, porque um commit novo não limpa o range), rotacione a
+   credencial se ela saiu da máquina e rode o scan de novo. Sem `ggshield` ou sem
+   a chave, declare "secret-scan não executado" no corpo do PR.
 
 ## Lista de verificação adversarial (local)
 
