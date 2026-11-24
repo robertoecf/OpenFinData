@@ -19,31 +19,24 @@ registry FTS5, code mode): `pip install openfindata` ou FastAPI interno.
 
 ## Por que Worker e não VM própria
 
-Decisão de 19/10/2026. A dúvida era hospedar a superfície pública numa VM
-(Oracle Cloud) em vez do Worker, justamente para evitar surpresa de custo.
-A conclusão foi a inversa: para esta carga, a VM é o caminho menos previsível.
+Decisão de 19/10/2026. A alternativa avaliada era hospedar a superfície
+pública numa VM, para evitar surpresa de custo. A conclusão foi a inversa:
+para esta carga, a VM é o caminho menos previsível.
 
 - **Forma da carga.** O MCP público é stateless, read-only, sem disco, em
   rajada, e passa a maior parte do tempo esperando I/O das fontes. Numa VM se
   paga ociosidade 24h para servir rajada, e assume-se patch, TLS, DDoS e
   supervisão de processo. O Worker cobra CPU, não tempo de parede, então uma
   fonte lenta (ver o caso do SGS em `MCP_SURFACE.md`) quase não custa.
-- **Custo marginal.** A conta Cloudflare já estava em `workers_paid`, US$ 5
-  mensais, compartilhado por 10 workers. O plano é da conta, não do worker,
-  então o custo marginal deste projeto no Worker é praticamente zero. Subir VM
-  não economiza esse valor, soma um servidor em cima dele.
+- **Custo marginal.** O plano pago de Workers é da conta, não do worker, então
+  o custo marginal de mais um Worker é praticamente zero. Uma VM soma um
+  servidor em cima desse custo.
 - **Teto de exposição.** O excedente do Worker é linear e barato por request, e
-  o `wrangler.toml` já limita 60 req/min e 20 a cada 10s por IP. A Oracle, no
-  sentido oposto, cortou o Always Free do Ampere A1 pela metade em junho de 2026
-  e passou a encerrar instâncias acima do novo limite, sem aviso prévio: o teto
-  é o que o fornecedor decidir. (Fontes secundárias, conferidas em 19/10/2026;
-  confirme na documentação oficial antes de decidir com base nisso.)
-- **Segurança.** Expor MCP público a partir da VPS tiraria o container da
-  condição de alcançável só pelo tailnet. Um comprometimento herdaria a posição
-  de rede dele, que inclui o tailnet: seria pivô para dentro. Mantendo o público
-  no Worker, não há porta pública na VPS, e o raio de dano de um
-  comprometimento do Worker é o próprio Worker, que não tem credencial, disco,
-  rede interna nem rota para o tailnet. O endurecimento do lado VPS está em
+  o `wrangler.toml` já limita 60 req/min e 20 a cada 10s por IP. Em camadas
+  gratuitas de VM, o teto é o que o fornecedor decidir.
+- **Segurança.** O Worker não tem credencial, disco nem rede interna, então o
+  raio de dano de um comprometimento é o próprio Worker. Uma VM exposta
+  publicamente amplia essa superfície. O endurecimento do lado VM está em
   [`DEPLOY_GVISOR.md`](DEPLOY_GVISOR.md).
 
 A VM continua sendo a ferramenta certa para o FastAPI interno, que é o único
