@@ -47,6 +47,22 @@ Antes de publicar ou fazer push material:
    `.claude/skills/mcp-trust-reviewer`. Anexe o resultado ao PR. Sem superfície:
    `NOT_APPLICABLE` uma vez.
 5. Antes do push: `bash scripts/ship/preflight.sh` (evidência amarrada ao HEAD).
+6. Não versione nada com cara de segredo, nem valor de teste: vetores com tokens,
+   HMACs ou chaves de exemplo longas são gerados no teste a partir de chaves
+   fictícias declaradas no código. Exceção só por caminho ignorado em
+   `.gitguardian.yaml`, de escopo mínimo e justificado no mesmo PR (o arquivo
+   vale para o `ggshield` local; incidente do app do GitHub se resolve no painel
+   do GitGuardian). O hook de pre-commit (`scripts/git/guardrails.sh`) roda
+   `ggshield secret scan pre-commit` quando o `ggshield` está instalado. Se algum
+   commit a publicar não passou pelo hook (`--no-verify` ou feito antes de
+   instalar o `ggshield`), varra o range antes do push:
+   `doppler run --project personal --config dev_personal --only-secrets GITGUARDIAN_API_KEY -- ggshield secret scan commit-range origin/main..HEAD < /dev/null`
+   (sem acesso ao Doppler, com o `ggshield` autenticado por `ggshield auth login`:
+   `ggshield secret scan commit-range origin/main..HEAD < /dev/null`). Achado:
+   tire o segredo do commit que o introduziu (amend ou rebase dos commits ainda
+   não publicados, porque um commit novo não limpa o range), rotacione a
+   credencial se ela saiu da máquina e rode o scan de novo. Sem `ggshield` ou sem
+   a chave, declare "secret-scan não executado" no corpo do PR.
 
 ## Lista de verificação adversarial (local)
 
