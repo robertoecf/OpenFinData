@@ -69,16 +69,18 @@ Antes de publicar ou fazer push material:
      commite e cite o motivo no PR. Se esse arquivo já tiver comentários ou
      ajustes à mão, edite `secret.ignored_matches` à mão: o comando reescreve o
      arquivo inteiro. Não use `--last-found` nem ignore por caminho;
-   - segredo, ou valor de teste com cara de segredo, achado pelo hook: tire o
-     valor da mudança em stage e faça o stage de novo;
-   - achado pelo scan num commit: antes de reescrever, veja se o commit já está
-     em alguma branch remota (`git branch -r --contains <commit>`). Segredo real
-     já publicado, ou exposto em outro lugar (log de CI, issue): pare e chame o
-     usuário, porque a credencial precisa ser rotacionada no serviço dela. Caso
-     contrário, tire o valor do commit que o introduziu (amend ou rebase, porque
-     um commit novo não limpa o range); se o commit já estava só na branch deste
-     PR, publique com `git push --force-with-lease`. Credencial vai para o
-     Doppler; valor de teste passa a ser gerado no teste;
+   - segredo real exposto fora da máquina (commit publicado, log de CI, issue,
+     chat) ou cuja exposição você não consegue descartar: pare e chame o
+     usuário, porque a credencial precisa ser rotacionada no serviço dela. Para
+     commit, rode `git fetch origin` e confira com
+     `git branch -r --contains <commit>`;
+   - achado pelo hook, sem exposição: tire o valor da mudança em stage e faça o
+     stage de novo;
+   - achado pelo scan num commit, sem exposição: tire o valor do commit que o
+     introduziu (amend ou rebase, porque um commit novo não limpa o range);
+     credencial vai para o Doppler, valor de teste passa a ser gerado no teste.
+     Rode `bash scripts/ship/preflight.sh` no novo HEAD; se o commit já estava
+     só na branch deste PR, publique com `git push --force-with-lease`;
    - rode o scan de novo até passar. O app do GitGuardian no GitHub não lê o
      `ignored_matches` local e pode continuar acusando no PR; não é check
      obrigatório: registre no PR e siga.
