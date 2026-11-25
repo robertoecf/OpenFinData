@@ -49,20 +49,41 @@ Antes de publicar ou fazer push material:
 5. Antes do push: `bash scripts/ship/preflight.sh` (evidência amarrada ao HEAD).
 6. Não versione nada com cara de segredo, nem valor de teste: vetores com tokens,
    HMACs ou chaves de exemplo longas são gerados no teste a partir de chaves
-   fictícias declaradas no código. Exceção só por caminho ignorado em
-   `.gitguardian.yaml`, de escopo mínimo e justificado no mesmo PR (o arquivo
-   vale para o `ggshield` local; incidente do app do GitHub se resolve no painel
-   do GitGuardian). O hook de pre-commit (`scripts/git/guardrails.sh`) roda
+   fictícias declaradas no código. O hook de pre-commit (`scripts/git/guardrails.sh`) roda
    `ggshield secret scan pre-commit` quando o `ggshield` está instalado. Se algum
    commit a publicar não passou pelo hook (`--no-verify` ou feito antes de
    instalar o `ggshield`), varra o range antes do push:
    `doppler run --project personal --config dev_personal --only-secrets GITGUARDIAN_API_KEY -- ggshield secret scan commit-range origin/main..HEAD < /dev/null`
    (sem acesso ao Doppler, com o `ggshield` autenticado por `ggshield auth login`:
-   `ggshield secret scan commit-range origin/main..HEAD < /dev/null`). Achado:
-   tire o segredo do commit que o introduziu (amend ou rebase dos commits ainda
-   não publicados, porque um commit novo não limpa o range), rotacione a
-   credencial se ela saiu da máquina e rode o scan de novo. Sem `ggshield` ou sem
-   a chave, declare "secret-scan não executado" no corpo do PR.
+   `ggshield secret scan commit-range origin/main..HEAD < /dev/null`). Sem
+   `ggshield` ou sem a chave, declare "secret-scan não executado" no corpo do PR.
+
+   Achado (no hook ou no scan): faça a triagem e a correção você mesmo; pare só
+   nos casos indicados abaixo. Para cada achado, leia o trecho apontado (arquivo,
+   `Secret detected`, `Secret SHA`):
+   - falso positivo é só o que comprovadamente não é credencial (nome de pacote,
+     hash de lockfile, ID público). Na dúvida, trate como segredo; placeholder
+     com cara de segredo é reescrito para algo como `<API_KEY>`. Para o falso
+     positivo, rode `ggshield secret ignore <Secret SHA> --name "<arquivo>:
+     <motivo>"` (grava no arquivo de config ativo ou cria `.gitguardian.yaml`),
+     commite e cite o motivo no PR. Se esse arquivo já tiver comentários ou
+     ajustes à mão, edite `secret.ignored_matches` à mão: o comando reescreve o
+     arquivo inteiro. Não use `--last-found` nem ignore por caminho;
+   - segredo real exposto fora da máquina (commit publicado, log de CI, issue,
+     chat) ou cuja exposição você não consegue descartar: pare e chame o
+     usuário, porque a credencial precisa ser rotacionada no serviço dela. Para
+     commit, rode `git fetch origin` e confira com
+     `git branch -r --contains <commit>`;
+   - achado pelo hook, sem exposição: tire o valor da mudança em stage e faça o
+     stage de novo;
+   - achado pelo scan num commit, sem exposição: tire o valor do commit que o
+     introduziu (amend ou rebase, porque um commit novo não limpa o range);
+     credencial vai para o Doppler, valor de teste passa a ser gerado no teste.
+     Rode `bash scripts/ship/preflight.sh` no novo HEAD; se o commit já estava
+     só na branch deste PR, publique com `git push --force-with-lease`;
+   - rode o scan de novo até passar. O app do GitGuardian no GitHub não lê o
+     `ignored_matches` local e pode continuar acusando no PR; não é check
+     obrigatório: registre no PR e siga.
 
 ## Lista de verificação adversarial (local)
 

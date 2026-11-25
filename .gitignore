@@ -36,3 +36,6 @@ node_modules/
 /scripts/benchmark_public_surface.py
 /tests/test_obm_audit.py
 /tests/test_benchmark_public_surface.py
+
+# cache local do ggshield
+.cache_ggshield
