@@ -17,6 +17,31 @@ IBGE, IPEA, SICONFI, Open Finance Directory) e os ZIPs/CSV da CVM em
 Fora deste Worker (lâmina, perfil, B3 COTAHIST, ANBIMA XLS,
 registry FTS5, code mode): `pip install openfindata` ou FastAPI interno.
 
+## Por que Worker e não VM própria
+
+Decisão de 19/10/2026. A alternativa avaliada era hospedar a superfície
+pública numa VM, para evitar surpresa de custo. A conclusão foi a inversa:
+para esta carga, a VM é o caminho menos previsível.
+
+- **Forma da carga.** O MCP público é stateless, read-only, sem disco, em
+  rajada, e passa a maior parte do tempo esperando I/O das fontes. Numa VM se
+  paga ociosidade 24h para servir rajada, e assume-se patch, TLS, DDoS e
+  supervisão de processo. O Worker cobra CPU, não tempo de parede, então uma
+  fonte lenta (ver o caso do SGS em `MCP_SURFACE.md`) quase não custa.
+- **Custo marginal.** O plano pago de Workers é da conta, não do worker, então
+  o custo marginal de mais um Worker é praticamente zero. Uma VM soma um
+  servidor em cima desse custo.
+- **Teto de exposição.** O excedente do Worker é linear e barato por request, e
+  o `wrangler.toml` já limita 60 req/min e 20 a cada 10s por IP. Em camadas
+  gratuitas de VM, o teto é o que o fornecedor decidir.
+- **Segurança.** O Worker não tem credencial, disco nem rede interna, então o
+  raio de dano de um comprometimento é o próprio Worker. Uma VM exposta
+  publicamente amplia essa superfície. O endurecimento do lado VM está em
+  [`DEPLOY_GVISOR.md`](DEPLOY_GVISOR.md).
+
+A VM continua sendo a ferramenta certa para o FastAPI interno, que é o único
+pedaço que realmente precisa dela.
+
 `cvm_fund` no Worker:
 
 - `dataset=catalog` + `cnpj` ou `q` — cadastro oficial RCVM 175

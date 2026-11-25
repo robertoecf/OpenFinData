@@ -134,6 +134,26 @@ yet, which is the divergence noted at the top.
 - **OData query options keep literal spaces.** `URLSearchParams` form-encodes a
   space as `+`, and Olinda answers 400 for `$orderby=Data+desc`. `buildUrl`
   re-encodes those as `%20`. This broke every `bcb_focus` path in production.
+- **A slow upstream fails before it answers.** `FETCH_TIMEOUT_MS` is 15s. BCB's
+  SGS gateway was measured at about 20s while degraded on 2026-10-18, so
+  `bcb_series` aborts rather than waiting it out. The tool is correct and the
+  upstream is late; raising the timeout trades a clear failure for a long hang,
+  which is why it was left alone. If `bcb_series` times out, suspect SGS first.
+
+## Worker request limits
+
+The contract above bounds what the Worker **returns**. These bound what a
+caller **sends**, and they are a separate layer: neither replaces the other.
+
+- **Request body is capped at 64 KiB.** `maxRequestBodySize` is set on the MCP
+  handler, and because the `agents` legacy compatibility path does not forward
+  that option, `src/index.ts` also bounds the stream itself before either
+  protocol path parses the JSON. Over the cap returns HTTP 413 with
+  `{"error": "payload_too_large"}`.
+- **Tool input arrays are capped at 1000 elements** (`maxToolInputElements`).
+- **Upstream responses are capped at 2 MB** (`MAX_RESPONSE_BYTES`), which bounds
+  what a source can push into the Worker, as distinct from the row limits above
+  that bound what the Worker hands back.
 
 ## Tradeoffs
 
